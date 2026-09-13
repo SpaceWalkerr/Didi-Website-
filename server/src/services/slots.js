@@ -96,21 +96,28 @@ export function getSlots(date, serviceId, now = Date.now(), excludeId = null) {
   return slots;
 }
 
-/** Guard used before creating a booking, so two patients can't grab one slot. */
+/**
+ * Guard used before creating a booking, so two patients can't grab one slot.
+ *
+ * Returns null when the slot is fine, otherwise `{ code, params }`. Codes map to
+ * keys under `errors.*` in the client's translation files — the server never
+ * sends a user-facing sentence, because it does not know what language the
+ * patient is reading.
+ */
 export function validateSlot(date, time, serviceId, now = Date.now(), excludeId = null) {
-  if (!isValidDateString(date)) return 'Please choose a valid date.';
+  if (!isValidDateString(date)) return { code: 'slotInvalidDate' };
 
   const service = getService(serviceId);
-  if (!service) return 'Please choose a consultation type.';
+  if (!service) return { code: 'slotInvalidDate' };
 
   const maxDate = istDateString(new Date(now + maxDaysAhead * 24 * 60 * 60 * 1000));
-  if (date < istToday()) return 'That date has already passed.';
-  if (date > maxDate) return `Bookings open only ${maxDaysAhead} days in advance.`;
+  if (date < istToday()) return { code: 'slotInvalidDate' };
+  if (date > maxDate) return { code: 'slotTooFar', params: { days: maxDaysAhead } };
 
   const slot = getSlots(date, serviceId, now, excludeId).find((s) => s.time === time);
-  if (!slot) return 'That time is outside consulting hours.';
-  if (slot.reason === 'past') return 'That slot is too soon — please pick a later time.';
-  if (!slot.available) return 'That slot has just been taken. Please choose another.';
+  if (!slot) return { code: 'slotOutsideHours' };
+  if (slot.reason === 'past') return { code: 'slotPast' };
+  if (!slot.available) return { code: 'slotTaken' };
 
   return null;
 }

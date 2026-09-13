@@ -43,28 +43,23 @@ const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
 const isPhone = (v) => /^[6-9]\d{9}$/.test(String(v).replace(/\D/g, '').replace(/^91(?=\d{10}$)/, ''));
 const normalisePhone = (v) => String(v).replace(/\D/g, '').replace(/^91(?=\d{10}$)/, '');
 
+/**
+ * Returns { field: errorCode }. Codes match keys under `errors.*` in the
+ * client's translation files — the server stays language-agnostic.
+ */
 function validatePatient(patient = {}) {
   const errors = {};
-  if (!patient.name || String(patient.name).trim().length < 2) {
-    errors.name = 'Please enter the patient’s full name.';
-  }
-  if (!isPhone(patient.phone || '')) {
-    errors.phone = 'Please enter a valid 10-digit Indian mobile number.';
-  }
-  if (!isEmail(patient.email || '')) {
-    errors.email = 'Please enter a valid email address.';
-  }
-  if (!patient.symptoms || String(patient.symptoms).trim().length < 10) {
-    errors.symptoms = 'Please describe the symptoms in at least a sentence.';
-  }
-  if (patient.age && (Number(patient.age) < 0 || Number(patient.age) > 120)) {
-    errors.age = 'Please enter a valid age.';
-  }
-  if (!patient.consent) {
-    errors.consent = 'Patient consent is required under the Telemedicine Practice Guidelines.';
-  }
+  if (!patient.name || String(patient.name).trim().length < 2) errors.name = 'name';
+  if (!isPhone(patient.phone || '')) errors.phone = 'phone';
+  if (!isEmail(patient.email || '')) errors.email = 'email';
+  if (!patient.symptoms || String(patient.symptoms).trim().length < 10) errors.symptoms = 'symptoms';
+  if (patient.age && (Number(patient.age) < 0 || Number(patient.age) > 120)) errors.age = 'age';
+  if (!patient.consent) errors.consent = 'consent';
   return errors;
 }
+
+/** Languages the site is published in; anything else is stored as 'en'. */
+const LANGUAGES = ['en', 'hi', 'pa', 'bho', 'bgc', 'ru'];
 
 /**
  * POST /api/bookings
@@ -73,15 +68,25 @@ function validatePatient(patient = {}) {
  */
 router.post('/', async (req, res, next) => {
   try {
-    const { date, time, service: serviceId, patient = {} } = req.body || {};
+    const { date, time, service: serviceId, patient = {}, language } = req.body || {};
 
     const fieldErrors = validatePatient(patient);
     if (Object.keys(fieldErrors).length) {
-      return res.status(400).json({ error: 'Please correct the highlighted fields.', fieldErrors });
+      return res.status(400).json({
+        code: 'fieldsInvalid',
+        error: 'Please correct the highlighted fields.',
+        fieldErrors,
+      });
     }
 
     const slotError = validateSlot(String(date), String(time), String(serviceId));
-    if (slotError) return res.status(409).json({ error: slotError });
+    if (slotError) {
+      return res.status(409).json({
+        code: slotError.code,
+        params: slotError.params || null,
+        error: 'That slot is not available.',
+      });
+    }
 
     const service = getService(serviceId);
     const id = newId();
@@ -118,6 +123,7 @@ router.post('/', async (req, res, next) => {
         paymentId: null,
         status: 'created',
       },
+      language: LANGUAGES.includes(language) ? language : 'en',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -141,7 +147,7 @@ router.post('/', async (req, res, next) => {
 /** GET /api/bookings/:id — the confirmation page. Only confirmed bookings expose the join link. */
 router.get('/:id', (req, res) => {
   const booking = db.find(req.params.id.toUpperCase());
-  if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+  if (!booking) return res.status(404).json({ code: 'bookingNotFound', error: 'Booking not found.' });
 
   res.json({
     id: booking.id,
@@ -149,6 +155,9 @@ router.get('/:id', (req, res) => {
     date: booking.date,
     time: booking.time,
     when: formatWhen(booking),
+    // The client re-formats `when` and looks up the service name in the
+    // patient's language; these English values stay for email and logs.
+    serviceId: booking.serviceId,
     serviceName: booking.serviceName,
     durationMinutes: booking.durationMinutes,
     amount: booking.amount,

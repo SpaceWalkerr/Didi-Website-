@@ -1,8 +1,8 @@
 import { CheckIcon } from './Icons.jsx';
 
-export default function StepIndicator({ steps, current }) {
+export default function StepIndicator({ steps, current, label = 'Booking progress' }) {
   return (
-    <ol className="flex items-center gap-2 sm:gap-3" aria-label="Booking progress">
+    <ol className="flex items-center gap-2 sm:gap-3" aria-label={label}>
       {steps.map((label, i) => {
         const done = i < current;
         const active = i === current;

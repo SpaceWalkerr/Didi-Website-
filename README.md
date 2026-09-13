@@ -6,6 +6,8 @@ channel, and a private view of upcoming bookings for the doctor.
 
 **Stack:** React 18 + Vite + Tailwind CSS · Node/Express · Razorpay (test mode) · JSON file store.
 
+**Languages:** English (default), Hindi, Bhojpuri, Haryanvi, Punjabi, Russian.
+
 ---
 
 ## Quick start
@@ -38,6 +40,8 @@ Everything a non-developer needs to change is in two files, and every placeholde
 | `client/src/config.js` | Doctor's name, qualifications, registration number, council, bio, photo, WhatsApp number, email, clinic hours |
 | `server/src/config.js` | Service names, **prices and durations**, consulting hours, booking rules, WhatsApp number |
 | `client/public/images/` | Doctor photograph and link-preview card — see the README in that folder |
+| `client/src/i18n/en.js` | **All patient-facing wording**, including the bio and the disclaimer |
+| `client/src/i18n/*.js` | The same keys in each other language |
 
 Two of these are deliberately duplicated across client and server — prices/durations and the
 WhatsApp number. The **server copy is authoritative** (the client fetches services from the API, so
@@ -60,6 +64,83 @@ Reg. No. 52532, Bihar State Medical Council, 2+ years' experience.**
 
 The bio copy in `DOCTOR.shortBio` and `DOCTOR.longBio` is written to fit 2+ years of experience, but
 it is drafted text — the doctor should read and adjust it.
+
+---
+
+## Languages
+
+The site is published in six languages. English is the default and the fallback:
+any key missing from another language falls back to English rather than showing
+a blank, so a partial translation degrades gracefully.
+
+| Code | Language | Script |
+| --- | --- | --- |
+| `en` | English | Latin |
+| `hi` | हिन्दी — Hindi | Devanagari |
+| `bho` | भोजपुरी — Bhojpuri | Devanagari |
+| `bgc` | हरियाणवी — Haryanvi | Devanagari |
+| `pa` | ਪੰਜਾਬੀ — Punjabi | Gurmukhi |
+| `ru` | Русский — Russian | Cyrillic |
+
+### How the language is chosen
+
+In order of how much the signal can be trusted, from `detectLanguage()` in
+[`client/src/i18n/index.jsx`](client/src/i18n/index.jsx):
+
+1. **What the visitor previously picked** here (stored in `localStorage`)
+2. **`?lang=` in the URL** — so the clinic can share a link that opens in one
+   language, e.g. `…/book?lang=bho`
+3. **A region code**, if one is supplied — `REGION_LANGUAGE` maps Haryana to
+   Haryanvi, Punjab to Punjabi, Bihar to Bhojpuri, and so on
+4. **The browser's own language settings** — reliable, instant, needs no
+   permission and makes no network call
+5. **Time zone**, which only separates Russia from India
+6. **English**
+
+A note on "by location": step 4 is doing the real work today. Step 3 is wired up
+and ready, but **nothing currently supplies a region code** — every Indian state
+shares one time zone, so a browser cannot tell Haryana from Bihar. Narrowing to a
+state needs an IP-geolocation lookup (a third-party service, a per-request cost,
+and a privacy trade-off), so it is deliberately left switched off. To enable it,
+resolve the visitor's state server-side and pass it to `detectLanguage(region)`.
+The language switcher in the header is always available regardless.
+
+### Editing translations
+
+`en.js` is the reference. After changing any language file:
+
+```bash
+node scripts/check-translations.mjs
+```
+
+That fails if a language is missing a key, has an unknown one, or has a list of
+the wrong length — all of which would silently show English to a patient.
+
+Each dictionary is a separate bundle chunk, so a visitor reading English never
+downloads the other five (~8 KB gzipped each).
+
+### What is *not* translated
+
+- **The admin view** (`/admin`) is English only — the clinic is the only audience.
+  It does show which language each patient booked in, so the doctor knows what to
+  expect on the call.
+- **Email and SMS templates** in `server/src/services/notify.js` are English. The
+  booking record stores the patient's language, so whoever wires up the real
+  provider can use it.
+- **The WhatsApp join message** *is* translated, in `JOIN_MESSAGES` in
+  `notify.js` — the patient reads that one before sending it.
+
+### Translation quality
+
+The English and Hindi text is solid. **Bhojpuri and Haryanvi have not been
+reviewed by a native speaker**, and both are languages with limited written
+standardisation — the wording will read as serviceable rather than natural, and
+some medical phrasing may be off. Have someone who speaks each read through
+before launch; each file has a `Reviewed by: ______` line at the top.
+
+Because of that, the footer shows a line in every non-English language stating
+that the **English version of the terms is authoritative**. Keep it there unless
+a lawyer reviews each translated disclaimer.
 
 ---
 
@@ -150,6 +231,8 @@ information.
 - [ ] Backups configured for `server/data/`
 - [ ] Cancellation and refund terms on the Services page reviewed by the doctor
 - [ ] Doctor has completed the mandatory telemedicine training course
+- [ ] Bhojpuri and Haryanvi translations read by a native speaker
+- [ ] `node scripts/check-translations.mjs` passes
 
 ---
 
@@ -182,7 +265,10 @@ client/
     pages/                 Home, About, Services, Booking, Confirmation, Contact, Admin
     components/            Navbar, Footer, WhatsAppButton, StepIndicator, Icons …
     lib/                   api client, Razorpay checkout, date/currency formatting
+    i18n/                  ← all patient-facing wording; en.js is the reference
   public/images/           ← doctor photo, link-preview card, home-screen icon
+scripts/
+  check-translations.mjs   verifies every language has the same keys as en.js
 server/
   src/
     config.js              ← services, prices, consulting hours, booking rules
@@ -193,6 +279,11 @@ server/
 ```
 
 ## API
+
+Errors come back as a machine-readable `code` (plus `params` where a number is
+interpolated), not an English sentence — the server has no idea what language the
+patient is reading. The client maps each code to a key under `errors.*` in the
+translation files. Field validation returns `fieldErrors` as `{ field: code }`.
 
 | Method | Endpoint | Purpose |
 | --- | --- | --- |

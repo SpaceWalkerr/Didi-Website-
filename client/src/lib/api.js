@@ -15,8 +15,15 @@ async function request(path, options = {}) {
   }
 
   if (!res.ok) {
-    const error = new Error(data?.error || 'We could not reach the clinic server. Please try again.');
+    // The server sends a `code` rather than a sentence, because it does not know
+    // what language the patient is reading. Callers translate `messageKey`;
+    // `message` is the English fallback for logs and unexpected failures.
+    const error = new Error(data?.error || 'We could not reach the clinic server.');
     error.status = res.status;
+    error.code = data?.code || null;
+    error.params = data?.params || null;
+    error.messageKey = data?.code ? `errors.${data.code}` : 'errors.network';
+    // { field: errorCode } — each code maps to an `errors.*` translation key.
     error.fieldErrors = data?.fieldErrors || null;
     throw error;
   }

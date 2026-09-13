@@ -18,12 +18,12 @@ router.post('/verify', async (req, res, next) => {
     const { bookingId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
 
     const booking = db.find(String(bookingId || '').toUpperCase());
-    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    if (!booking) return res.status(404).json({ code: 'bookingNotFound', error: 'Booking not found.' });
     if (booking.status === 'confirmed') {
       return res.json({ status: 'confirmed', whatsappLink: whatsappJoinLink(booking) });
     }
     if (booking.payment.orderId !== razorpay_order_id) {
-      return res.status(400).json({ error: 'Payment does not match this booking.' });
+      return res.status(400).json({ code: 'paymentMismatch', error: 'Payment does not match this booking.' });
     }
 
     const ok = verifySignature({
@@ -34,7 +34,9 @@ router.post('/verify', async (req, res, next) => {
 
     if (!ok) {
       db.update(booking.id, { payment: { ...booking.payment, status: 'failed' } });
-      return res.status(400).json({ error: 'Payment could not be verified. You have not been charged.' });
+      return res
+        .status(400)
+        .json({ code: 'paymentUnverified', error: 'Payment could not be verified.' });
     }
 
     // The hold may have lapsed while the patient was paying. Re-check before
@@ -46,16 +48,15 @@ router.post('/verify', async (req, res, next) => {
       Date.now(),
       booking.id,
     );
-    if (conflict && conflict.includes('just been taken')) {
+    if (conflict?.code === 'slotTaken') {
       db.update(booking.id, {
         status: 'needs-attention',
         payment: { ...booking.payment, paymentId: razorpay_payment_id, status: 'paid' },
         note: 'Paid, but the slot expired. Refund or reschedule manually.',
       });
       return res.status(409).json({
-        error:
-          'Your payment went through but the slot was taken while you were paying. ' +
-          'We will contact you to reschedule or refund.',
+        code: 'slotLostAfterPayment',
+        error: 'Paid, but the slot was taken during payment.',
       });
     }
 
@@ -92,7 +93,7 @@ router.post('/mock-pay', (req, res) => {
 
   const { orderId } = req.body || {};
   const booking = db.findByOrderId(String(orderId || ''));
-  if (!booking) return res.status(404).json({ error: 'Order not found.' });
+  if (!booking) return res.status(404).json({ code: 'bookingNotFound', error: 'Order not found.' });
 
   const paymentId = `pay_mock_${crypto.randomBytes(8).toString('hex')}`;
   res.json({
@@ -105,7 +106,7 @@ router.post('/mock-pay', (req, res) => {
 /** Marks a booking as failed when the patient dismisses the payment window. */
 router.post('/cancel', (req, res) => {
   const booking = db.find(String(req.body?.bookingId || '').toUpperCase());
-  if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+  if (!booking) return res.status(404).json({ code: 'bookingNotFound', error: 'Booking not found.' });
   if (booking.status === 'pending') {
     db.update(booking.id, {
       status: 'cancelled',

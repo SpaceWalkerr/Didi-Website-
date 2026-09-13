@@ -46,6 +46,8 @@ router.get('/bookings', requireAdmin, (req, res) => {
       serviceName: b.serviceName,
       durationMinutes: b.durationMinutes,
       amount: b.amount,
+      // Which language the patient booked in — worth knowing before the call.
+      language: b.language || 'en',
       patient: b.patient,
       payment: b.payment,
       note: b.note || null,

@@ -32,7 +32,19 @@ export default {
         },
       },
       fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Roboto', 'sans-serif'],
+        // Inter first for Latin/Cyrillic, then the Noto faces so Devanagari and
+        // Gurmukhi text renders in a matching weight instead of a system fallback.
+        sans: [
+          'Inter',
+          'Noto Sans Devanagari',
+          'Noto Sans Gurmukhi',
+          'ui-sans-serif',
+          'system-ui',
+          '-apple-system',
+          'Segoe UI',
+          'Roboto',
+          'sans-serif',
+        ],
       },
       boxShadow: {
         card: '0 1px 2px rgba(16, 40, 64, 0.04), 0 8px 24px rgba(16, 40, 64, 0.06)',

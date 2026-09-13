@@ -1,8 +1,22 @@
+/**
+ * Date, time and money formatting.
+ *
+ * Every function takes a `locale` so dates read naturally in the language the
+ * patient is using. Bhojpuri and Haryanvi have no CLDR data, so they are mapped
+ * to hi-IN in src/i18n/index.jsx — the text around the date is translated even
+ * though the date itself follows Hindi conventions.
+ */
+
+/**
+ * Amounts always use Indian digit grouping (₹1,00,000), whatever the interface
+ * language — it is an Indian fee in rupees, and the grouping is part of how the
+ * number is recognised.
+ */
 export const rupees = (amount) => `₹${Number(amount).toLocaleString('en-IN')}`;
 
-/** "2026-09-20" + "14:30" → "Sun, 20 Sep 2026 at 2:30 PM" */
-export const formatDateTime = (date, time) =>
-  new Intl.DateTimeFormat('en-IN', {
+/** "2026-09-20" + "14:30" → "Sun, 20 Sep 2026 at 2:30 PM", localised. */
+export const formatDateTime = (date, time, locale = 'en-IN') =>
+  new Intl.DateTimeFormat(locale, {
     timeZone: 'Asia/Kolkata',
     weekday: 'short',
     day: 'numeric',
@@ -10,20 +24,20 @@ export const formatDateTime = (date, time) =>
     year: 'numeric',
     hour: 'numeric',
     minute: '2-digit',
-    hour12: true,
   }).format(new Date(`${date}T${time}:00+05:30`));
 
-/** "14:30" → "2:30 PM" */
-export const formatTime = (time) => {
-  const [h, m] = time.split(':').map(Number);
-  const suffix = h >= 12 ? 'PM' : 'AM';
-  const hour = h % 12 === 0 ? 12 : h % 12;
-  return `${hour}:${String(m).padStart(2, '0')} ${suffix}`;
-};
+/** "14:30" → "2:30 PM" (or "14:30" in locales that use a 24-hour clock). */
+export const formatTime = (time, locale = 'en-IN') =>
+  new Intl.DateTimeFormat(locale, {
+    timeZone: 'Asia/Kolkata',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(new Date(`2000-01-01T${time}:00+05:30`));
 
 /** Dates for the next N days, as {value, weekday, day, month, isToday}. */
-export const upcomingDates = (count = 21) => {
-  const fmt = (d, opts) => new Intl.DateTimeFormat('en-IN', { timeZone: 'Asia/Kolkata', ...opts }).format(d);
+export const upcomingDates = (count = 21, locale = 'en-IN') => {
+  const fmt = (d, opts) => new Intl.DateTimeFormat(locale, { timeZone: 'Asia/Kolkata', ...opts }).format(d);
+  // en-CA gives the ISO "YYYY-MM-DD" the API expects, whatever the display locale.
   const iso = (d) =>
     new Intl.DateTimeFormat('en-CA', {
       timeZone: 'Asia/Kolkata',

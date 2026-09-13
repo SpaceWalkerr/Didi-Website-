@@ -1,4 +1,5 @@
 import { Routes, Route, Link } from 'react-router-dom';
+import { useI18n } from './i18n/index.jsx';
 import Navbar from './components/Navbar.jsx';
 import Footer from './components/Footer.jsx';
 import WhatsAppButton from './components/WhatsAppButton.jsx';
@@ -12,20 +13,18 @@ import Contact from './pages/Contact.jsx';
 import Admin from './pages/Admin.jsx';
 
 function NotFound() {
+  const { t } = useI18n();
   return (
     <div className="container-page py-24 text-center">
-      <p className="eyebrow">Error 404</p>
-      <h1 className="mt-2 text-3xl">We couldn’t find that page</h1>
-      <p className="mx-auto mt-3 max-w-md text-slate-600">
-        The link may be out of date. You can head back to the home page or book a consultation
-        directly.
-      </p>
+      <p className="eyebrow">{t('notFound.eyebrow')}</p>
+      <h1 className="mt-2 text-3xl">{t('notFound.title')}</h1>
+      <p className="mx-auto mt-3 max-w-md text-slate-600">{t('notFound.body')}</p>
       <div className="mt-8 flex flex-wrap justify-center gap-3">
         <Link to="/" className="btn-secondary">
-          Back to home
+          {t('common.backHome')}
         </Link>
         <Link to="/book" className="btn-primary">
-          Book a consultation
+          {t('common.book')}
         </Link>
       </div>
     </div>

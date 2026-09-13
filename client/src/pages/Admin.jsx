@@ -5,6 +5,16 @@ import { UserIcon, WhatsAppIcon } from '../components/Icons.jsx';
 
 const TOKEN_KEY = 'clinic-admin-token';
 
+/** The admin view stays in English — it is only ever seen by the clinic. */
+const LANGUAGE_NAMES = {
+  en: 'English',
+  hi: 'Hindi',
+  pa: 'Punjabi',
+  bho: 'Bhojpuri',
+  bgc: 'Haryanvi',
+  ru: 'Russian',
+};
+
 const STATUS_STYLES = {
   confirmed: 'bg-care-100 text-care-800',
   completed: 'bg-slate-200 text-slate-700',
@@ -203,6 +213,9 @@ export default function Admin() {
                   {b.patient.name}
                   {b.patient.age ? `, ${b.patient.age}` : ''}
                   {b.patient.gender ? ` · ${b.patient.gender}` : ''}
+                </p>
+                <p className="mt-0.5 text-xs text-slate-500">
+                  Booked in {LANGUAGE_NAMES[b.language] || 'English'}
                 </p>
                 <p className="mt-1.5 text-slate-600">
                   <a href={`tel:+91${b.patient.phone}`} className="hover:text-brand-700">

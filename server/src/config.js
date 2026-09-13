@@ -85,7 +85,18 @@ export const BOOKING_RULES = {
  */
 export const PRACTICE = {
   doctorName: 'Dr. Richa Rani',
+  /**
+   * The name in each published script, so a message written in Bhojpuri or
+   * Punjabi does not switch to Latin halfway through. Falls back to doctorName.
+   */
+  doctorNameByLanguage: {
+    hi: 'डॉ. रिचा रानी',
+    bho: 'डॉ. रिचा रानी',
+    bgc: 'डॉ. रिचा रानी',
+    pa: 'ਡਾ. ਰਿਚਾ ਰਾਣੀ',
+    ru: 'Д-р Рича Рани',
+  },
   qualification: 'MBBS, MD',
-  whatsappNumber: '919999999999', // TODO: replace with the clinic's WhatsApp Business number
-  email: 'consult@example.com',
+  whatsappNumber: '919117851233',
+  email: 'drricha7273@gmail.com',
 };
