@@ -3,11 +3,16 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
-import { config } from './config.js';
+import { config, isProduction } from './config.js';
 import { paymentMode } from './services/payments.js';
+import { preflight } from './preflight.js';
 import bookingsRouter from './routes/bookings.js';
 import paymentsRouter from './routes/payments.js';
 import adminRouter from './routes/admin.js';
+
+// Checked before anything binds a port, so an unsafe production config fails
+// the deploy rather than quietly going live.
+preflight();
 
 const app = express();
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -44,7 +49,7 @@ app.listen(config.port, () => {
   if (paymentMode() === 'mock') {
     console.log('               (no Razorpay keys set — payments are simulated)');
   }
-  if (config.adminToken === 'change-me-please') {
+  if (!isProduction && config.adminToken === 'change-me-please') {
     console.log('  WARNING    : ADMIN_TOKEN is still the default. Change it in server/.env');
   }
   console.log('');

@@ -4,8 +4,11 @@ import 'dotenv/config';
  * Single source of truth for the practice. Everything a non-developer would
  * need to change (name, fees, clinic hours) lives here or in client/src/config.js.
  */
+export const isProduction = process.env.NODE_ENV === 'production';
+
 export const config = {
   port: Number(process.env.PORT || 4000),
+  isProduction,
   clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
   adminToken: process.env.ADMIN_TOKEN || 'change-me-please',
 

@@ -9,7 +9,13 @@ import { fileURLToPath } from 'node:url';
  * Everything goes through this module, so swapping in Postgres, SQLite or
  * Firestore later means rewriting this file only.
  */
-const DATA_DIR = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data');
+/**
+ * DATA_DIR must point at persistent storage in production — a container
+ * filesystem is discarded on every deploy, which would silently erase every
+ * booking. On Fly that means a mounted volume (see fly.toml).
+ */
+const DATA_DIR =
+  process.env.DATA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data');
 const DB_FILE = path.join(DATA_DIR, 'bookings.json');
 
 function read() {
