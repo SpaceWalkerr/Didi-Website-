@@ -17,6 +17,9 @@ primary_region = "bom"           # Mumbai — closest to patients in India
   DATA_DIR = "/data"
   CLIENT_ORIGIN = "https://dr-richa-rani.fly.dev"
 
+# A volume attaches to exactly one machine. Keep this app at ONE machine: scale
+# it to two and the second gets its own empty volume, so bookings would be split
+# across machines and each patient would see only half the diary.
 [[mounts]]
   source = "clinic_data"
   destination = "/data"
@@ -27,6 +30,7 @@ primary_region = "bom"           # Mumbai — closest to patients in India
   auto_stop_machines = "suspend"
   auto_start_machines = true
   min_machines_running = 1       # keep one warm: a cold start during booking looks broken
+  max_machines_running = 1       # see the volume note above
 
   [[http_service.checks]]
     interval = "30s"

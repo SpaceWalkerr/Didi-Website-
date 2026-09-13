@@ -136,37 +136,82 @@ It is not worth doing to avoid paying for a Render instance.
 
 ## Option C — Deploy to Fly
 
+`fly.toml`, `Dockerfile` and `docker-entrypoint.sh` are already in the repo, so do
+**not** run `fly launch` — it rewrites the config and would undo the volume mount and
+the single-machine limit. Create the app explicitly instead.
+
+**1. Log in** (opens a browser):
+
 ```bash
 fly auth login
 ```
 
-```bash
-fly launch --no-deploy --copy-config --name dr-richa-rani --region bom
-```
-
-Create the volume the bookings live on — **without this, every deploy wipes them**:
+**2. Pick a name.** Fly app names are globally unique, so `dr-richa-rani` may be taken.
+Check:
 
 ```bash
-fly volumes create clinic_data --region bom --size 1
+fly apps create dr-richa-rani
 ```
 
-Set the secrets:
+If that name is gone, choose another and change `app` **and** the `CLIENT_ORIGIN` in
+`fly.toml` to match — `CLIENT_ORIGIN` must be exactly the URL the browser will use, or
+the API will reject its own front end.
+
+**3. Create the volume.** Bookings live here. Without it every deploy wipes them:
 
 ```bash
-fly secrets set ADMIN_TOKEN="paste-the-generated-token" RAZORPAY_KEY_ID="rzp_live_..." RAZORPAY_KEY_SECRET="..."
+fly volumes create clinic_data --region bom --size 1 --app dr-richa-rani
 ```
 
-Deploy:
+**4. Set the secrets** — these never go in `fly.toml`, which is committed:
+
+```bash
+fly secrets set ADMIN_TOKEN="paste-your-token" RAZORPAY_KEY_ID="rzp_test_..." RAZORPAY_KEY_SECRET="..." --app dr-richa-rani
+```
+
+Without Razorpay keys the server refuses to start. For a staging site nobody will book
+on, add `ALLOW_DEMO_PAYMENTS=true` — never on the site patients use.
+
+**5. Deploy:**
 
 ```bash
 fly deploy
 ```
 
+**6. Open it:**
+
 ```bash
 fly open
 ```
 
-If you use a different app name, update `app` and `CLIENT_ORIGIN` in `fly.toml`.
+### If the deploy fails
+
+```bash
+fly logs
+```
+
+The server prints why it refused to start — a missing or too-short `ADMIN_TOKEN`, or
+missing Razorpay keys. Both are deliberate: see `server/src/preflight.js`.
+
+### Keep it at one machine
+
+The volume attaches to a single machine. `fly scale count 2` would give the second
+machine its own empty volume, splitting the diary in half. To check:
+
+```bash
+fly status
+```
+
+### Notes on this setup
+
+- **`primary_region = "bom"`** is Mumbai, closest to patients in India.
+- **The volume is mounted at `/data`**, and `DATA_DIR` points there. The entrypoint
+  chowns it at start-up because Fly mounts volumes owned by root while the app runs
+  unprivileged — without that the site would start cleanly and then fail on the first
+  booking.
+- **`force_https = true`** — leave it on; this carries patient health data.
+- **Snapshots**: Fly takes daily volume snapshots by default. Confirm with
+  `fly volumes snapshots list <volume-id>`.
 
 ---
 
