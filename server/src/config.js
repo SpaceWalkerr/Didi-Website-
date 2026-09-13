@@ -9,7 +9,15 @@ export const isProduction = process.env.NODE_ENV === 'production';
 export const config = {
   port: Number(process.env.PORT || 4000),
   isProduction,
-  clientOrigin: process.env.CLIENT_ORIGIN || 'http://localhost:5173',
+  /**
+   * Allowed browser origins, comma-separated. More than one matters when the
+   * client is hosted separately from the API (e.g. the SPA on Vercel, this
+   * server on Render) and for Vercel's per-branch preview URLs.
+   */
+  clientOrigins: (process.env.CLIENT_ORIGIN || 'http://localhost:5173')
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean),
   adminToken: process.env.ADMIN_TOKEN || 'change-me-please',
 
   razorpay: {

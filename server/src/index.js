@@ -17,7 +17,19 @@ preflight();
 const app = express();
 const here = path.dirname(fileURLToPath(import.meta.url));
 
-app.use(cors({ origin: config.clientOrigin, credentials: false }));
+// When the client is served from this same origin the browser sends no Origin
+// header and CORS never applies; the list only matters for a split deployment.
+app.use(
+  cors({
+    origin(origin, callback) {
+      // `false` simply omits the CORS headers, so the browser blocks the read.
+      // Throwing here instead would turn every scanner and stray request into a
+      // 500 with a stack trace in the logs.
+      callback(null, !origin || config.clientOrigins.includes(origin));
+    },
+    credentials: false,
+  }),
+);
 app.use(express.json({ limit: '100kb' }));
 
 app.get('/api/health', (_req, res) =>

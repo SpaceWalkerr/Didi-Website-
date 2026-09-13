@@ -1,0 +1,37 @@
+# Render deployment — the whole app as one service.
+#
+# This is the simplest correct setup: one Node process serves the API and the
+# built client from a single origin, with a disk for the booking store.
+#
+# The disk is NOT optional. Render's filesystem is otherwise ephemeral, so
+# without it every deploy and every restart would erase all bookings.
+# Disks require a paid instance type; the free tier cannot run this as-is.
+
+services:
+  - type: web
+    name: dr-richa-rani
+    runtime: node
+    region: singapore          # closest Render region to India
+    plan: starter              # free tier has no disk — bookings would not survive
+    buildCommand: npm ci && npm run build
+    startCommand: node server/src/index.js
+    healthCheckPath: /api/health
+
+    disk:
+      name: clinic-data
+      mountPath: /var/data
+      sizeGB: 1
+
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATA_DIR
+        value: /var/data        # must match mountPath above
+      - key: CLIENT_ORIGIN
+        sync: false             # set to the service's own URL once Render assigns it
+      - key: ADMIN_TOKEN
+        sync: false             # set in the dashboard — never commit this
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false

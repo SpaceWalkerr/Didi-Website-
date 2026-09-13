@@ -218,8 +218,10 @@ npm run build && npm start
 `npm run build` emits `client/dist`, which the Express server serves automatically when present —
 so the whole site runs from one origin on one port, with no CORS configuration needed.
 
-A `Dockerfile` and `fly.toml` are included. The app needs **persistent disk** for the booking
-store, so serverless hosts will not work without first swapping `server/src/db.js` for a database.
+Configs for Render (`render.yaml`), Fly (`fly.toml` + `Dockerfile`) and Vercel (`vercel.json`) are
+included. The app needs **persistent disk** for the booking store, so Render or Fly can host the
+whole thing; Vercel can serve the front end but not the API, because serverless functions have no
+persistent filesystem. **[DEPLOY.md](DEPLOY.md)** covers all three.
 
 In production the server refuses to start if `ADMIN_TOKEN` is still the default or shorter than 24
 characters, or if Razorpay keys are missing — both would be live-site problems that are easy to
