@@ -1,4 +1,20 @@
-import 'dotenv/config';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import dotenv from 'dotenv';
+
+/**
+ * Load server/.env explicitly rather than via `dotenv/config`, which resolves
+ * relative to the current working directory. The Dockerfile and DEPLOY.md both
+ * start the app as `node server/src/index.js` from the repo root, where a bare
+ * import would look for ./.env and silently find nothing — so the server would
+ * boot with no configuration at all and blame a missing ADMIN_TOKEN.
+ *
+ * In production the real values come from the host's own secrets; dotenv is a
+ * no-op when the file is absent.
+ */
+dotenv.config({
+  path: path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '.env'),
+});
 
 /**
  * Single source of truth for the practice. Everything a non-developer would
