@@ -127,6 +127,7 @@ export default {
     },
     yearsValue: '{years} years',
     credentialsTitle: 'Qualifications & training',
+    gradPhotoAlt: 'Dr. Richa Rani at her convocation, holding her degree',
     focusTitle: 'Areas of focus',
     hoursTitle: 'Consulting hours',
   },

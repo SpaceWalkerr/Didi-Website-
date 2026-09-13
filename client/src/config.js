@@ -18,6 +18,8 @@ export const DOCTOR = {
   // Replace client/public/images/doctor-photo.png with the real photograph,
   // keeping the filename. Set this to '' to fall back to an illustrated placeholder.
   photoUrl: '/images/doctor-photo.jpg',
+  // Shown beside the qualifications on the About page. Set to '' to hide it.
+  gradPhotoUrl: '/images/about.jpeg',
 };
 
 export const CONTACT = {

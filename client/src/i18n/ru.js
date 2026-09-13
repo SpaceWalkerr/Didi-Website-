@@ -124,6 +124,7 @@ export default {
     },
     yearsValue: '{years} года',
     credentialsTitle: 'Образование и подготовка',
+    gradPhotoAlt: 'Д-р Рича Рани на вручении диплома',
     focusTitle: 'Основные направления',
     hoursTitle: 'Часы приёма',
   },

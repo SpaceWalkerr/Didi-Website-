@@ -96,17 +96,30 @@ export default function About() {
 
             <div>
               <h2 className="text-2xl">{t('about.credentialsTitle')}</h2>
-              <ul className="mt-4 space-y-3">
-                {tList('doctor.credentials').map((item) => (
-                  <li key={item.title} className="flex gap-3 rounded-xl border border-slate-200 bg-white p-4">
-                    <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
-                    <span>
-                      <span className="block text-sm font-semibold text-slate-900">{item.title}</span>
-                      <span className="mt-0.5 block text-sm text-slate-600">{item.detail}</span>
-                    </span>
-                  </li>
-                ))}
-              </ul>
+              {/* The convocation photo sits beside the qualifications it belongs to.
+                  It stacks below the list on a phone so the text stays first. */}
+              <div className="mt-4 grid gap-6 sm:grid-cols-[1fr_15rem] sm:items-start">
+                <ul className="min-w-0 space-y-3">
+                  {tList('doctor.credentials').map((item) => (
+                    <li key={item.title} className="flex gap-3 rounded-xl border border-slate-200 bg-white p-4">
+                      <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+                      <span className="min-w-0">
+                        <span className="block text-sm font-semibold text-slate-900">{item.title}</span>
+                        <span className="mt-0.5 block text-sm text-slate-600">{item.detail}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                {DOCTOR.gradPhotoUrl && (
+                  <img
+                    src={DOCTOR.gradPhotoUrl}
+                    alt={t('about.gradPhotoAlt')}
+                    loading="lazy"
+                    className="aspect-square w-full rounded-2xl border border-slate-200 object-cover shadow-card"
+                  />
+                )}
+              </div>
             </div>
 
             <div>

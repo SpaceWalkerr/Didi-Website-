@@ -5,6 +5,7 @@ Drop replacements in this folder **using the same filenames** — nothing in the
 | File | Size | Where it shows | Status |
 | --- | --- | --- | --- |
 | `doctor-photo.jpg` | 1000 × 1250 (4:5 portrait) | Home hero and About page | ✅ Real photo in place |
+| `about.jpeg` | 827 × 827 (1:1 square) | Beside "Qualifications & training" on the About page | ✅ Convocation photo in place |
 | `og-image.jpg` | 1200 × 630 | Link preview when the site is shared on WhatsApp, Facebook, LinkedIn | Usable as-is; replace if you want a photo version |
 | `apple-touch-icon.png` | 180 × 180 | Icon when a patient adds the site to their phone's home screen | Usable as-is |
 | `../favicon.svg` | square | Browser tab icon | Usable as-is |
@@ -26,6 +27,15 @@ taken many seconds to load on a patient's mobile data:
 If you would rather use a different filename or format, change `photoUrl` in
 [`client/src/config.js`](../../src/config.js). Setting `photoUrl` to an empty string falls back to a
 built-in illustrated placeholder instead.
+
+## Convocation photo (`about.jpeg`)
+
+Sits next to the qualifications list on the About page, where it backs up what that list claims.
+It is cropped square, so use a **1:1 image** if you swap it — anything else gets trimmed top and
+bottom. Set `gradPhotoUrl` to `''` in [`client/src/config.js`](../../src/config.js) to hide it.
+
+The alt text describes the photo for screen readers and is translated in every language
+(`about.gradPhotoAlt` in `client/src/i18n/`). Update it there if you change the image.
 
 ## Link preview (`og-image.jpg`)
 

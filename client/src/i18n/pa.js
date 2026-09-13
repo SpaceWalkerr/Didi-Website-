@@ -122,6 +122,7 @@ export default {
     },
     yearsValue: '{years} ਸਾਲ',
     credentialsTitle: 'ਯੋਗਤਾਵਾਂ ਤੇ ਸਿਖਲਾਈ',
+    gradPhotoAlt: 'ਡਾ. ਰਿਚਾ ਰਾਣੀ ਆਪਣੇ ਕਨਵੋਕੇਸ਼ਨ ਵਿੱਚ, ਡਿਗਰੀ ਨਾਲ',
     focusTitle: 'ਖ਼ਾਸ ਰੁਚੀ ਦੇ ਖੇਤਰ',
     hoursTitle: 'ਸਲਾਹ ਦਾ ਸਮਾਂ',
   },

@@ -123,6 +123,7 @@ export default {
     },
     yearsValue: '{years} वर्ष',
     credentialsTitle: 'योग्यताएँ और प्रशिक्षण',
+    gradPhotoAlt: 'डॉ. रिचा रानी अपने दीक्षांत समारोह में, डिग्री के साथ',
     focusTitle: 'विशेष रुचि के क्षेत्र',
     hoursTitle: 'परामर्श का समय',
   },

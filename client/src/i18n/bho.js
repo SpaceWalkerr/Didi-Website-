@@ -121,6 +121,7 @@ export default {
     },
     yearsValue: '{years} साल',
     credentialsTitle: 'योग्यता आ ट्रेनिंग',
+    gradPhotoAlt: 'डॉ. रिचा रानी आपन दीक्षांत समारोह में, डिग्री के साथे',
     focusTitle: 'खास रुचि के क्षेत्र',
     hoursTitle: 'सलाह के समय',
   },
