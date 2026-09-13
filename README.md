@@ -37,19 +37,29 @@ Everything a non-developer needs to change is in two files, and every placeholde
 | --- | --- |
 | `client/src/config.js` | Doctor's name, qualifications, registration number, council, bio, photo, WhatsApp number, email, clinic hours |
 | `server/src/config.js` | Service names, **prices and durations**, consulting hours, booking rules, WhatsApp number |
+| `client/public/images/` | Doctor photograph and link-preview card — see the README in that folder |
 
 Two of these are deliberately duplicated across client and server — prices/durations and the
 WhatsApp number. The **server copy is authoritative** (the client fetches services from the API, so
 a patient cannot be charged a price they didn't see). Keep the two in step.
 
-**Replace before launch:**
+The doctor's identity is already filled in: **Dr. Richa Rani, MBBS, MD — General Physician,
+Reg. No. 52532, Bihar State Medical Council, 2+ years' experience.**
 
-- Doctor's name, qualification, real registration number and State/NMC council — these are
-  **required on the page** under the 2020 Telemedicine Practice Guidelines
-- The WhatsApp Business number, in both config files (international format, digits only: `91XXXXXXXXXX`)
-- A doctor photograph: drop it in `client/public/` and set `photoUrl` (until then, a labelled
-  placeholder renders in its place)
+**Still to replace before launch:**
+
+- **WhatsApp Business number** — in *both* config files (international format, digits only:
+  `91XXXXXXXXXX`). Everything currently points at `919999999999`, which is not a real number
+- **Email address** — `CONTACT.email` (client) and `PRACTICE.email` (server)
+- **Doctor's photograph** — see [`client/public/images/README.md`](client/public/images/README.md)
+- **Medical college and year** in `DOCTOR.credentials`, still marked `[Medical College Name]`
+- **The telemedicine certificate entry** in `DOCTOR.credentials` — delete it if that course has not
+  been completed yet
 - Consulting hours in `AVAILABILITY` (server) and the human-readable `CONTACT.hours` (client)
+- Service prices, if ₹500 / ₹250 / ₹900 are not the intended fees
+
+The bio copy in `DOCTOR.shortBio` and `DOCTOR.longBio` is written to fit 2+ years of experience, but
+it is drafted text — the doctor should read and adjust it.
 
 ---
 
@@ -130,7 +140,9 @@ information.
 
 ### 5. Before accepting real patients
 
-- [ ] Real registration number and council on the About page and footer
+- [ ] Real WhatsApp number and email address in both config files
+- [ ] Doctor's photograph in place of the placeholder
+- [ ] Registration number and council checked against the council register
 - [ ] `ADMIN_TOKEN` changed from the default
 - [ ] HTTPS enforced
 - [ ] Razorpay live keys, after KYC
@@ -170,6 +182,7 @@ client/
     pages/                 Home, About, Services, Booking, Confirmation, Contact, Admin
     components/            Navbar, Footer, WhatsAppButton, StepIndicator, Icons …
     lib/                   api client, Razorpay checkout, date/currency formatting
+  public/images/           ← doctor photo, link-preview card, home-screen icon
 server/
   src/
     config.js              ← services, prices, consulting hours, booking rules

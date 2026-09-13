@@ -8,38 +8,46 @@
  */
 
 export const DOCTOR = {
-  name: 'Dr. [Full Name]', // TODO
-  qualification: 'MBBS, MD (General Medicine)', // TODO
-  specialty: 'General Physician & Internal Medicine',
+  name: 'Dr. Richa Rani',
+  qualification: 'MBBS, MD',
+  specialty: 'General Physician',
   tagline: 'Careful, unhurried online consultations for everyday health concerns.',
-  yearsExperience: 12, // TODO
+  yearsExperience: 2,
   // Registration details are mandatory on a telemedicine site in India and must
   // be displayed to the patient (2020 Telemedicine Practice Guidelines, 3.7.1).
-  registrationNumber: 'XXXXX/2013', // TODO
-  medicalCouncil: '[State] Medical Council', // TODO
-  languages: ['English', 'Hindi'], // TODO
-  photoUrl: '', // TODO: put a photo in client/public/ and set e.g. '/doctor.jpg'
+  registrationNumber: '52532',
+  medicalCouncil: 'Bihar State Medical Council',
+  languages: ['Hindi', 'English'], // TODO: add any others the doctor consults in
+  // Replace client/public/images/doctor-photo.jpg with the real photograph,
+  // keeping the same filename — nothing here needs to change.
+  photoUrl: '/images/doctor-photo.jpg',
   shortBio:
-    'I am a general physician with over a decade of experience in outpatient and internal ' +
-    'medicine. I treat common infections, fevers, lifestyle conditions such as diabetes and ' +
-    'hypertension, and everyday complaints that do not need a hospital visit — with enough ' +
-    'time to actually listen.', // TODO
+    'I am a general physician trained in internal medicine. I treat common infections, fevers, ' +
+    'lifestyle conditions such as diabetes and hypertension, and the everyday complaints that do ' +
+    'not need a hospital visit — with enough time to actually listen.', // TODO: review wording
   longBio: [
-    'After completing MBBS and post-graduate training in internal medicine, I spent several ' +
-      'years in busy hospital outpatient departments before moving to a practice built around ' +
-      'longer, calmer consultations.',
+    'I completed my MBBS followed by post-graduate training in general medicine, and have worked ' +
+      'in hospital outpatient and inpatient care since. Much of what I saw there were ordinary ' +
+      'problems that had been left far too long, often because getting to a doctor was the hard part.',
     'Most everyday health problems do not need a waiting room. A structured conversation, a ' +
       'careful history and a look at your reports can resolve a great deal — and when it cannot, ' +
       'I will say so plainly and help you find the right specialist or in-person care.',
     'I consult online for patients across India, and follow the Telemedicine Practice ' +
       'Guidelines issued by the Board of Governors in supersession of the Medical Council of ' +
       'India in March 2020.',
-  ], // TODO
+  ], // TODO: review wording
   credentials: [
     { title: 'MBBS', detail: '[Medical College Name], [Year]' }, // TODO
     { title: 'MD — General Medicine', detail: '[Institute Name], [Year]' }, // TODO
-    { title: 'Senior Resident, Internal Medicine', detail: '[Hospital Name], [Years]' }, // TODO
-    { title: 'Certificate in Telemedicine', detail: 'Completed as required for online practice' },
+    {
+      title: 'Registered medical practitioner',
+      detail: 'Bihar State Medical Council — Reg. No. 52532',
+    },
+    // TODO: delete this entry if the telemedicine course has not been completed yet.
+    {
+      title: 'Certificate in Telemedicine',
+      detail: 'As required under the 2020 Telemedicine Practice Guidelines',
+    },
   ],
   focusAreas: [
     'Fever, infections and seasonal illness',

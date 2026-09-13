@@ -84,8 +84,8 @@ export const BOOKING_RULES = {
  * The number is in international format, digits only (91 = India).
  */
 export const PRACTICE = {
-  doctorName: 'Dr. [Full Name]',
-  qualification: 'MBBS, MD (General Medicine)',
+  doctorName: 'Dr. Richa Rani',
+  qualification: 'MBBS, MD',
   whatsappNumber: '919999999999', // TODO: replace with the clinic's WhatsApp Business number
   email: 'consult@example.com',
 };
