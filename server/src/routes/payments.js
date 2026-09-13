@@ -17,7 +17,7 @@ router.post('/verify', async (req, res, next) => {
   try {
     const { bookingId, razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body || {};
 
-    const booking = db.find(String(bookingId || '').toUpperCase());
+    const booking = await db.find(String(bookingId || '').toUpperCase());
     if (!booking) return res.status(404).json({ code: 'bookingNotFound', error: 'Booking not found.' });
     if (booking.status === 'confirmed') {
       return res.json({ status: 'confirmed', whatsappLink: whatsappJoinLink(booking) });
@@ -33,7 +33,7 @@ router.post('/verify', async (req, res, next) => {
     });
 
     if (!ok) {
-      db.update(booking.id, { payment: { ...booking.payment, status: 'failed' } });
+      await db.update(booking.id, { payment: { ...booking.payment, status: 'failed' } });
       return res
         .status(400)
         .json({ code: 'paymentUnverified', error: 'Payment could not be verified.' });
@@ -41,7 +41,7 @@ router.post('/verify', async (req, res, next) => {
 
     // The hold may have lapsed while the patient was paying. Re-check before
     // confirming so we never double-book the doctor.
-    const conflict = validateSlot(
+    const conflict = await validateSlot(
       booking.date,
       booking.time,
       booking.serviceId,
@@ -49,7 +49,7 @@ router.post('/verify', async (req, res, next) => {
       booking.id,
     );
     if (conflict?.code === 'slotTaken') {
-      db.update(booking.id, {
+      await db.update(booking.id, {
         status: 'needs-attention',
         payment: { ...booking.payment, paymentId: razorpay_payment_id, status: 'paid' },
         note: 'Paid, but the slot expired. Refund or reschedule manually.',
@@ -60,7 +60,7 @@ router.post('/verify', async (req, res, next) => {
       });
     }
 
-    const confirmed = db.update(booking.id, {
+    const confirmed = await db.update(booking.id, {
       status: 'confirmed',
       confirmedAt: new Date().toISOString(),
       payment: { ...booking.payment, paymentId: razorpay_payment_id, status: 'paid' },
@@ -86,13 +86,18 @@ router.post('/verify', async (req, res, next) => {
  * POST /api/payments/mock-pay — MOCK MODE ONLY.
  * Stands in for the Razorpay Checkout popup so the flow can be demoed without keys.
  */
-router.post('/mock-pay', (req, res) => {
+router.post('/mock-pay', async (req, res, next) => {
   if (paymentMode() !== 'mock') {
     return res.status(400).json({ error: 'Mock payments are disabled when Razorpay keys are set.' });
   }
 
   const { orderId } = req.body || {};
-  const booking = db.findByOrderId(String(orderId || ''));
+  let booking;
+  try {
+    booking = await db.findByOrderId(String(orderId || ''));
+  } catch (err) {
+    return next(err);
+  }
   if (!booking) return res.status(404).json({ code: 'bookingNotFound', error: 'Order not found.' });
 
   const paymentId = `pay_mock_${crypto.randomBytes(8).toString('hex')}`;
@@ -104,16 +109,20 @@ router.post('/mock-pay', (req, res) => {
 });
 
 /** Marks a booking as failed when the patient dismisses the payment window. */
-router.post('/cancel', (req, res) => {
-  const booking = db.find(String(req.body?.bookingId || '').toUpperCase());
-  if (!booking) return res.status(404).json({ code: 'bookingNotFound', error: 'Booking not found.' });
-  if (booking.status === 'pending') {
-    db.update(booking.id, {
-      status: 'cancelled',
-      payment: { ...booking.payment, status: 'cancelled' },
-    });
+router.post('/cancel', async (req, res, next) => {
+  try {
+    const booking = await db.find(String(req.body?.bookingId || '').toUpperCase());
+    if (!booking) return res.status(404).json({ code: 'bookingNotFound', error: 'Booking not found.' });
+    if (booking.status === 'pending') {
+      await db.update(booking.id, {
+        status: 'cancelled',
+        payment: { ...booking.payment, status: 'cancelled' },
+      });
+    }
+    res.json({ status: 'cancelled' });
+  } catch (err) {
+    next(err);
   }
-  res.json({ status: 'cancelled' });
 });
 
 export default router;

@@ -1,14 +1,13 @@
 # Deploying
 
 The app is one Node process serving both the API and the built client from a single
-origin. Bookings are stored in a JSON file, and that one fact decides everything about
-where it can go: **it needs a persistent disk.**
+origin. Bookings live in **Postgres**, so no persistent disk is needed and the whole
+thing runs on free tiers.
 
-Every host gives each deploy a fresh filesystem. Without a disk the site looks perfectly
-healthy and quietly loses every booking on each deploy and each idle restart — the kind
-of failure you discover when a patient arrives for an appointment nobody has a record
-of. The server now refuses to start in production unless `DATA_DIR` is set, so this
-cannot happen silently.
+Locally, leaving `DATABASE_URL` unset falls back to a JSON file under `server/data/`, so
+you can develop with no database installed. In production that fallback would sit on a
+filesystem that is wiped on every deploy and every idle restart, so **the server refuses
+to start in production without `DATABASE_URL`.**
 
 ---
 
@@ -16,27 +15,24 @@ cannot happen silently.
 
 | Option | Cost | Notes |
 | --- | --- | --- |
-| **Render, one service + disk** | Paid instance | Simplest correct setup. One origin, no CORS. |
-| **Vercel (front end) + Render (API)** | Vercel free¹ + paid Render | Front end on a fast CDN; two services to keep in sync. |
-| **Either one, free tier** | Free | ⚠️ **Only after moving storage to a database** — see below. |
+| **Render, one service** | Free | Simplest. One origin, no CORS. Sleeps when idle — see below. |
+| **Render, Starter** | ~$7/mo | Same, but always on. |
+| **Vercel (front end) + Render (API)** | Free¹ | Front end on a fast CDN; two services to keep in sync. |
 
 ¹ Vercel's Hobby plan is free but **not licensed for commercial use**. A practice taking
-payments is commercial, so a live clinic site needs a paid Vercel plan. Check their
-current terms before relying on it.
+payments is commercial, so a live clinic site would need a paid Vercel plan. Check their
+current terms — and Render's pricing — before relying on either.
 
-**Recommendation: Render as a single service.** One thing to deploy, one origin, no CORS,
-and the whole app in one place.
+**Recommendation: Render as a single service.** One thing to deploy, one origin, no CORS.
 
-### Deploying for free
+### The one catch with Render's free tier
 
-A free tier has no disk, so the JSON store has to go first. Swap `server/src/db.js` for a
-free managed Postgres (Neon, Supabase, or Render's own) and no disk is needed — storage
-lives in the database instead. `db.js` is the only file that touches storage, but the
-change is not purely mechanical: its functions are synchronous today, so `getSlots`,
-`validateSlot` and their callers all become `async`.
+Free web services sleep after about 15 minutes idle. The first visitor after a quiet
+spell waits roughly 50 seconds on a blank page before anything renders — on a booking
+site that reads as broken, and most people leave.
 
-Be aware that Render's free web services sleep after ~15 minutes idle. The first patient
-of the day would wait roughly a minute on a blank page before the booking form appeared.
+That is fine while you are testing and sharing the link for review. Before real patients
+use it, either upgrade to Starter, or accept that the first patient of the day waits.
 
 ---
 
@@ -67,12 +63,28 @@ set it where patients can reach it.
 
 ## Option A — Render, one service (recommended)
 
-### 1. Create the service
+### 1. Create a free Postgres
+
+**Neon** ([neon.tech](https://neon.tech)) — free tier, no card, does not expire. Create a
+project in the `ap-southeast-1` (Singapore) region and copy the connection string. It
+looks like:
+
+```
+postgresql://user:password@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+```
+
+**Supabase** works the same way — use the connection string under Project Settings →
+Database. Render's own Postgres is also free but **expires after 90 days**, after which
+the database is deleted, so prefer Neon or Supabase.
+
+You do not need to create any tables. The server creates them on first start.
+
+### 2. Create the web service
 
 `render.yaml` describes the whole thing, so in the Render dashboard choose
 **New → Blueprint** and point it at the GitHub repo.
 
-To do it by hand instead — **New → Web Service**, connect the repo, then:
+To do it by hand — **New → Web Service**, connect the repo, then:
 
 | Setting | Value |
 | --- | --- |
@@ -81,17 +93,7 @@ To do it by hand instead — **New → Web Service**, connect the repo, then:
 | Build command | `npm ci && npm run build` |
 | Start command | `node server/src/index.js` |
 | Health check path | `/api/health` |
-| Instance type | Any **paid** type — the free tier has no disk |
-
-### 2. Add the disk
-
-**Settings → Disks → Add Disk:**
-
-| Field | Value |
-| --- | --- |
-| Name | `clinic-data` |
-| Mount path | `/var/data` |
-| Size | 1 GB |
+| Instance type | Free (or Starter, to stop it sleeping) |
 
 ### 3. Set environment variables
 
@@ -100,22 +102,31 @@ To do it by hand instead — **New → Web Service**, connect the repo, then:
 | Key | Value |
 | --- | --- |
 | `NODE_ENV` | `production` |
-| `DATA_DIR` | `/var/data` — must match the disk's mount path exactly |
+| `DATABASE_URL` | the Neon or Supabase connection string |
 | `CLIENT_ORIGIN` | your Render URL, e.g. `https://dr-richa-rani.onrender.com` |
 | `ADMIN_TOKEN` | the token you generated |
 | `RAZORPAY_KEY_ID` | `rzp_test_…` or the live key |
 | `RAZORPAY_KEY_SECRET` | from Razorpay |
 
-You will not know the Render URL until the service is created, so set `CLIENT_ORIGIN`
-after the first deploy and let it redeploy.
+You will not know the Render URL until the service exists, so set `CLIENT_ORIGIN` after
+the first deploy and let it redeploy.
 
 ### 4. Deploy
 
-Render builds on push to `main`. The first deploy takes a few minutes.
+Render builds on every push to `main`. The first build takes a few minutes.
 
-If it fails, open **Logs** — the server prints exactly what it refused to start over:
-a missing `DATA_DIR`, a weak `ADMIN_TOKEN`, or missing Razorpay keys. All three are
-deliberate (`server/src/preflight.js`).
+If it fails, open **Logs**. The server prints exactly what it refused to start over — a
+missing `DATABASE_URL`, a weak `ADMIN_TOKEN`, or missing Razorpay keys. All three are
+deliberate (`server/src/preflight.js`). On a successful start it logs:
+
+```
+  Server ready on http://localhost:10000
+  Storage    : postgres
+  Payments   : razorpay-test
+```
+
+If `Storage` says `json`, `DATABASE_URL` did not reach the process — fix it before
+anyone books, because those bookings will not survive.
 
 ---
 
@@ -166,9 +177,10 @@ between invocations and is not shared between concurrent instances. Bookings liv
 JSON file, so on Vercel they would disappear, and two patients booking at once could hit
 different instances and both be given the same slot.
 
-Running the whole thing on Vercel means replacing the storage layer first: rewrite
-`server/src/db.js` against a managed database and expose the Express app as a serverless
-function. That is the same migration described under *Deploying for free* above.
+Storage is no longer the blocker — bookings are in Postgres now. What remains is that
+Express has to be wrapped as a serverless function, and that serverless Postgres
+connections need pooling care (Neon's pooled connection string, or its HTTP driver).
+Workable, but it buys little over Option A.
 
 ---
 
@@ -179,8 +191,10 @@ function. That is the same migration described under *Deploying for free* above.
 - **Make one real booking** end to end and confirm the WhatsApp link works.
 - **Open `/admin`**, confirm your token works and a wrong one is rejected.
 - **Send the link to yourself on WhatsApp** to check the preview card renders.
-- **Set up backups.** Render snapshots disks daily on paid plans — confirm it is on. There
-  is no second copy of this data.
+- **Check storage**: the health endpoint and the startup log should both say Postgres.
+- **Set up backups.** Neon's free tier keeps a short restore window; Supabase's free tier
+  has limited backups. For real patient records, take your own periodic dump —
+  `pg_dump "$DATABASE_URL" > backup.sql`.
 
 ## A custom domain
 
@@ -199,8 +213,7 @@ This stores patient health information, which under the Digital Personal Data Pr
 Act, 2023 carries real obligations:
 
 - HTTPS is on by default on both Render and Vercel — keep it that way.
-- The disk holds unencrypted JSON. For anything beyond a small practice, move to a managed
-  database with encryption at rest (rewrite `server/src/db.js` only).
-- **Back up the disk.** There is no second copy of this data.
+- Neon and Supabase both encrypt at rest and require TLS in transit.
+- **Take your own backups.** `pg_dump "$DATABASE_URL" > backup.sql` on a schedule.
 - Have a deletion process. A patient can ask for their data to be removed.
 - Never commit `server/data/` — it is gitignored, keep it that way.

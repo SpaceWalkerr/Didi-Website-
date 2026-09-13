@@ -26,7 +26,7 @@ router.get('/meta', (_req, res) => {
 });
 
 /** GET /api/bookings/slots?date=2026-09-20&service=general */
-router.get('/slots', (req, res) => {
+router.get('/slots', async (req, res, next) => {
   const { date, service } = req.query;
 
   if (!isValidDateString(String(date || ''))) {
@@ -36,7 +36,11 @@ router.get('/slots', (req, res) => {
     return res.status(400).json({ error: 'A valid service is required.' });
   }
 
-  res.json({ date, service, slots: getSlots(String(date), String(service)) });
+  try {
+    res.json({ date, service, slots: await getSlots(String(date), String(service)) });
+  } catch (err) {
+    next(err);
+  }
 });
 
 const isEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v);
@@ -79,7 +83,7 @@ router.post('/', async (req, res, next) => {
       });
     }
 
-    const slotError = validateSlot(String(date), String(time), String(serviceId));
+    const slotError = await validateSlot(String(date), String(time), String(serviceId));
     if (slotError) {
       return res.status(409).json({
         code: slotError.code,
@@ -128,7 +132,7 @@ router.post('/', async (req, res, next) => {
       updatedAt: new Date().toISOString(),
     };
 
-    db.insert(booking);
+    await db.insert(booking);
 
     res.status(201).json({
       bookingId: booking.id,
@@ -145,8 +149,13 @@ router.post('/', async (req, res, next) => {
 });
 
 /** GET /api/bookings/:id — the confirmation page. Only confirmed bookings expose the join link. */
-router.get('/:id', (req, res) => {
-  const booking = db.find(req.params.id.toUpperCase());
+router.get('/:id', async (req, res, next) => {
+  let booking;
+  try {
+    booking = await db.find(req.params.id.toUpperCase());
+  } catch (err) {
+    return next(err);
+  }
   if (!booking) return res.status(404).json({ code: 'bookingNotFound', error: 'Booking not found.' });
 
   res.json({

@@ -35,16 +35,16 @@ export function preflight() {
     );
   }
 
-  // Without this, a free-tier deploy writes bookings to the container's own
+  // Without a database the app falls back to a JSON file on the container's own
   // filesystem, which is wiped on every deploy and every idle restart. The site
   // looks like it is working right up until the diary is empty and a patient
   // turns up for an appointment nobody has a record of.
-  if (!process.env.DATA_DIR) {
+  if (!process.env.DATABASE_URL) {
     errors.push(
-      'DATA_DIR is not set. Bookings would be written to the container\'s own\n' +
-        '    filesystem, which is erased on every deploy and restart.\n' +
-        '    Point it at a mounted disk (on Render: Settings -> Disks, then set\n' +
-        '    DATA_DIR to the mount path). Free tiers have no disk.',
+      'DATABASE_URL is not set, so bookings would be written to a file on the\n' +
+        '    container filesystem — erased on every deploy and restart.\n' +
+        '    Create a free Postgres (Neon, Supabase or Render) and set its\n' +
+        '    connection string. See DEPLOY.md.',
     );
   }
 

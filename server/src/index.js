@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
 import { config, isProduction } from './config.js';
+import { db } from './db.js';
 import { paymentMode } from './services/payments.js';
 import { preflight } from './preflight.js';
 import bookingsRouter from './routes/bookings.js';
@@ -55,8 +56,18 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Something went wrong on our side. Please try again.' });
 });
 
+// Creates the bookings table if it does not exist. Awaited before listening so
+// the first request cannot arrive before the schema is there.
+try {
+  await db.init();
+} catch (err) {
+  console.error('\n  Could not reach the database:', err.message, '\n');
+  process.exit(1);
+}
+
 app.listen(config.port, () => {
   console.log(`\n  Server ready on http://localhost:${config.port}`);
+  console.log(`  Storage    : ${db.kind}`);
   console.log(`  Payments   : ${paymentMode()}`);
   if (paymentMode() === 'mock') {
     console.log('               (no Razorpay keys set — payments are simulated)');

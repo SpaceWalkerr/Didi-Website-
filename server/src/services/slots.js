@@ -44,11 +44,13 @@ const isBlocking = (booking, now) => {
 /**
  * Bookings on a given date that currently occupy time, as [start, end) minute ranges.
  * `excludeId` lets a booking ignore its own hold when it re-checks its slot.
+ *
+ * Only that date is fetched, not the whole table — this runs every time a
+ * patient taps a different day.
  */
-const busyRanges = (date, now, excludeId) =>
-  db
-    .all()
-    .filter((b) => b.date === date && b.id !== excludeId && isBlocking(b, now))
+const busyRanges = async (date, now, excludeId) =>
+  (await db.onDate(date))
+    .filter((b) => b.id !== excludeId && isBlocking(b, now))
     .map((b) => {
       const start = toMinutes(b.time);
       return [start, start + b.durationMinutes];
@@ -62,12 +64,12 @@ const overlaps = (aStart, aEnd, ranges) =>
  * Returns [{ time, available, reason }] so the UI can grey out taken slots
  * rather than making them disappear — patients find that less confusing.
  */
-export function getSlots(date, serviceId, now = Date.now(), excludeId = null) {
+export async function getSlots(date, serviceId, now = Date.now(), excludeId = null) {
   const service = getService(serviceId);
   if (!service) throw new Error(`Unknown service: ${serviceId}`);
 
   const windows = AVAILABILITY[dayOfWeek(date)] || [];
-  const busy = busyRanges(date, now, excludeId);
+  const busy = await busyRanges(date, now, excludeId);
   const earliest = now + minLeadMinutes * 60 * 1000;
   const slots = [];
 
@@ -104,7 +106,7 @@ export function getSlots(date, serviceId, now = Date.now(), excludeId = null) {
  * sends a user-facing sentence, because it does not know what language the
  * patient is reading.
  */
-export function validateSlot(date, time, serviceId, now = Date.now(), excludeId = null) {
+export async function validateSlot(date, time, serviceId, now = Date.now(), excludeId = null) {
   if (!isValidDateString(date)) return { code: 'slotInvalidDate' };
 
   const service = getService(serviceId);
@@ -114,7 +116,8 @@ export function validateSlot(date, time, serviceId, now = Date.now(), excludeId 
   if (date < istToday()) return { code: 'slotInvalidDate' };
   if (date > maxDate) return { code: 'slotTooFar', params: { days: maxDaysAhead } };
 
-  const slot = getSlots(date, serviceId, now, excludeId).find((s) => s.time === time);
+  const slots = await getSlots(date, serviceId, now, excludeId);
+  const slot = slots.find((s) => s.time === time);
   if (!slot) return { code: 'slotOutsideHours' };
   if (slot.reason === 'past') return { code: 'slotPast' };
   if (!slot.available) return { code: 'slotTaken' };

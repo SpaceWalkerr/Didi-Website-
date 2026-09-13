@@ -198,14 +198,16 @@ them. Each function has one place to drop a provider call:
 
 ### 3. Storage
 
-Bookings live in `server/data/bookings.json` (gitignored), written atomically via a temp file. That
-is genuinely fine for a solo practice's volume, and it keeps deployment to "copy the folder and run
-node".
+Bookings go to **Postgres** when `DATABASE_URL` is set, and to a JSON file under `server/data/`
+(gitignored) when it is not — so local development needs no database installed, while production
+gets durable storage. The server refuses to start in production without `DATABASE_URL`, because the
+JSON fallback would sit on a filesystem that is wiped on every deploy.
 
-Every read and write goes through `server/src/db.js`, so moving to SQLite, Postgres or Firestore
-means rewriting that one file and nothing else. **Do move** if you add a second doctor, run more than
-one server process, or deploy somewhere with an ephemeral filesystem — concurrent writes from
-multiple processes are not safe, and patient data needs real backups either way.
+Both adapters live in `server/src/db/` behind one small async interface, and `server/src/db.js`
+picks between them. Nothing else in the app knows where bookings are kept, so swapping in SQLite or
+Firestore later means writing one more adapter.
+
+Any Postgres works — Neon and Supabase both have free tiers that do not expire.
 
 ### 4. Deploy
 
@@ -218,16 +220,14 @@ npm run build && npm start
 `npm run build` emits `client/dist`, which the Express server serves automatically when present —
 so the whole site runs from one origin on one port, with no CORS configuration needed.
 
-Configs for Render (`render.yaml`) and Vercel (`vercel.json`) are included. The app needs
-**persistent disk** for the booking store, so Render can host the whole thing; Vercel can serve the
-front end but not the API, because serverless functions have no persistent filesystem. Free tiers
-have no disk either — deploying free means moving storage to a database first.
-**[DEPLOY.md](DEPLOY.md)** covers it.
+Configs for Render (`render.yaml`) and Vercel (`vercel.json`) are included. With bookings in
+Postgres the whole thing runs on free tiers — Render for the app, Neon or Supabase for the
+database. **[DEPLOY.md](DEPLOY.md)** has the walkthrough.
 
-In production the server refuses to start if `DATA_DIR` is unset, if `ADMIN_TOKEN` is still the
+In production the server refuses to start if `DATABASE_URL` is unset, if `ADMIN_TOKEN` is still the
 default or shorter than 24 characters, or if Razorpay keys are missing. All three are live-site
-problems that are easy to miss in a deploy log and expensive to discover later — an unset
-`DATA_DIR` in particular means the site works perfectly until the diary silently empties.
+problems that are easy to miss in a deploy log and expensive to discover later — a missing
+`DATABASE_URL` in particular means the site works perfectly until the diary silently empties.
 `server/src/preflight.js` has the detail.
 
 Behind a reverse proxy, terminate TLS there. **Serve over HTTPS only** — this handles patient health
@@ -286,7 +286,7 @@ scripts/
 server/
   src/
     config.js              ← services, prices, consulting hours, booking rules
-    db.js                  JSON store — the only file to rewrite for a real database
+    db.js                  picks the store; db/ holds the Postgres and JSON adapters
     routes/                bookings, payments, admin
     services/              slots (availability + overlap), payments (Razorpay), notify
   data/bookings.json       created at runtime, gitignored
