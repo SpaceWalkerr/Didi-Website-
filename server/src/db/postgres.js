@@ -28,12 +28,18 @@ const SCHEMA = `
 /** Rows carry the booking object verbatim in `data`. */
 const toBooking = (row) => (row ? row.data : null);
 
+/** A local database is almost never running TLS; a hosted one always is. */
+const isLocal = (url) => /@(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(url);
+
 export function createPostgresStore(connectionString) {
   const pool = new pg.Pool({
     connectionString,
-    // Neon, Supabase and Render all require TLS but present certificates that
-    // Node will not verify against its default CA bundle.
-    ssl: { rejectUnauthorized: false },
+    // Neon, Supabase and Render all require TLS but present certificates Node
+    // will not verify against its default CA bundle. Forcing it on for a local
+    // database would just fail to connect.
+    ssl: isLocal(connectionString) ? false : { rejectUnauthorized: false },
+    // Small on purpose: free Postgres tiers cap connections hard, and this app
+    // serves one doctor's diary, not a busy API.
     max: 5,
     idleTimeoutMillis: 30_000,
     connectionTimeoutMillis: 10_000,

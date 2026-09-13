@@ -65,19 +65,50 @@ set it where patients can reach it.
 
 ### 1. Create a free Postgres
 
-**Neon** ([neon.tech](https://neon.tech)) — free tier, no card, does not expire. Create a
-project in the `ap-southeast-1` (Singapore) region and copy the connection string. It
-looks like:
+Any Postgres works — the app talks to it with plain `pg` and one `DATABASE_URL`. Two
+free options, and the choice matters less than it looks:
+
+| | **Neon** | **Supabase** |
+| --- | --- | --- |
+| Idle behaviour | Suspends in minutes, **wakes automatically** on the next connection | Free projects **pause after ~1 week idle** and need a manual restore from the dashboard |
+| Seeing your data | SQL editor | SQL editor **plus a spreadsheet-style table editor** |
+| Extras | Database branching | Auth, file storage, realtime — none of which this app uses |
+
+**The one that actually matters for a clinic site is the idle behaviour.** A new practice
+can easily go a quiet week, and on Supabase's free tier that means the database pauses
+and bookings start failing until someone logs in and restores it. Neon just wakes up.
+
+**Pick Supabase if** you want to look at bookings in a table editor without writing SQL —
+genuinely useful for a non-developer — and you will remember to keep the project awake or
+upgrade. **Pick Neon if** you want to set it up and forget about it.
+
+Free-tier terms change; check both before deciding.
+
+#### Neon
+
+Create a project at [neon.tech](https://neon.tech) in the `ap-southeast-1` (Singapore)
+region and copy the connection string:
 
 ```
 postgresql://user:password@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
 ```
 
-**Supabase** works the same way — use the connection string under Project Settings →
-Database. Render's own Postgres is also free but **expires after 90 days**, after which
-the database is deleted, so prefer Neon or Supabase.
+#### Supabase
 
-You do not need to create any tables. The server creates them on first start.
+Create a project at [supabase.com](https://supabase.com) in the Singapore region. Then
+**Project Settings → Database → Connection string**, and — this part matters — take the
+**Session pooler** string, not "Direct connection":
+
+```
+postgresql://postgres.xxxx:password@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
+```
+
+Supabase's direct connections are IPv6-only, and most hosts (Render included) make
+outbound connections over IPv4. Using the direct string is the usual cause of a deploy
+that builds cleanly and then cannot reach the database at all.
+
+Either way you do **not** need to create any tables — the server creates them on first
+start.
 
 ### 2. Create the web service
 

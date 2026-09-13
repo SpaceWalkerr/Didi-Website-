@@ -207,7 +207,9 @@ Both adapters live in `server/src/db/` behind one small async interface, and `se
 picks between them. Nothing else in the app knows where bookings are kept, so swapping in SQLite or
 Firestore later means writing one more adapter.
 
-Any Postgres works — Neon and Supabase both have free tiers that do not expire.
+Any Postgres works. Neon and Supabase both have free tiers; the practical difference is that a
+Supabase free project pauses after about a week idle and needs a manual restore, while Neon wakes
+on its own. [DEPLOY.md](DEPLOY.md) compares them.
 
 ### 4. Deploy
 
