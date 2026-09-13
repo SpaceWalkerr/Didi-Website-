@@ -56,6 +56,11 @@ export function createPostgresStore(connectionString) {
       await pool.query(SCHEMA);
     },
 
+    /** Cheap liveness check for /api/health. */
+    async ping() {
+      await pool.query('SELECT 1');
+    },
+
     async all() {
       const { rows } = await pool.query('SELECT data FROM bookings ORDER BY created_at DESC');
       return rows.map(toBooking);

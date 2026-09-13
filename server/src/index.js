@@ -33,9 +33,22 @@ app.use(
 );
 app.use(express.json({ limit: '100kb' }));
 
-app.get('/api/health', (_req, res) =>
-  res.json({ ok: true, paymentMode: paymentMode(), time: new Date().toISOString() }),
-);
+/**
+ * Reports unhealthy when the database is unreachable, rather than 200-ing while
+ * unable to take a single booking. Also the endpoint to point an uptime pinger
+ * at: the query keeps a free Postgres from going idle long enough to be paused.
+ */
+app.get('/api/health', async (_req, res) => {
+  const body = { ok: true, storage: db.kind, paymentMode: paymentMode(), time: new Date().toISOString() };
+
+  try {
+    await db.ping();
+    res.json({ ...body, database: 'up' });
+  } catch (err) {
+    console.error('Health check: database unreachable —', err.message);
+    res.status(503).json({ ...body, ok: false, database: 'down', error: 'Database unreachable.' });
+  }
+});
 
 app.use('/api/bookings', bookingsRouter);
 app.use('/api/payments', paymentsRouter);

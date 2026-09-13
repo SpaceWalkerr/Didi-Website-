@@ -39,6 +39,11 @@ export function createJsonStore() {
       fs.mkdirSync(DATA_DIR, { recursive: true });
     },
 
+    /** Matches the Postgres adapter's interface; reads the file to prove it parses. */
+    async ping() {
+      read();
+    },
+
     async all() {
       return read().bookings;
     },

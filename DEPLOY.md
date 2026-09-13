@@ -25,14 +25,10 @@ current terms — and Render's pricing — before relying on either.
 
 **Recommendation: Render as a single service.** One thing to deploy, one origin, no CORS.
 
-### The one catch with Render's free tier
+### Free-tier caveats
 
-Free web services sleep after about 15 minutes idle. The first visitor after a quiet
-spell waits roughly 50 seconds on a blank page before anything renders — on a booking
-site that reads as broken, and most people leave.
-
-That is fine while you are testing and sharing the link for review. Before real patients
-use it, either upgrade to Starter, or accept that the first patient of the day waits.
+Render sleeps a free service after ~15 minutes idle, and a free Supabase project pauses
+after about a week. Step 1b below sets up a pinger that handles both.
 
 ---
 
@@ -63,52 +59,53 @@ set it where patients can reach it.
 
 ## Option A — Render, one service (recommended)
 
-### 1. Create a free Postgres
+### 1. Create a free Postgres (Supabase)
 
-Any Postgres works — the app talks to it with plain `pg` and one `DATABASE_URL`. Two
-free options, and the choice matters less than it looks:
+Create a project at [supabase.com](https://supabase.com), region **Singapore**
+(`ap-southeast-1`), closest to patients in India.
 
-| | **Neon** | **Supabase** |
-| --- | --- | --- |
-| Idle behaviour | Suspends in minutes, **wakes automatically** on the next connection | Free projects **pause after ~1 week idle** and need a manual restore from the dashboard |
-| Seeing your data | SQL editor | SQL editor **plus a spreadsheet-style table editor** |
-| Extras | Database branching | Auth, file storage, realtime — none of which this app uses |
-
-**The one that actually matters for a clinic site is the idle behaviour.** A new practice
-can easily go a quiet week, and on Supabase's free tier that means the database pauses
-and bookings start failing until someone logs in and restores it. Neon just wakes up.
-
-**Pick Supabase if** you want to look at bookings in a table editor without writing SQL —
-genuinely useful for a non-developer — and you will remember to keep the project awake or
-upgrade. **Pick Neon if** you want to set it up and forget about it.
-
-Free-tier terms change; check both before deciding.
-
-#### Neon
-
-Create a project at [neon.tech](https://neon.tech) in the `ap-southeast-1` (Singapore)
-region and copy the connection string:
-
-```
-postgresql://user:password@ep-xxx.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
-```
-
-#### Supabase
-
-Create a project at [supabase.com](https://supabase.com) in the Singapore region. Then
-**Project Settings → Database → Connection string**, and — this part matters — take the
-**Session pooler** string, not "Direct connection":
+Then **Project Settings → Database → Connection string**, and take the **Session pooler**
+string — *not* "Direct connection":
 
 ```
 postgresql://postgres.xxxx:password@aws-0-ap-southeast-1.pooler.supabase.com:5432/postgres
 ```
 
-Supabase's direct connections are IPv6-only, and most hosts (Render included) make
-outbound connections over IPv4. Using the direct string is the usual cause of a deploy
-that builds cleanly and then cannot reach the database at all.
+> Supabase's direct connections are IPv6-only, and Render dials out over IPv4. Using the
+> direct string gives you a deploy that builds perfectly and then cannot reach the
+> database at all — a confusing hour to spend.
 
-Either way you do **not** need to create any tables — the server creates them on first
-start.
+You do **not** need to create any tables. The server creates them on first start.
+
+Neon is the main alternative and works identically — the app only needs a `DATABASE_URL`.
+It suspends and wakes on its own rather than pausing after a week, but has no table
+editor. Free-tier terms change, so check both if you are deciding fresh.
+
+### 1b. Keep it awake
+
+Two things sleep on free tiers, and one external pinger fixes both:
+
+- **Render** sleeps a free web service after ~15 minutes idle. The next visitor waits
+  roughly 50 seconds on a blank page — on a booking site that reads as broken.
+- **Supabase** pauses a free project after about a week idle, and it needs a **manual
+  restore** from the dashboard before bookings work again.
+
+Set up a free monitor — [UptimeRobot](https://uptimerobot.com), Better Stack or
+cron-job.org — to request this every **10 minutes**:
+
+```
+https://<your-site>.onrender.com/api/health
+```
+
+That endpoint runs a `SELECT 1`, so one ping keeps the web service awake *and* the
+database active. It also tells you when the site breaks, which is worth having anyway.
+
+Two caveats:
+
+- Render's free tier allows 750 instance-hours a month. Staying awake 24/7 is ~744 hours,
+  so this just fits — **for one free service only**. A second would exceed it.
+- This is a workaround, not a fix. Before real patients depend on the site, Render's
+  Starter plan (~$7/mo) removes the sleep entirely and is the honest answer.
 
 ### 2. Create the web service
 
@@ -218,14 +215,19 @@ Workable, but it buys little over Option A.
 ## After deploying
 
 - **Check the health endpoint**: `curl https://<your-site>/api/health` should report
-  `"paymentMode":"razorpay-test"` or `"razorpay-live"` — never `"mock"`.
+  `"storage":"postgres"`, `"database":"up"`, and `"paymentMode":"razorpay-test"` or
+  `"razorpay-live"` — never `"mock"`. It returns 503 if the database is unreachable, so
+  it is also what the uptime monitor should watch.
 - **Make one real booking** end to end and confirm the WhatsApp link works.
 - **Open `/admin`**, confirm your token works and a wrong one is rejected.
 - **Send the link to yourself on WhatsApp** to check the preview card renders.
 - **Check storage**: the health endpoint and the startup log should both say Postgres.
-- **Set up backups.** Neon's free tier keeps a short restore window; Supabase's free tier
-  has limited backups. For real patient records, take your own periodic dump —
-  `pg_dump "$DATABASE_URL" > backup.sql`.
+- **Set up the uptime pinger** (step 1b) — without it the site sleeps and the database
+  eventually pauses.
+- **Set up backups.** Supabase's free tier has limited backups and no point-in-time
+  restore. For patient records, take your own periodic dump:
+  `pg_dump "$DATABASE_URL" > backup.sql`. Supabase's dashboard can also export a table
+  to CSV.
 
 ## A custom domain
 
