@@ -35,6 +35,19 @@ export function preflight() {
     );
   }
 
+  // Without this, a free-tier deploy writes bookings to the container's own
+  // filesystem, which is wiped on every deploy and every idle restart. The site
+  // looks like it is working right up until the diary is empty and a patient
+  // turns up for an appointment nobody has a record of.
+  if (!process.env.DATA_DIR) {
+    errors.push(
+      'DATA_DIR is not set. Bookings would be written to the container\'s own\n' +
+        '    filesystem, which is erased on every deploy and restart.\n' +
+        '    Point it at a mounted disk (on Render: Settings -> Disks, then set\n' +
+        '    DATA_DIR to the mount path). Free tiers have no disk.',
+    );
+  }
+
   if (paymentMode() === 'mock' && process.env.ALLOW_DEMO_PAYMENTS !== 'true') {
     errors.push(
       'No Razorpay keys are set, so payments would be simulated. Patients would\n' +

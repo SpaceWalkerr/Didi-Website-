@@ -218,14 +218,17 @@ npm run build && npm start
 `npm run build` emits `client/dist`, which the Express server serves automatically when present —
 so the whole site runs from one origin on one port, with no CORS configuration needed.
 
-Configs for Render (`render.yaml`), Fly (`fly.toml` + `Dockerfile`) and Vercel (`vercel.json`) are
-included. The app needs **persistent disk** for the booking store, so Render or Fly can host the
-whole thing; Vercel can serve the front end but not the API, because serverless functions have no
-persistent filesystem. **[DEPLOY.md](DEPLOY.md)** covers all three.
+Configs for Render (`render.yaml`) and Vercel (`vercel.json`) are included. The app needs
+**persistent disk** for the booking store, so Render can host the whole thing; Vercel can serve the
+front end but not the API, because serverless functions have no persistent filesystem. Free tiers
+have no disk either — deploying free means moving storage to a database first.
+**[DEPLOY.md](DEPLOY.md)** covers it.
 
-In production the server refuses to start if `ADMIN_TOKEN` is still the default or shorter than 24
-characters, or if Razorpay keys are missing — both would be live-site problems that are easy to
-miss in a deploy log and expensive to discover later. `server/src/preflight.js` has the detail.
+In production the server refuses to start if `DATA_DIR` is unset, if `ADMIN_TOKEN` is still the
+default or shorter than 24 characters, or if Razorpay keys are missing. All three are live-site
+problems that are easy to miss in a deploy log and expensive to discover later — an unset
+`DATA_DIR` in particular means the site works perfectly until the diary silently empties.
+`server/src/preflight.js` has the detail.
 
 Behind a reverse proxy, terminate TLS there. **Serve over HTTPS only** — this handles patient health
 information.

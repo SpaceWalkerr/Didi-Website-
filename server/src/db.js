@@ -10,9 +10,10 @@ import { fileURLToPath } from 'node:url';
  * Firestore later means rewriting this file only.
  */
 /**
- * DATA_DIR must point at persistent storage in production — a container
- * filesystem is discarded on every deploy, which would silently erase every
- * booking. On Fly that means a mounted volume (see fly.toml).
+ * DATA_DIR must point at persistent storage in production — a host's own
+ * filesystem is discarded on every deploy and restart, which would silently
+ * erase every booking. On Render that means a mounted disk (see render.yaml);
+ * the server refuses to start in production without DATA_DIR set.
  */
 const DATA_DIR =
   process.env.DATA_DIR || path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'data');
