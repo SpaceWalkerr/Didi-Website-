@@ -47,7 +47,7 @@ Two of these are deliberately duplicated across client and server — prices/dur
 WhatsApp number. The **server copy is authoritative** (the client fetches services from the API, so
 a patient cannot be charged a price they didn't see). Keep the two in step.
 
-The doctor's identity is already filled in: **Dr. Richa Rani, MBBS, MD — General Physician,
+The doctor's identity is already filled in: **Dr. Richa Rani, MBBS (MD) — General Physician,
 Reg. No. 52532, Bihar State Medical Council, 2+ years' experience.**
 
 **Still to replace before launch:**

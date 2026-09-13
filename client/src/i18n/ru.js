@@ -4,7 +4,7 @@ export default {
 
   doctor: {
     name: 'Д-р Рича Рани',
-    qualification: 'MBBS, MD',
+    qualification: 'MBBS (MD)',
     specialty: 'Врач общей практики',
     council: 'Медицинский совет штата Бихар',
     tagline: 'Внимательные, неторопливые онлайн-консультации по повседневным вопросам здоровья.',

@@ -96,7 +96,7 @@ export const PRACTICE = {
     pa: 'ਡਾ. ਰਿਚਾ ਰਾਣੀ',
     ru: 'Д-р Рича Рани',
   },
-  qualification: 'MBBS, MD',
+  qualification: 'MBBS (MD)',
   whatsappNumber: '919117851233',
   email: 'drricha7273@gmail.com',
 };

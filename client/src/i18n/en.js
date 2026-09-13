@@ -10,7 +10,7 @@ export default {
 
   doctor: {
     name: 'Dr. Richa Rani',
-    qualification: 'MBBS, MD',
+    qualification: 'MBBS (MD)',
     specialty: 'General Physician',
     council: 'Bihar State Medical Council',
     tagline: 'Careful, unhurried online consultations for everyday health concerns.',
