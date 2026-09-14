@@ -75,6 +75,38 @@ postgresql://postgres.xxxx:password@aws-0-ap-southeast-1.pooler.supabase.com:543
 > direct string gives you a deploy that builds perfectly and then cannot reach the
 > database at all — a confusing hour to spend.
 
+#### Watch the password characters
+
+A connection string is a URL, so punctuation in the generated password changes what it
+means. A `?` is the dangerous one — everything after it is read as a query string, so
+
+```
+postgresql://postgres.abc:pa?ss@aws-0-....pooler.supabase.com:5432/postgres
+```
+
+parses with the **hostname `postgres.abc`** and no password at all. It cannot connect, and
+the error says nothing about the password.
+
+The simplest fix is to avoid the problem: **Project Settings → Database → Reset database
+password**, and choose one with only letters and digits. Supabase generates passwords
+containing `?`, `$`, `!` and similar.
+
+If you would rather keep the generated password, percent-encode it:
+
+| Character | Encode as |
+| --- | --- |
+| `?` | `%3F` |
+| `$` | `%24` |
+| `!` | `%21` |
+| `#` | `%23` |
+| `@` | `%40` |
+| `/` | `%2F` |
+| `:` | `%3A` |
+
+```bash
+node -e "console.log(encodeURIComponent('your-password-here'))"
+```
+
 You do **not** need to create any tables. The server creates them on first start.
 
 Neon is the main alternative and works identically — the app only needs a `DATABASE_URL`.
