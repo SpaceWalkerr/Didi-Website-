@@ -31,6 +31,9 @@ app.use(
     credentials: false,
   }),
 );
+// Razorpay signs the raw request bytes, so this one route must not be parsed
+// into an object first. Mounted before express.json so it wins for that path.
+app.use('/api/payments/webhook', express.raw({ type: '*/*', limit: '100kb' }));
 app.use(express.json({ limit: '100kb' }));
 
 /**

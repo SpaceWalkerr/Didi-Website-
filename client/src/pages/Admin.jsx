@@ -10,8 +10,6 @@ const LANGUAGE_NAMES = {
   en: 'English',
   hi: 'Hindi',
   pa: 'Punjabi',
-  bho: 'Bhojpuri',
-  bgc: 'Haryanvi',
   ru: 'Russian',
 };
 

@@ -43,7 +43,7 @@ node -e "console.log(crypto.randomUUID())"
 The admin view exposes every patient's name, phone, email and symptom summary. The server
 **refuses to start in production** with the default token or anything under 24 characters.
 
-### 2. Get Razorpay keys
+### 2. Get Razorpay keys and set up the webhook
 
 From the Razorpay dashboard. The server also **refuses to start in production** without
 them, because simulated payments would let patients book real appointments having paid
@@ -54,6 +54,35 @@ keys require KYC.
 
 For a staging site nobody will book on, `ALLOW_DEMO_PAYMENTS=true` overrides this. Never
 set it where patients can reach it.
+
+#### The webhook is not optional once money is real
+
+A booking is confirmed when the payment is proven good. That proof can arrive two ways:
+the patient's browser returning from Checkout, or Razorpay telling the server directly.
+
+Only the second is reliable. If the patient pays and then closes the tab, loses signal or
+their phone dies in that couple of seconds, Razorpay has their money while the booking
+stays `pending`, expires after 15 minutes and releases the slot — and nobody is told.
+
+So once the keys are live, set this up. **The server refuses to start with live keys and
+no webhook secret.**
+
+In the Razorpay dashboard, **Settings → Webhooks → Add New Webhook**:
+
+| Field | Value |
+| --- | --- |
+| Webhook URL | `https://<your-api>/api/payments/webhook` |
+| Secret | any strong string — also set it as `RAZORPAY_WEBHOOK_SECRET` |
+| Active events | `payment.captured` and `payment.failed` |
+
+The URL must point at the **Render backend**, not the Vercel front end — Razorpay's
+servers call it directly, and the front end has no server to receive it.
+
+Also check **Settings → Payments → auto-capture is on**. With it off, payments are only
+authorised, `payment.captured` never fires, and the money sits in limbo.
+
+Both paths are safe to fire at once: whichever arrives first confirms the booking, and the
+patient is notified exactly once.
 
 ---
 
@@ -167,6 +196,7 @@ To do it by hand — **New → Web Service**, connect the repo, then:
 | `ADMIN_TOKEN` | the token you generated |
 | `RAZORPAY_KEY_ID` | `rzp_test_…` or the live key |
 | `RAZORPAY_KEY_SECRET` | from Razorpay |
+| `RAZORPAY_WEBHOOK_SECRET` | the webhook secret you chose — required with live keys |
 
 You will not know the Render URL until the service exists, so set `CLIENT_ORIGIN` after
 the first deploy and let it redeploy.
@@ -251,6 +281,9 @@ Workable, but it buys little over Option A.
   `"razorpay-live"` — never `"mock"`. It returns 503 if the database is unreachable, so
   it is also what the uptime monitor should watch.
 - **Make one real booking** end to end and confirm the WhatsApp link works.
+- **Check the webhook fires.** Razorpay Dashboard → Settings → Webhooks shows recent
+  deliveries and their response codes. A booking should confirm even if you close the tab
+  the instant the payment succeeds — that is the whole point of it.
 - **Open `/admin`**, confirm your token works and a wrong one is rejected.
 - **Send the link to yourself on WhatsApp** to check the preview card renders.
 - **Check storage**: the health endpoint and the startup log should both say Postgres.

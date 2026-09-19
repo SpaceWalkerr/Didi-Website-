@@ -105,7 +105,11 @@ export default function About() {
                       <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
                       <span className="min-w-0">
                         <span className="block text-sm font-semibold text-slate-900">{item.title}</span>
-                        <span className="mt-0.5 block text-sm text-slate-600">{item.detail}</span>
+                        {/* Not every qualification carries a detail line — an empty
+                            one would just add stray spacing. */}
+                        {item.detail && (
+                          <span className="mt-0.5 block text-sm text-slate-600">{item.detail}</span>
+                        )}
                       </span>
                     </li>
                   ))}

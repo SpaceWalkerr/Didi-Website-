@@ -29,10 +29,9 @@ export default {
         'issued by the Board of Governors in supersession of the Medical Council of India in March 2020.',
     ],
     credentials: [
-      { title: 'MBBS', detail: '[Medical College Name], [Year]' },
-      { title: 'MD — General Medicine', detail: '[Institute Name], [Year]' },
+      { title: 'MBBS' },
+      { title: 'MD — General Medicine' },
       { title: 'Registered medical practitioner', detail: 'Bihar State Medical Council — Reg. No. 52532' },
-      { title: 'Certificate in Telemedicine', detail: 'As required under the 2020 Telemedicine Practice Guidelines' },
     ],
     focusAreas: [
       'Fever, infections and seasonal illness',

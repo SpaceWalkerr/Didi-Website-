@@ -2,9 +2,7 @@
  * Date, time and money formatting.
  *
  * Every function takes a `locale` so dates read naturally in the language the
- * patient is using. Bhojpuri and Haryanvi have no CLDR data, so they are mapped
- * to hi-IN in src/i18n/index.jsx — the text around the date is translated even
- * though the date itself follows Hindi conventions.
+ * patient is using.
  */
 
 /**

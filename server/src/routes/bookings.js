@@ -63,7 +63,7 @@ function validatePatient(patient = {}) {
 }
 
 /** Languages the site is published in; anything else is stored as 'en'. */
-const LANGUAGES = ['en', 'hi', 'pa', 'bho', 'bgc', 'ru'];
+const LANGUAGES = ['en', 'hi', 'pa', 'ru'];
 
 /**
  * POST /api/bookings

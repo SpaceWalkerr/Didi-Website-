@@ -39,6 +39,13 @@ export const config = {
   razorpay: {
     keyId: process.env.RAZORPAY_KEY_ID || '',
     keySecret: process.env.RAZORPAY_KEY_SECRET || '',
+    // Set in the Razorpay dashboard when creating the webhook. Distinct from
+    // the API key secret above, and used only to verify webhook signatures.
+    webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || '',
+    /** True once real money can move — live keys rather than test keys. */
+    get isLive() {
+      return this.keyId.startsWith('rzp_live_');
+    },
     // Mock mode lets the whole booking flow run before the doctor's
     // Razorpay account exists. No money moves, nothing is called externally.
     get enabled() {
@@ -113,13 +120,11 @@ export const BOOKING_RULES = {
 export const PRACTICE = {
   doctorName: 'Dr. Richa Rani',
   /**
-   * The name in each published script, so a message written in Bhojpuri or
-   * Punjabi does not switch to Latin halfway through. Falls back to doctorName.
+   * The name in each published script, so a message written in Hindi or Punjabi
+   * does not switch to Latin halfway through. Falls back to doctorName.
    */
   doctorNameByLanguage: {
     hi: 'डॉ. रिचा रानी',
-    bho: 'डॉ. रिचा रानी',
-    bgc: 'डॉ. रिचा रानी',
     pa: 'ਡਾ. ਰਿਚਾ ਰਾਣੀ',
     ru: 'Д-р Рича Рани',
   },

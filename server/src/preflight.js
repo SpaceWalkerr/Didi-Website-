@@ -58,6 +58,19 @@ export function preflight() {
     );
   }
 
+  // With test keys a missing webhook is survivable — nobody loses real money.
+  // With live keys it means a patient can pay and silently lose both the money
+  // and the slot if their browser dies on the way back from Checkout.
+  if (config.razorpay.isLive && !config.razorpay.webhookSecret) {
+    errors.push(
+      'RAZORPAY_WEBHOOK_SECRET is not set, but the Razorpay keys are LIVE.\n' +
+        '    Without the webhook, a patient whose browser closes just after paying\n' +
+        '    loses the money and the slot, and nothing records it.\n' +
+        '    Add the webhook in the Razorpay dashboard (see DEPLOY.md), or switch\n' +
+        '    back to test keys.',
+    );
+  }
+
   if (errors.length) {
     console.error('\n  Refusing to start in production:\n');
     errors.forEach((message, i) => console.error(`  ${i + 1}. ${message}\n`));

@@ -7,7 +7,7 @@
  * missing key still means a patient sees English on an otherwise translated
  * page — so this should stay at zero. Run it after editing any translation.
  */
-const LANGS = ['hi', 'pa', 'bho', 'bgc', 'ru'];
+const LANGS = ['hi', 'pa', 'ru'];
 
 const load = async (code) => (await import(`../client/src/i18n/${code}.js`)).default;
 

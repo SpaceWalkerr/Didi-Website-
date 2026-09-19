@@ -120,6 +120,34 @@ export function createPostgresStore(connectionString) {
       }
     },
 
+    /**
+     * Applies a patch only if the row is still in `expectedStatus`, in one
+     * statement. Returns the updated booking, or null if the status had already
+     * moved on.
+     *
+     * This is what makes confirmation exactly-once: the browser returning from
+     * Checkout and the Razorpay webhook can arrive at the same moment, and
+     * without an atomic check both would confirm and both would send the
+     * patient a confirmation.
+     *
+     * `data || patch` is a shallow merge, so nested objects in the patch replace
+     * their counterpart wholesale — callers pass complete sub-objects.
+     */
+    async updateIf(id, expectedStatus, patch) {
+      const merged = JSON.stringify({ ...patch, updatedAt: new Date().toISOString() });
+      const { rows } = await pool.query(
+        `UPDATE bookings
+            SET data       = data || $3::jsonb,
+                status     = COALESCE($3::jsonb->>'status', status),
+                order_id   = COALESCE($3::jsonb->'payment'->>'orderId', order_id),
+                updated_at = now()
+          WHERE id = $1 AND status = $2
+          RETURNING data`,
+        [id, expectedStatus, merged],
+      );
+      return toBooking(rows[0]);
+    },
+
     async close() {
       await pool.end();
     },

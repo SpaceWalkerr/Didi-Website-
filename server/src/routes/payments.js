@@ -2,9 +2,9 @@ import crypto from 'node:crypto';
 import { Router } from 'express';
 import { db } from '../db.js';
 import { verifySignature, mockSignature, paymentMode } from '../services/payments.js';
-import { sendBookingConfirmation, notifyDoctor, whatsappJoinLink, formatWhen }
-  from '../services/notify.js';
-import { validateSlot } from '../services/slots.js';
+import { whatsappJoinLink, formatWhen } from '../services/notify.js';
+import { confirmPaidBooking } from '../services/confirm.js';
+import { config } from '../config.js';
 
 const router = Router();
 
@@ -39,46 +39,106 @@ router.post('/verify', async (req, res, next) => {
         .json({ code: 'paymentUnverified', error: 'Payment could not be verified.' });
     }
 
-    // The hold may have lapsed while the patient was paying. Re-check before
-    // confirming so we never double-book the doctor.
-    const conflict = await validateSlot(
-      booking.date,
-      booking.time,
-      booking.serviceId,
-      Date.now(),
-      booking.id,
-    );
-    if (conflict?.code === 'slotTaken') {
-      await db.update(booking.id, {
-        status: 'needs-attention',
-        payment: { ...booking.payment, paymentId: razorpay_payment_id, status: 'paid' },
-        note: 'Paid, but the slot expired. Refund or reschedule manually.',
-      });
+    const { outcome, booking: result } = await confirmPaidBooking(booking, razorpay_payment_id);
+
+    if (outcome === 'slot-lost') {
       return res.status(409).json({
         code: 'slotLostAfterPayment',
         error: 'Paid, but the slot was taken during payment.',
       });
     }
 
-    const confirmed = await db.update(booking.id, {
-      status: 'confirmed',
-      confirmedAt: new Date().toISOString(),
-      payment: { ...booking.payment, paymentId: razorpay_payment_id, status: 'paid' },
-    });
-
-    // Fire-and-forget: a notification failure must not break the confirmation.
-    Promise.all([sendBookingConfirmation(confirmed), notifyDoctor(confirmed)]).catch((err) =>
-      console.error('Notification failed:', err),
-    );
+    // 'already-handled' means the webhook got here first — which is a success
+    // from the patient's point of view, so report it as one.
+    if (result.status !== 'confirmed') {
+      return res.status(409).json({
+        code: 'slotLostAfterPayment',
+        error: 'Paid, but the booking needs attention.',
+      });
+    }
 
     res.json({
       status: 'confirmed',
-      bookingId: confirmed.id,
-      when: formatWhen(confirmed),
-      whatsappLink: whatsappJoinLink(confirmed),
+      bookingId: result.id,
+      when: formatWhen(result),
+      whatsappLink: whatsappJoinLink(result),
     });
   } catch (err) {
     next(err);
+  }
+});
+
+/**
+ * POST /api/payments/webhook — called by Razorpay's servers, not the browser.
+ *
+ * Without this, a booking is only confirmed if the patient's browser survives
+ * the round trip back from Checkout. If they close the tab, lose signal or
+ * their phone dies in that window, Razorpay has their money while the booking
+ * silently expires and releases the slot — and nobody is told.
+ *
+ * Configure at Razorpay Dashboard -> Settings -> Webhooks:
+ *   URL    : https://<your-api>/api/payments/webhook
+ *   Events : payment.captured, payment.failed
+ *   Secret : whatever you set, also as RAZORPAY_WEBHOOK_SECRET
+ *
+ * Note this route reads a raw body (see index.js) — the signature is computed
+ * over the exact bytes Razorpay sent, so a re-serialised JSON object will not
+ * match.
+ */
+router.post('/webhook', async (req, res) => {
+  const secret = config.razorpay.webhookSecret;
+  if (!secret) {
+    console.warn('Webhook received but RAZORPAY_WEBHOOK_SECRET is not set — ignoring.');
+    return res.status(503).json({ error: 'Webhook not configured.' });
+  }
+
+  const signature = String(req.get('x-razorpay-signature') || '');
+  const expected = crypto.createHmac('sha256', secret).update(req.body).digest('hex');
+  const a = Buffer.from(expected);
+  const b = Buffer.from(signature);
+  if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+    return res.status(400).json({ error: 'Invalid signature.' });
+  }
+
+  let event;
+  try {
+    event = JSON.parse(req.body.toString('utf8'));
+  } catch {
+    return res.status(400).json({ error: 'Malformed payload.' });
+  }
+
+  // Anything unrecognised gets a 200: Razorpay retries non-2xx responses, and
+  // retrying an event we will never act on is just noise.
+  try {
+    const payment = event?.payload?.payment?.entity;
+    if (!payment?.order_id) return res.json({ received: true, ignored: event?.event });
+
+    const booking = await db.findByOrderId(payment.order_id);
+    if (!booking) return res.json({ received: true, ignored: 'unknown order' });
+
+    if (event.event === 'payment.captured' || event.event === 'order.paid') {
+      if (booking.status !== 'pending') {
+        return res.json({ received: true, outcome: 'already-handled' });
+      }
+      const { outcome } = await confirmPaidBooking(booking, payment.id);
+      console.log(`Webhook ${event.event}: booking ${booking.id} -> ${outcome}`);
+      return res.json({ received: true, outcome });
+    }
+
+    if (event.event === 'payment.failed' && booking.status === 'pending') {
+      await db.updateIf(booking.id, 'pending', {
+        status: 'cancelled',
+        payment: { ...booking.payment, paymentId: payment.id, status: 'failed' },
+      });
+      return res.json({ received: true, outcome: 'cancelled' });
+    }
+
+    return res.json({ received: true, ignored: event.event });
+  } catch (err) {
+    // A 500 tells Razorpay to retry, which is what we want for a transient
+    // database failure — the event is not lost.
+    console.error('Webhook processing failed:', err);
+    return res.status(500).json({ error: 'Processing failed.' });
   }
 });
 

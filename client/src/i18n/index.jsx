@@ -10,23 +10,17 @@ import en from './en.js';
 const LOADERS = {
   hi: () => import('./hi.js'),
   pa: () => import('./pa.js'),
-  bho: () => import('./bho.js'),
-  bgc: () => import('./bgc.js'),
   ru: () => import('./ru.js'),
 };
 
 /**
  * Languages offered in the switcher, in display order.
  *
- * `locale` is what Intl uses for dates and numbers. Bhojpuri and Haryanvi have
- * no CLDR locale data, so they borrow hi-IN — the text is translated, the date
- * formatting just follows Hindi conventions.
+ * `locale` is what Intl uses for dates and numbers.
  */
 export const LANGUAGES = [
   { code: 'en', label: 'English', native: 'English', locale: 'en-IN' },
   { code: 'hi', label: 'Hindi', native: 'हिन्दी', locale: 'hi-IN' },
-  { code: 'bho', label: 'Bhojpuri', native: 'भोजपुरी', locale: 'hi-IN' },
-  { code: 'bgc', label: 'Haryanvi', native: 'हरियाणवी', locale: 'hi-IN' },
   { code: 'pa', label: 'Punjabi', native: 'ਪੰਜਾਬੀ', locale: 'pa-IN' },
   { code: 'ru', label: 'Russian', native: 'Русский', locale: 'ru-RU' },
 ];
@@ -44,12 +38,12 @@ const isSupported = (code) => code === DEFAULT_LANGUAGE || Boolean(code && LOADE
  * we would rather show English than guess a regional language wrongly.
  */
 export const REGION_LANGUAGE = {
-  HR: 'bgc', // Haryana
-  PB: 'pa',  // Punjab
-  CH: 'pa',  // Chandigarh
-  BR: 'bho', // Bihar
-  JH: 'bho', // Jharkhand
-  UP: 'hi',  // Uttar Pradesh — Bhojpuri is eastern UP only, so Hindi is the safer default
+  PB: 'pa', // Punjab
+  CH: 'pa', // Chandigarh
+  HR: 'hi', // Haryana
+  BR: 'hi', // Bihar
+  JH: 'hi',
+  UP: 'hi',
   MP: 'hi',
   RJ: 'hi',
   DL: 'hi',
@@ -87,7 +81,7 @@ export function detectLanguage(region = null) {
 
   for (const tag of navigator.languages || [navigator.language || '']) {
     const lower = tag.toLowerCase();
-    // Exact tags first (bho, bgc, pa-in), then the base subtag.
+    // Exact tags first (pa-in), then the base subtag.
     const base = lower.split('-')[0];
     if (isSupported(base)) return base;
     if (lower.startsWith('pa')) return 'pa';

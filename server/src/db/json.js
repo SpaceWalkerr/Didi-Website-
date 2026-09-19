@@ -81,6 +81,21 @@ export function createJsonStore() {
       return data.bookings[index];
     },
 
+    /** Conditional counterpart to the Postgres adapter's atomic update. */
+    async updateIf(id, expectedStatus, patch) {
+      const data = read();
+      const index = data.bookings.findIndex((b) => b.id === id);
+      if (index === -1 || data.bookings[index].status !== expectedStatus) return null;
+
+      data.bookings[index] = {
+        ...data.bookings[index],
+        ...patch,
+        updatedAt: new Date().toISOString(),
+      };
+      write(data);
+      return data.bookings[index];
+    },
+
     async close() {},
   };
 }

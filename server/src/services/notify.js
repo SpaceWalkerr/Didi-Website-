@@ -43,12 +43,6 @@ const JOIN_MESSAGES = {
   hi: ({ doctor, name, when, id }) =>
     `नमस्ते ${doctor}, मैं ${name} हूँ। मेरा परामर्श ${when} के लिए बुक है ` +
     `(बुकिंग आईडी: ${id})। मैं तैयार हूँ।`,
-  bho: ({ doctor, name, when, id }) =>
-    `नमस्ते ${doctor}, हम ${name} बानी। हमार सलाह ${when} खातिर बुक बा ` +
-    `(बुकिंग आईडी: ${id})। हम तइयार बानी।`,
-  bgc: ({ doctor, name, when, id }) =>
-    `नमस्ते ${doctor}, मैं ${name} सूं। मेरी सलाह ${when} खातर बुक सै ` +
-    `(बुकिंग आईडी: ${id})। मैं त्यार सूं।`,
   pa: ({ doctor, name, when, id }) =>
     `ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ ${doctor}, ਮੈਂ ${name} ਹਾਂ। ਮੇਰੀ ਸਲਾਹ ${when} ਲਈ ਬੁੱਕ ਹੈ ` +
     `(ਬੁਕਿੰਗ ਆਈਡੀ: ${id})। ਮੈਂ ਤਿਆਰ ਹਾਂ।`,
@@ -70,8 +64,7 @@ export function whatsappJoinLink(booking) {
   return `https://wa.me/${PRACTICE.whatsappNumber}?text=${encodeURIComponent(message)}`;
 }
 
-/** Bhojpuri and Haryanvi have no CLDR locale, so they borrow Hindi's. */
-const LOCALES = { en: 'en-IN', hi: 'hi-IN', bho: 'hi-IN', bgc: 'hi-IN', pa: 'pa-IN', ru: 'ru-RU' };
+const LOCALES = { en: 'en-IN', hi: 'hi-IN', pa: 'pa-IN', ru: 'ru-RU' };
 
 export function formatWhen(booking, language = 'en') {
   const when = new Date(`${booking.date}T${booking.time}:00+05:30`);
@@ -124,8 +117,6 @@ const LANGUAGE_NAMES = {
   en: 'English',
   hi: 'Hindi',
   pa: 'Punjabi',
-  bho: 'Bhojpuri',
-  bgc: 'Haryanvi',
   ru: 'Russian',
 };
 

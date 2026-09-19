@@ -6,7 +6,7 @@ channel, and a private view of upcoming bookings for the doctor.
 
 **Stack:** React 18 + Vite + Tailwind CSS · Node/Express · Razorpay (test mode) · JSON file store.
 
-**Languages:** English (default), Hindi, Bhojpuri, Haryanvi, Punjabi, Russian.
+**Languages:** English (default), Hindi, Punjabi, Russian.
 
 ---
 
@@ -77,8 +77,6 @@ a blank, so a partial translation degrades gracefully.
 | --- | --- | --- |
 | `en` | English | Latin |
 | `hi` | हिन्दी — Hindi | Devanagari |
-| `bho` | भोजपुरी — Bhojpuri | Devanagari |
-| `bgc` | हरियाणवी — Haryanvi | Devanagari |
 | `pa` | ਪੰਜਾਬੀ — Punjabi | Gurmukhi |
 | `ru` | Русский — Russian | Cyrillic |
 
@@ -90,8 +88,8 @@ In order of how much the signal can be trusted, from `detectLanguage()` in
 1. **What the visitor previously picked** here (stored in `localStorage`)
 2. **`?lang=` in the URL** — so the clinic can share a link that opens in one
    language, e.g. `…/book?lang=bho`
-3. **A region code**, if one is supplied — `REGION_LANGUAGE` maps Haryana to
-   Haryanvi, Punjab to Punjabi, Bihar to Bhojpuri, and so on
+3. **A region code**, if one is supplied — `REGION_LANGUAGE` maps Punjab to
+   Punjabi, and the Hindi-belt states to Hindi
 4. **The browser's own language settings** — reliable, instant, needs no
    permission and makes no network call
 5. **Time zone**, which only separates Russia from India
@@ -132,13 +130,10 @@ downloads the other five (~8 KB gzipped each).
 
 ### Translation quality
 
-The English and Hindi text is solid. **Bhojpuri and Haryanvi have not been
-reviewed by a native speaker**, and both are languages with limited written
-standardisation — the wording will read as serviceable rather than natural, and
-some medical phrasing may be off. Have someone who speaks each read through
-before launch; each file has a `Reviewed by: ______` line at the top.
+Each file has a `Reviewed by: ______` line at the top — worth having a native speaker read
+through before launch.
 
-Because of that, the footer shows a line in every non-English language stating
+The footer shows a line in every non-English language stating
 that the **English version of the terms is authoritative**. Keep it there unless
 a lawyer reviews each translated disclaimer.
 
@@ -247,7 +242,6 @@ information.
 - [ ] Backups configured for `server/data/`
 - [ ] Cancellation and refund terms on the Services page reviewed by the doctor
 - [ ] Doctor has completed the mandatory telemedicine training course
-- [ ] Bhojpuri and Haryanvi translations read by a native speaker
 - [ ] `node scripts/check-translations.mjs` passes
 
 ---
