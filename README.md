@@ -246,6 +246,26 @@ information.
 
 ---
 
+## Dependencies and advisories
+
+`.node-version` pins Node 22 (active LTS). Render otherwise picks its own default — it chose
+24 — and 22 is the version this has actually been tested on. Moving up is fine once you have
+run the booking flow through on it.
+
+`npm audit` reports two moderate advisories against `react-router` with no non-breaking fix
+(they need react-router-dom v7). Both were assessed rather than ignored:
+
+- **Open redirect via backslash in `<Link>` / `useNavigate`** — needs a user-controlled
+  navigation target. There is none: every `to` is a literal path or built from
+  server-supplied values (`service.id`, and booking IDs drawn from a fixed alphanumeric
+  alphabet). Re-check this if you ever navigate to a path derived from user input or a query
+  parameter.
+- **Arbitrary constructor injection in `deserializeErrors()` during SSR hydration** — this is
+  a client-rendered SPA with no server-side rendering, so the affected code never runs.
+
+Upgrading to v7 is a breaking change to routing. That did not seem a worthwhile trade for two
+issues that cannot be reached here — but revisit it at the next routing change.
+
 ## Compliance notes
 
 The site is built around the **Telemedicine Practice Guidelines** notified on 25 March 2020 by the

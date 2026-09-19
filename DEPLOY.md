@@ -179,10 +179,15 @@ To do it by hand — **New → Web Service**, connect the repo, then:
 | --- | --- |
 | Runtime | Node |
 | Region | Singapore (closest to India) |
-| Build command | `npm ci && npm run build` |
+| Build command | `npm ci --include=dev && npm run build` |
 | Start command | `node server/src/index.js` |
 | Health check path | `/api/health` |
 | Instance type | Free (or Starter, to stop it sleeping) |
+
+> `--include=dev` is not optional. `NODE_ENV=production` is set below because the
+> server needs it at runtime, and it also makes npm skip devDependencies — one of
+> which is `vite`, the thing that builds the client. Plain `npm ci` gives you
+> `sh: 1: vite: not found`.
 
 ### 3. Set environment variables
 
