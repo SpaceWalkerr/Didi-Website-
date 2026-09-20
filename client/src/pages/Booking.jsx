@@ -10,6 +10,7 @@ import { useI18n } from '../i18n/index.jsx';
 import {
   AlertIcon, ArrowRightIcon, CalendarIcon, ClockIcon, ShieldIcon, WhatsAppIcon,
 } from '../components/Icons.jsx';
+import { REGION_IDS } from '../components/bodymap/regions.js';
 
 const emptyPatient = {
   name: '', age: '', gender: '', phone: '', email: '', symptoms: '', consent: false,
@@ -30,7 +31,29 @@ export default function Booking() {
   const [slots, setSlots] = useState([]);
   const [slotsLoading, setSlotsLoading] = useState(false);
 
-  const [patient, setPatient] = useState(emptyPatient);
+  /**
+   * The body map sends the visitor here as ?area=chest&topic=Palpitations.
+   * That becomes the opening line of the symptoms box — a starting point the
+   * patient is expected to edit and add to, not a substitute for describing
+   * the problem. The area id is checked against the known regions so a
+   * hand-edited URL cannot inject arbitrary text into the form.
+   */
+  const [patient, setPatient] = useState(() => {
+    const area = params.get('area');
+    if (!REGION_IDS.includes(area)) return emptyPatient;
+
+    const label = t(`bodyMap.regions.${area}.label`);
+    const topic = params.get('topic');
+    // Only a concern the region actually offers is accepted.
+    const known = tList(`bodyMap.regions.${area}.concerns`).includes(topic);
+
+    return {
+      ...emptyPatient,
+      symptoms: known
+        ? t('booking.prefillTopic', { area: label, topic })
+        : t('booking.prefillArea', { area: label }),
+    };
+  });
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [step, setStep] = useState(0);
@@ -508,7 +531,7 @@ export default function Booking() {
               rel="noopener noreferrer"
               className="btn-secondary mt-4 w-full"
             >
-              <WhatsAppIcon className="h-5 w-5 text-[#25D366]" />
+              <WhatsAppIcon className="h-5 w-5 text-whatsapp" />
               {t('common.needHelp')}
             </a>
           </aside>

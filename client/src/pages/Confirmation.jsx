@@ -142,7 +142,7 @@ export default function Confirmation() {
               rel="noopener noreferrer"
               className="btn-secondary flex-1"
             >
-              <WhatsAppIcon className="h-5 w-5 text-[#25D366]" />
+              <WhatsAppIcon className="h-5 w-5 text-whatsapp" />
               {t('common.messageClinic')}
             </a>
             <Link to="/" className="btn-secondary flex-1">

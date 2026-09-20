@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { LANGUAGES, useI18n } from '../i18n/index.jsx';
+import { LANGUAGES, useI18n } from '../../i18n/index.jsx';
 
 const GlobeIcon = ({ className = 'h-5 w-5' }) => (
   <svg

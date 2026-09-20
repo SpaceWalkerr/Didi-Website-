@@ -1,5 +1,37 @@
 import { api } from './api.js';
 
+const CHECKOUT_SRC = 'https://checkout.razorpay.com/v1/checkout.js';
+
+/**
+ * Loads Razorpay Checkout on demand.
+ *
+ * It used to be a <script defer> in index.html, which meant every visitor —
+ * including everyone who only ever reads the home page — downloaded and parsed
+ * a third-party payment script. Fetching it at the moment the patient actually
+ * presses Pay costs them nothing extra and takes it off the critical path for
+ * the mobile Lighthouse score.
+ */
+function loadCheckout() {
+  if (window.Razorpay) return Promise.resolve();
+
+  const existing = document.querySelector(`script[src="${CHECKOUT_SRC}"]`);
+  if (existing) {
+    return new Promise((resolve, reject) => {
+      existing.addEventListener('load', () => resolve());
+      existing.addEventListener('error', () => reject(new Error('checkout-load-failed')));
+    });
+  }
+
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = CHECKOUT_SRC;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('checkout-load-failed'));
+    document.head.appendChild(script);
+  });
+}
+
 /**
  * Opens Razorpay Checkout and resolves with the fields the server needs to
  * verify the payment.
@@ -10,7 +42,7 @@ import { api } from './api.js';
  * Messages are passed in already translated — Razorpay's own checkout UI has its
  * own language setting, but the errors we raise are ours to word.
  */
-export function openCheckout({
+export async function openCheckout({
   order,
   bookingId,
   razorpayKeyId,
@@ -23,6 +55,12 @@ export function openCheckout({
 }) {
   if (paymentMode !== 'razorpay-test') {
     return api.mockPay(order.id);
+  }
+
+  try {
+    await loadCheckout();
+  } catch {
+    throw new Error(checkoutUnavailable);
   }
 
   return new Promise((resolve, reject) => {
@@ -41,7 +79,7 @@ export function openCheckout({
       image: '/favicon.svg',
       prefill: { name: patient.name, email: patient.email, contact: patient.phone },
       notes: { bookingId },
-      theme: { color: '#0270c2' },
+      theme: { color: '#0f8078' },
       handler: (response) => resolve(response),
       modal: {
         ondismiss: () => reject(new Error(cancelledMessage)),

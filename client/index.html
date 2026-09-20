@@ -5,35 +5,46 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Book an online consultation with Dr. Richa Rani, MBBS (MD) — General Physician. Pick a slot, pay securely and consult from home over WhatsApp."
+      content="Book an online consultation with Dr. Richa Rani, MBBS — General Physician. Pick a slot, pay securely and consult from home over WhatsApp."
     />
-    <meta name="theme-color" content="#0270c2" />
+    <meta name="theme-color" content="#0f8078" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
 
     <!-- Link preview card, e.g. when a patient forwards the site on WhatsApp.
-         Set og:url to the real domain once the site is deployed. -->
+         Set og:url to the real domain once the site is deployed — see
+         BRAND.siteUrl in shared/practice.config.js. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Dr. Richa Rani — Online Consultation" />
     <meta property="og:title" content="Dr. Richa Rani — Online Consultation" />
     <meta
       property="og:description"
-      content="MBBS (MD) · General Physician. Book a slot and consult from home over WhatsApp."
+      content="MBBS · General Physician. Book a slot and consult from home over WhatsApp."
     />
     <meta property="og:image" content="/images/og-image.jpg" />
     <meta name="twitter:card" content="summary_large_image" />
+
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Inter covers Latin and Cyrillic; Noto adds Devanagari (Hindi, Bhojpuri,
-         Haryanvi) and Gurmukhi (Punjabi). Google Fonts declares each face with a
-         unicode-range, so a browser only downloads the script actually on screen. -->
+    <!--
+      Inter covers Latin and Cyrillic; Noto adds Devanagari (Hindi) and Gurmukhi
+      (Punjabi). Google Fonts declares each face with a unicode-range, so a
+      browser only downloads the script actually on screen.
+
+      Fraunces is the warmer display face used for headings. It is Latin-only
+      and loaded at two weights, so Hindi and Punjabi headings fall through to
+      Noto — deliberate: a Latin serif has no Devanagari glyphs to fall back on.
+    -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Gurmukhi:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Gurmukhi:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
     <title>Dr. Richa Rani — Online Consultation | General Physician</title>
-    <!-- Razorpay Checkout. Harmless when the site runs in mock payment mode. -->
-    <script src="https://checkout.razorpay.com/v1/checkout.js" defer></script>
+    <!--
+      Razorpay Checkout is NOT loaded here. It is fetched on demand by
+      src/lib/razorpay.js at the moment a patient presses Pay, so visitors who
+      only read the site never download a third-party payment script.
+    -->
   </head>
   <body>
     <div id="root"></div>

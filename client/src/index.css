@@ -2,68 +2,189 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * ─────────────────────────────────────────────────────────────────────────
+ *  Design tokens and component classes.
+ *
+ *  Type scale is deliberately large: the body floor is 16px and most prose
+ *  sits at 17px, because a meaningful share of these patients are older or
+ *  reading on a phone in bright light.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+
 @layer base {
+  :root {
+    --header-height: 4rem;
+  }
+
   html {
     scroll-behavior: smooth;
+    /* Anchored sections must clear the sticky header. */
+    scroll-padding-top: calc(var(--header-height) + 1rem);
+    -webkit-text-size-adjust: 100%;
   }
 
   body {
-    @apply bg-white text-slate-700 antialiased;
+    @apply bg-white text-[17px] leading-relaxed text-slate-700 antialiased;
   }
 
-  h1, h2, h3, h4 {
-    @apply text-slate-900 font-semibold tracking-tight;
+  h1, h2, h3 {
+    @apply font-display font-semibold tracking-[-0.015em] text-slate-900;
   }
 
-  /* Visible focus for keyboard users — important on a form-heavy medical site. */
+  h4, h5, h6 {
+    @apply font-sans font-semibold tracking-tight text-slate-900;
+  }
+
+  /* Visible focus for keyboard users — critical on a form-heavy medical site. */
   :focus-visible {
-    @apply outline-none ring-2 ring-brand-500 ring-offset-2 rounded;
+    @apply outline-none ring-2 ring-brand-600 ring-offset-2 ring-offset-white;
+    border-radius: 0.375rem;
+  }
+
+  /* Never let a long email or URL blow out the mobile layout. */
+  a, p, li { overflow-wrap: break-word; }
+
+  /*
+   * Honour the OS "reduce motion" setting globally. Framer Motion is told
+   * separately via useReducedMotion(), but CSS transitions, the smooth-scroll
+   * above and any third-party animation need shutting off here too.
+   */
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
   }
 }
 
 @layer components {
   .container-page {
-    @apply mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8;
+    @apply mx-auto w-full max-w-6xl px-5 sm:px-6 lg:px-8;
   }
 
+  /* ── Buttons ─────────────────────────────────────────────────────────── */
+  /* min-h-[2.75rem] keeps every tap target at the 44px touch minimum. */
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-semibold
-           transition focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed
-           disabled:opacity-60;
+    @apply inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-xl px-5 py-3
+           text-[15px] font-semibold transition-colors duration-200
+           focus-visible:ring-2 focus-visible:ring-offset-2
+           disabled:cursor-not-allowed disabled:opacity-60;
   }
 
   .btn-primary {
-    @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700 focus-visible:ring-brand-500;
+    @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700 focus-visible:ring-brand-600;
   }
 
   .btn-secondary {
-    @apply btn border border-brand-200 bg-white text-brand-700 hover:border-brand-300 hover:bg-brand-50
-           focus-visible:ring-brand-500;
+    @apply btn border border-brand-200 bg-white text-brand-700
+           hover:border-brand-300 hover:bg-brand-50 focus-visible:ring-brand-600;
+  }
+
+  .btn-ghost {
+    @apply btn text-brand-700 hover:bg-brand-50 focus-visible:ring-brand-600;
   }
 
   .btn-whatsapp {
-    @apply btn bg-[#25D366] text-white hover:bg-[#1ebe5a] focus-visible:ring-[#25D366];
+    /* See the `whatsapp` token in tailwind.config.js — the official brand
+       green fails AA badly against white, so this is a darkened stand-in. */
+    @apply btn bg-whatsapp text-white hover:bg-whatsapp-dark focus-visible:ring-whatsapp;
   }
 
+  /* ── Surfaces ────────────────────────────────────────────────────────── */
   .card {
-    @apply rounded-2xl border border-slate-200 bg-white p-6 shadow-card;
+    @apply rounded-2xl border border-slate-200/80 bg-white p-6 shadow-card;
   }
 
+  .card-warm {
+    @apply rounded-2xl border border-surface-300/60 bg-surface p-6;
+  }
+
+  .section {
+    @apply py-16 sm:py-20 lg:py-24;
+  }
+
+  .section-warm {
+    @apply section border-y border-surface-200 bg-surface;
+  }
+
+  /* ── Forms ───────────────────────────────────────────────────────────── */
   .label {
-    @apply mb-1.5 block text-sm font-medium text-slate-700;
+    @apply mb-1.5 block text-[15px] font-medium text-slate-800;
   }
 
   .input {
-    @apply w-full rounded-lg border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-slate-900
-           placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2
-           focus:ring-brand-100;
+    @apply w-full min-h-[2.75rem] rounded-xl border border-slate-300 bg-white px-3.5 py-2.5
+           text-base text-slate-900 placeholder:text-slate-400
+           focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100;
   }
 
   .input-error {
-    @apply border-red-400 focus:border-red-500 focus:ring-red-100;
+    @apply border-red-500 focus:border-red-600 focus:ring-red-100;
   }
 
+  .hint {
+    @apply mt-1.5 text-sm leading-relaxed text-slate-500;
+  }
+
+  /* ── Type helpers ────────────────────────────────────────────────────── */
   .eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.14em] text-brand-600;
+    @apply text-xs font-semibold uppercase tracking-[0.14em] text-brand-700;
+  }
+
+  .lede {
+    @apply text-lg leading-relaxed text-slate-600;
+  }
+
+  .prose-legal {
+    @apply space-y-4 text-[16px] leading-[1.75] text-slate-700;
+  }
+
+  .prose-legal h2 {
+    @apply mt-10 mb-3 text-xl;
+  }
+
+  .prose-legal h3 {
+    @apply mt-6 mb-2 font-sans text-lg font-semibold;
+  }
+
+  .prose-legal ul {
+    @apply list-disc space-y-2 pl-5 marker:text-brand-500;
+  }
+
+
+  /* ── Body map ────────────────────────────────────────────────────────── */
+  /*
+   * Focus here is drawn with `stroke`, not Tailwind's `ring`: ring compiles to
+   * box-shadow, which SVG shapes do not render. A keyboard user would get no
+   * focus indicator at all on the figure.
+   */
+  .bm-region {
+    @apply cursor-pointer fill-brand-100 stroke-brand-300 outline-none transition-[fill,stroke] duration-200;
+    stroke-width: 1.5;
+    /* Removes the 300ms tap delay and stops a double-tap zooming the page. */
+    touch-action: manipulation;
+  }
+
+  .bm-region:hover {
+    @apply fill-brand-200 stroke-brand-400;
+  }
+
+  .bm-region[data-selected='true'] {
+    @apply fill-brand-500 stroke-brand-700;
+  }
+
+  .bm-region:focus-visible {
+    @apply stroke-brand-800;
+    stroke-width: 3.5;
+  }
+
+  /* Skip link — offscreen until focused. */
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100]
+           focus:rounded-lg focus:bg-brand-700 focus:px-4 focus:py-2.5 focus:text-white;
   }
 }

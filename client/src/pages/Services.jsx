@@ -1,10 +1,12 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import PageHeader from '../components/PageHeader.jsx';
 import { api } from '../lib/api.js';
 import { rupees } from '../lib/format.js';
 import { HIGHLIGHTED_SERVICE, waLink } from '../config.js';
 import { useI18n } from '../i18n/index.jsx';
+import PageIntro from '../design/PageIntro.jsx';
+import Badge from '../design/Badge.jsx';
+import { RevealGroup, RevealItem } from '../design/Reveal.jsx';
 import { ArrowRightIcon, CheckIcon, ClockIcon, WhatsAppIcon } from '../components/Icons.jsx';
 
 export default function Services() {
@@ -29,18 +31,20 @@ export default function Services() {
 
   return (
     <>
-      <PageHeader
+      <PageIntro
         eyebrow={t('services.eyebrow')}
         title={t('services.title')}
-        description={t('services.description')}
+        lede={t('services.description')}
       />
 
-      <section className="container-page py-14 sm:py-16">
-        {loading && <p className="text-sm text-slate-500">{t('services.loading')}</p>}
+      <div className="container-page py-12 sm:py-16">
+        {loading && <p className="text-slate-500">{t('services.loading')}</p>}
 
         {error && (
-          <div className="card mb-8 border-amber-200 bg-amber-50">
-            <p className="text-sm text-amber-900">{t('services.loadError', { error })}</p>
+          <div className="card mb-8 border-amber-300 bg-amber-50">
+            <p className="text-[15px] leading-relaxed text-amber-900">
+              {t('services.loadError', { error })}
+            </p>
             <a
               href={waLink(t('whatsapp.booking', { doctor: t('doctor.name') }))}
               target="_blank"
@@ -53,96 +57,81 @@ export default function Services() {
           </div>
         )}
 
-        <div className="grid gap-6 lg:grid-cols-3">
+        <RevealGroup className="grid gap-6 lg:grid-cols-3">
           {services.map((service) => {
             const highlighted = service.id === HIGHLIGHTED_SERVICE;
             return (
-              <div
+              <RevealItem
                 key={service.id}
-                className={`card flex flex-col ${highlighted ? 'ring-2 ring-brand-500' : ''}`}
+                className={`flex flex-col rounded-2xl border bg-white p-6 shadow-card ${
+                  highlighted ? 'border-brand-400 ring-1 ring-brand-300' : 'border-slate-200'
+                }`}
               >
                 {highlighted && (
-                  <span className="mb-3 inline-flex w-fit rounded-full bg-brand-600 px-3 py-1 text-xs font-semibold text-white">
-                    {t('services.mostBooked')}
-                  </span>
+                  <Badge className="self-start">{t('services.mostBooked')}</Badge>
                 )}
 
-                <h2 className="text-xl">{t(`services.items.${service.id}.name`)}</h2>
+                <h2 className={`font-display text-2xl ${highlighted ? 'mt-3' : ''}`}>
+                  {t(`services.items.${service.id}.name`)}
+                </h2>
 
-                <p className="mt-1.5 flex items-center gap-1.5 text-sm text-slate-500">
-                  <ClockIcon className="h-4 w-4 shrink-0" />
+                <p className="mt-3 flex items-baseline gap-2">
+                  <span className="font-display text-3xl font-semibold text-brand-800">
+                    {rupees(service.price)}
+                  </span>
+                  <span className="text-sm text-slate-500">{t('common.perConsultation')}</span>
+                </p>
+
+                <p className="mt-2 flex items-center gap-1.5 text-sm text-slate-600">
+                  <ClockIcon className="h-4 w-4 text-brand-600" />
                   {t('common.minutes', { count: service.durationMinutes })}
                 </p>
 
-                <p className="mt-4 text-3xl font-semibold text-slate-900">
-                  {rupees(service.price)}
-                  <span className="ml-1.5 text-sm font-normal text-slate-500">
-                    {t('common.perConsultation')}
-                  </span>
-                </p>
-
-                <p className="mt-4 text-sm leading-relaxed text-slate-600">
+                <p className="mt-4 leading-relaxed text-slate-600">
                   {t(`services.items.${service.id}.description`)}
                 </p>
 
                 <ul className="mt-5 flex-1 space-y-2.5">
-                  {tList(`services.items.${service.id}.includes`).map((item) => (
-                    <li key={item} className="flex gap-2.5 text-sm text-slate-700">
+                  {tList(`services.items.${service.id}.includes`).map((line) => (
+                    <li key={line} className="flex gap-2.5 text-[15px] leading-relaxed text-slate-700">
                       <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-care-600" />
-                      {item}
+                      {line}
                     </li>
                   ))}
                 </ul>
 
                 <Link
                   to={`/book?service=${service.id}`}
-                  className={`${highlighted ? 'btn-primary' : 'btn-secondary'} mt-6 w-full`}
+                  className={`mt-6 ${highlighted ? 'btn-primary' : 'btn-secondary'}`}
                 >
                   {t('services.bookThis')}
                   <ArrowRightIcon />
                 </Link>
-              </div>
+              </RevealItem>
             );
           })}
-        </div>
+        </RevealGroup>
 
-        {/* Payment & refund terms */}
+        {/* Payment and refund summaries, with the full policies a click away. */}
         <div className="mt-12 grid gap-6 md:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
-            <h2 className="text-lg">{t('services.paymentTitle')}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">{t('services.paymentBody')}</p>
+          <div className="card-warm">
+            <h2 className="font-sans text-lg font-semibold">{t('services.paymentTitle')}</h2>
+            <p className="mt-2 leading-relaxed text-slate-600">{t('services.paymentBody')}</p>
+            <Link to="/terms" className="btn-ghost mt-4 -ml-2">
+              {t('legal.terms.navLabel')}
+              <ArrowRightIcon />
+            </Link>
           </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6">
-            <h2 className="text-lg">{t('services.refundTitle')}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-600">{t('services.refundBody')}</p>
-          </div>
-        </div>
-
-        {/* FAQ */}
-        <div className="mt-16">
-          <h2 className="text-2xl">{t('services.faqTitle')}</h2>
-          <div className="mt-6 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200">
-            {tList('services.faqs').map((faq) => (
-              <details key={faq.q} className="group bg-white">
-                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 text-sm font-medium text-slate-900 hover:bg-slate-50">
-                  {faq.q}
-                  <svg
-                    viewBox="0 0 24 24"
-                    className="h-5 w-5 shrink-0 text-slate-400 transition group-open:rotate-180"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                  >
-                    <path d="m6 9 6 6 6-6" />
-                  </svg>
-                </summary>
-                <p className="px-5 pb-5 text-sm leading-relaxed text-slate-600">{faq.a}</p>
-              </details>
-            ))}
+          <div className="card-warm">
+            <h2 className="font-sans text-lg font-semibold">{t('services.refundTitle')}</h2>
+            <p className="mt-2 leading-relaxed text-slate-600">{t('services.refundBody')}</p>
+            <Link to="/refund" className="btn-ghost mt-4 -ml-2">
+              {t('common.readPolicies')}
+              <ArrowRightIcon />
+            </Link>
           </div>
         </div>
-      </section>
+      </div>
     </>
   );
 }
