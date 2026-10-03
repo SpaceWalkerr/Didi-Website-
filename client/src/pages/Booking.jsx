@@ -1,16 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import PageHeader from '../components/PageHeader.jsx';
-import StepIndicator from '../components/StepIndicator.jsx';
 import { api } from '../lib/api.js';
 import { openCheckout } from '../lib/razorpay.js';
-import { formatDateTime, formatTime, rupees, upcomingDates } from '../lib/format.js';
-import { waLink } from '../config.js';
+import { rupees, upcomingDates } from '../lib/format.js';
+import { waLink } from '@shared/practice.config.js';
 import { useI18n } from '../i18n/index.jsx';
-import {
-  AlertIcon, ArrowRightIcon, CalendarIcon, ClockIcon, ShieldIcon, WhatsAppIcon,
-} from '../components/Icons.jsx';
+import PageIntro from '../design/PageIntro.jsx';
+import StepIndicator from '../design/StepIndicator.jsx';
+import ServicePicker from '../components/booking/ServicePicker.jsx';
+import DatePicker from '../components/booking/DatePicker.jsx';
+import SlotGrid from '../components/booking/SlotGrid.jsx';
+import PatientForm from '../components/booking/PatientForm.jsx';
+import Summary from '../components/booking/Summary.jsx';
 import { REGION_IDS } from '../components/bodymap/regions.js';
+import { AlertIcon, ArrowRightIcon, WhatsAppIcon } from '../components/Icons.jsx';
+import Seo from '../components/seo/Seo.jsx';
 
 const emptyPatient = {
   name: '', age: '', gender: '', phone: '', email: '', symptoms: '', consent: false,
@@ -33,20 +37,21 @@ export default function Booking() {
 
   /**
    * The body map sends the visitor here as ?area=chest&topic=Palpitations.
-   * That becomes the opening line of the symptoms box — a starting point the
-   * patient is expected to edit and add to, not a substitute for describing
-   * the problem. The area id is checked against the known regions so a
-   * hand-edited URL cannot inject arbitrary text into the form.
+   * The area is validated against the published region list, so a hand-edited
+   * URL cannot inject text into the form — and the same id is sent to the API,
+   * which validates it again against the shared list before storing it.
    */
-  const [patient, setPatient] = useState(() => {
+  const bodyRegion = useMemo(() => {
     const area = params.get('area');
-    if (!REGION_IDS.includes(area)) return emptyPatient;
+    return REGION_IDS.includes(area) ? area : null;
+  }, [params]);
 
-    const label = t(`bodyMap.regions.${area}.label`);
+  const [patient, setPatient] = useState(() => {
+    if (!bodyRegion) return emptyPatient;
+    const label = t(`bodyMap.regions.${bodyRegion}.label`);
     const topic = params.get('topic');
     // Only a concern the region actually offers is accepted.
-    const known = tList(`bodyMap.regions.${area}.concerns`).includes(topic);
-
+    const known = tList(`bodyMap.regions.${bodyRegion}.concerns`).includes(topic);
     return {
       ...emptyPatient,
       symptoms: known
@@ -54,12 +59,14 @@ export default function Booking() {
         : t('booking.prefillArea', { area: label }),
     };
   });
+
   const [fieldErrors, setFieldErrors] = useState({});
   const [submitError, setSubmitError] = useState(null);
   const [step, setStep] = useState(0);
   const [paying, setPaying] = useState(false);
 
   const detailsRef = useRef(null);
+  const errorRef = useRef(null);
   const dates = useMemo(() => upcomingDates(21, locale), [locale]);
   const service = meta?.services.find((s) => s.id === serviceId) || null;
 
@@ -97,13 +104,19 @@ export default function Booking() {
     loadSlots();
   }, [loadSlots]);
 
-  const availableCount = slots.filter((s) => s.available).length;
+  // Move focus to a submission error so it is announced rather than silently
+  // appearing above the fold the patient is no longer looking at.
+  useEffect(() => {
+    if (submitError) errorRef.current?.focus();
+  }, [submitError]);
 
   const goToDetails = () => {
     if (!time) return;
     setStep(1);
     // On a phone the form is below the fold after the slot grid.
-    requestAnimationFrame(() => detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+    requestAnimationFrame(() =>
+      detailsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    );
   };
 
   const updatePatient = (key) => (event) => {
@@ -122,7 +135,11 @@ export default function Booking() {
     try {
       // The language travels with the booking so confirmations can be sent in
       // it, and so the doctor knows which language to expect on the call.
-      created = await api.createBooking({ date, time, service: serviceId, patient, language });
+      // bodyRegion goes too, which is what makes "which areas do patients
+      // actually book about" answerable later.
+      created = await api.createBooking({
+        date, time, service: serviceId, patient, language, bodyRegion,
+      });
     } catch (err) {
       setPaying(false);
       setSubmitError(translateError(err));
@@ -168,7 +185,7 @@ export default function Booking() {
       <div className="container-page py-20">
         <div className="card mx-auto max-w-lg text-center">
           <h1 className="text-2xl">{t('booking.unavailableTitle')}</h1>
-          <p className="mt-3 text-sm leading-relaxed text-slate-600">
+          <p className="mt-3 leading-relaxed text-slate-600">
             {t('booking.unavailableBody', { error: metaError })}
           </p>
           <a
@@ -187,367 +204,93 @@ export default function Booking() {
 
   return (
     <>
-      <PageHeader
-        eyebrow={t('booking.eyebrow')}
-        title={t('booking.title')}
-        description={t('booking.description')}
-      />
+      <Seo title={t('booking.title')} description={t('booking.description')} noIndex />
+      <PageIntro eyebrow={t('booking.eyebrow')} title={t('booking.title')} lede={t('booking.description')} />
 
       <div className="container-page py-10 sm:py-14">
         <StepIndicator steps={tList('booking.steps')} current={step} label={t('booking.progressAria')} />
 
         {meta?.paymentMode === 'mock' && (
-          <div className="mt-6 flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
-            <AlertIcon className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-            <p className="text-sm text-amber-900">
-              <strong className="font-semibold">{t('booking.demoTitle')}</strong> {t('booking.demoBody')}
+          <div className="mt-6 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4">
+            <AlertIcon className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+            <p className="text-[15px] leading-relaxed text-amber-900">
+              <strong className="font-semibold">{t('booking.demoTitle')}</strong>{' '}
+              {t('booking.demoBody')}
             </p>
           </div>
         )}
 
-        <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_20rem] lg:items-start">
-          <div className="min-w-0 space-y-8">
-            {/* Step 1 — service, date, slot */}
-            <section className="card">
-              <h2 className="text-xl">{t('booking.step1Title')}</h2>
+        <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+          <div className="space-y-6">
+            {/* ── Step 1: slot ─────────────────────────────────────────── */}
+            <section aria-labelledby="step1" className="card">
+              <h2 id="step1" className="text-xl">{t('booking.step1Title')}</h2>
 
-              <fieldset className="mt-5 min-w-0">
-                <legend className="label">{t('booking.consultationType')}</legend>
-                <div className="grid gap-3 sm:grid-cols-3">
-                  {(meta?.services || []).map((s) => (
-                    <label
-                      key={s.id}
-                      className={`cursor-pointer rounded-xl border p-4 transition ${
-                        serviceId === s.id
-                          ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500'
-                          : 'border-slate-200 hover:border-brand-200 hover:bg-slate-50'
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="service"
-                        value={s.id}
-                        checked={serviceId === s.id}
-                        onChange={() => setServiceId(s.id)}
-                        className="sr-only"
-                      />
-                      <span className="block text-sm font-semibold text-slate-900">
-                        {t(`services.items.${s.id}.name`)}
-                      </span>
-                      <span className="mt-1 block text-xs text-slate-500">
-                        {t('common.minutesShort', { count: s.durationMinutes })} · {rupees(s.price)}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              </fieldset>
-
-              <fieldset className="mt-7 min-w-0">
-                <legend className="label">
-                  <span className="inline-flex items-center gap-1.5">
-                    <CalendarIcon className="h-4 w-4 text-slate-400" />
-                    {t('booking.date')}
-                  </span>
-                </legend>
-                {/* Horizontal date strip — thumb-friendly on a phone. */}
-                <div className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-2">
-                  {dates.map((d) => (
-                    <button
-                      key={d.value}
-                      type="button"
-                      onClick={() => setDate(d.value)}
-                      className={`flex w-16 shrink-0 flex-col items-center rounded-xl border px-2 py-2.5 transition ${
-                        date === d.value
-                          ? 'border-brand-500 bg-brand-600 text-white'
-                          : 'border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50'
-                      }`}
-                    >
-                      <span className="w-full truncate text-center text-[11px] font-medium uppercase opacity-80">
-                        {d.isToday ? t('booking.today') : d.weekday}
-                      </span>
-                      <span className="text-lg font-semibold leading-tight">{d.day}</span>
-                      <span className="w-full truncate text-center text-[11px] opacity-80">{d.month}</span>
-                    </button>
-                  ))}
-                </div>
-              </fieldset>
-
-              <fieldset className="mt-6 min-w-0">
-                <legend className="label">
-                  <span className="inline-flex items-center gap-1.5">
-                    <ClockIcon className="h-4 w-4 text-slate-400" />
-                    {t('booking.availableTimes')}
-                  </span>
-                </legend>
-
-                {slotsLoading ? (
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                    {Array.from({ length: 10 }).map((_, i) => (
-                      <div key={i} className="h-11 animate-pulse rounded-lg bg-slate-100" />
-                    ))}
-                  </div>
-                ) : slots.length === 0 ? (
-                  <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                    {t('booking.noConsultDay')}
-                  </p>
-                ) : availableCount === 0 ? (
-                  <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-                    {/* Split on the {link} marker so the anchor lands wherever the
-                        sentence puts it — word order differs between languages. */}
-                    {t('booking.allBooked').split('{link}').map((part, i) => (
-                      <span key={i}>
-                        {part}
-                        {i === 0 && (
-                          <a
-                            href={waLink(t('whatsapp.booking', { doctor: t('doctor.name') }))}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-medium text-brand-700 underline"
-                          >
-                            {t('booking.allBookedLink')}
-                          </a>
-                        )}
-                      </span>
-                    ))}
-                  </p>
-                ) : (
-                  <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
-                    {slots.map((slot) => (
-                      <button
-                        key={slot.time}
-                        type="button"
-                        disabled={!slot.available}
-                        onClick={() => setTime(slot.time)}
-                        title={slot.reason === 'booked' ? t('booking.alreadyBooked') : undefined}
-                        className={`rounded-lg border px-2 py-2.5 text-sm font-medium transition ${
-                          time === slot.time
-                            ? 'border-brand-600 bg-brand-600 text-white'
-                            : slot.available
-                              ? 'border-slate-200 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50'
-                              : 'cursor-not-allowed border-slate-100 bg-slate-50 text-slate-300 line-through'
-                        }`}
-                      >
-                        {formatTime(slot.time, locale)}
-                      </button>
-                    ))}
-                  </div>
+              <div className="mt-5 space-y-6">
+                {meta && (
+                  <ServicePicker services={meta.services} value={serviceId} onChange={setServiceId} />
                 )}
-              </fieldset>
+
+                <DatePicker
+                  dates={dates}
+                  value={date}
+                  onChange={setDate}
+                  minDate={meta?.minDate}
+                  maxDate={meta?.maxDate}
+                />
+
+                <div>
+                  <p className="label">{t('booking.availableTimes')}</p>
+                  <SlotGrid slots={slots} loading={slotsLoading} value={time} onChange={setTime} />
+                </div>
+              </div>
 
               {step === 0 && (
-                <button
-                  type="button"
-                  onClick={goToDetails}
-                  disabled={!time}
-                  className="btn-primary mt-7 w-full sm:w-auto"
-                >
+                <button type="button" onClick={goToDetails} disabled={!time} className="btn-primary mt-6 w-full sm:w-auto">
                   {t('booking.continue')}
                   <ArrowRightIcon />
                 </button>
               )}
             </section>
 
-            {/* Step 2 — patient details */}
+            {/* ── Step 2: details + pay ────────────────────────────────── */}
             {step >= 1 && (
-              <section ref={detailsRef} className="card scroll-mt-24">
-                <h2 className="text-xl">{t('booking.step2Title')}</h2>
-                <p className="mt-1.5 text-sm text-slate-500">{t('booking.step2Body')}</p>
+              <section aria-labelledby="step2" ref={detailsRef} className="card scroll-mt-24">
+                <h2 id="step2" className="text-xl">{t('booking.step2Title')}</h2>
+                <p className="mt-2 text-slate-600">{t('booking.step2Body')}</p>
 
-                <form className="mt-6 space-y-5" onSubmit={handleSubmit} noValidate>
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <div className="sm:col-span-2">
-                      <label htmlFor="name" className="label">{t('booking.fields.name')}</label>
-                      <input
-                        id="name"
-                        className={`input ${fieldErrors.name ? 'input-error' : ''}`}
-                        value={patient.name}
-                        onChange={updatePatient('name')}
-                        autoComplete="name"
-                        required
-                      />
-                      <FieldError code={fieldErrors.name} t={t} />
-                    </div>
-
-                    <div>
-                      <label htmlFor="age" className="label">{t('booking.fields.age')}</label>
-                      <input
-                        id="age"
-                        type="number"
-                        min="0"
-                        max="120"
-                        inputMode="numeric"
-                        className={`input ${fieldErrors.age ? 'input-error' : ''}`}
-                        value={patient.age}
-                        onChange={updatePatient('age')}
-                      />
-                      <FieldError code={fieldErrors.age} t={t} />
-                    </div>
-
-                    <div>
-                      <label htmlFor="gender" className="label">{t('booking.fields.gender')}</label>
-                      <select
-                        id="gender"
-                        className="input"
-                        value={patient.gender}
-                        onChange={updatePatient('gender')}
-                      >
-                        <option value="">{t('booking.fields.genderUnspecified')}</option>
-                        <option value="female">{t('booking.fields.genderFemale')}</option>
-                        <option value="male">{t('booking.fields.genderMale')}</option>
-                        <option value="other">{t('booking.fields.genderOther')}</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label htmlFor="phone" className="label">{t('booking.fields.phone')}</label>
-                      <input
-                        id="phone"
-                        type="tel"
-                        inputMode="tel"
-                        placeholder={t('booking.fields.phonePlaceholder')}
-                        className={`input ${fieldErrors.phone ? 'input-error' : ''}`}
-                        value={patient.phone}
-                        onChange={updatePatient('phone')}
-                        autoComplete="tel"
-                        required
-                      />
-                      <p className="mt-1 text-xs text-slate-500">{t('booking.fields.phoneHint')}</p>
-                      <FieldError code={fieldErrors.phone} t={t} />
-                    </div>
-
-                    <div>
-                      <label htmlFor="email" className="label">{t('booking.fields.email')}</label>
-                      <input
-                        id="email"
-                        type="email"
-                        className={`input ${fieldErrors.email ? 'input-error' : ''}`}
-                        value={patient.email}
-                        onChange={updatePatient('email')}
-                        autoComplete="email"
-                        required
-                      />
-                      <FieldError code={fieldErrors.email} t={t} />
-                    </div>
-
-                    <div className="sm:col-span-2">
-                      <label htmlFor="symptoms" className="label">{t('booking.fields.symptoms')}</label>
-                      <textarea
-                        id="symptoms"
-                        rows={5}
-                        className={`input resize-y ${fieldErrors.symptoms ? 'input-error' : ''}`}
-                        placeholder={t('booking.fields.symptomsPlaceholder')}
-                        value={patient.symptoms}
-                        onChange={updatePatient('symptoms')}
-                        required
-                      />
-                      <p className="mt-1 text-xs text-slate-500">{t('booking.fields.symptomsHint')}</p>
-                      <FieldError code={fieldErrors.symptoms} t={t} />
-                    </div>
+                {submitError && (
+                  <div
+                    ref={errorRef}
+                    tabIndex={-1}
+                    role="alert"
+                    className="mt-5 rounded-xl border border-red-300 bg-red-50 p-4 text-[15px] leading-relaxed text-red-900"
+                  >
+                    {submitError}
                   </div>
+                )}
 
-                  <label className="flex cursor-pointer gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4">
-                    <input
-                      type="checkbox"
-                      checked={patient.consent}
-                      onChange={updatePatient('consent')}
-                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-brand-600 focus:ring-brand-500"
-                      required
-                    />
-                    <span className="text-sm leading-relaxed text-slate-700">
-                      {t('booking.consent')}
-                      {fieldErrors.consent && (
-                        <span className="mt-1 block text-sm text-red-600">
-                          {t(`errors.${fieldErrors.consent}`)}
-                        </span>
-                      )}
-                    </span>
-                  </label>
+                <form onSubmit={handleSubmit} className="mt-6" noValidate>
+                  <PatientForm
+                    patient={patient}
+                    errors={fieldErrors}
+                    onChange={updatePatient}
+                    bodyRegion={bodyRegion}
+                  />
 
-                  {submitError && (
-                    <p className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                      {submitError}
-                    </p>
-                  )}
-
-                  <button type="submit" disabled={paying} className="btn-primary w-full">
+                  <button type="submit" disabled={paying} className="btn-primary mt-6 w-full text-base">
                     {paying
                       ? t('booking.paying')
                       : t('booking.pay', { amount: service ? rupees(service.price) : '' })}
                   </button>
-
-                  <p className="flex items-center justify-center gap-1.5 text-center text-xs text-slate-500">
-                    <ShieldIcon className="h-4 w-4 shrink-0" />
-                    {t('booking.secureNote')}
-                  </p>
                 </form>
               </section>
             )}
           </div>
 
-          {/* Summary rail */}
-          <aside className="min-w-0 lg:sticky lg:top-24">
-            <div className="card">
-              <h2 className="text-base">{t('booking.summaryTitle')}</h2>
-              <dl className="mt-4 space-y-3 text-sm">
-                <Row
-                  label={t('booking.summary.consultation')}
-                  value={service ? t(`services.items.${service.id}.name`) : '—'}
-                />
-                <Row
-                  label={t('booking.summary.duration')}
-                  value={service ? t('common.minutes', { count: service.durationMinutes }) : '—'}
-                />
-                <Row
-                  label={t('booking.summary.when')}
-                  value={date && time ? formatDateTime(date, time, locale) : t('booking.summary.notSelected')}
-                />
-                <div className="flex justify-between border-t border-slate-200 pt-3">
-                  <dt className="font-medium text-slate-900">{t('booking.summary.total')}</dt>
-                  <dd className="text-lg font-semibold text-slate-900">
-                    {service ? rupees(service.price) : '—'}
-                  </dd>
-                </div>
-              </dl>
-
-              {meta?.rules && (
-                <p className="mt-4 text-xs leading-relaxed text-slate-500">
-                  {t('booking.holdNote', {
-                    hold: meta.rules.pendingHoldMinutes,
-                    days: meta.rules.maxDaysAhead,
-                    lead: meta.rules.minLeadMinutes,
-                  })}
-                </p>
-              )}
-            </div>
-
-            <div className="mt-4 flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-              <AlertIcon className="mt-0.5 h-5 w-5 shrink-0 text-amber-600" />
-              <p className="text-xs leading-relaxed text-amber-900">{t('emergency.notice')}</p>
-            </div>
-
-            <a
-              href={waLink(t('whatsapp.booking', { doctor: t('doctor.name') }))}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="btn-secondary mt-4 w-full"
-            >
-              <WhatsAppIcon className="h-5 w-5 text-whatsapp" />
-              {t('common.needHelp')}
-            </a>
-          </aside>
+          <Summary service={service} date={date} time={time} rules={meta?.rules} />
         </div>
       </div>
     </>
   );
 }
-
-const Row = ({ label, value }) => (
-  <div className="flex justify-between gap-4">
-    <dt className="text-slate-500">{label}</dt>
-    <dd className="text-right font-medium text-slate-900">{value}</dd>
-  </div>
-);
-
-/** `code` is a server error code such as 'phone', mapped to `errors.phone`. */
-const FieldError = ({ code, t }) =>
-  code ? <p className="mt-1 text-sm text-red-600">{t(`errors.${code}`)}</p> : null;

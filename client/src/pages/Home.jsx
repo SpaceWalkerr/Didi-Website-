@@ -10,12 +10,16 @@ import CtaBand from '../components/home/CtaBand.jsx';
 import BodyMap from '../components/bodymap/BodyMap.jsx';
 import { Link } from 'react-router-dom';
 import { ArrowRightIcon } from '../components/Icons.jsx';
+import Seo from '../components/seo/Seo.jsx';
+import PhysicianSchema from '../components/seo/PhysicianSchema.jsx';
 
 export default function Home() {
   const { t, tList } = useI18n();
 
   return (
     <>
+      <Seo description={t('doctor.tagline')} />
+      <PhysicianSchema />
       <Hero />
 
       {/* Signature feature — placed straight after the hero because it is the

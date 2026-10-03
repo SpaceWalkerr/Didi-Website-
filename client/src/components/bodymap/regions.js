@@ -17,6 +17,8 @@
  *  at home with something that needs an ambulance, not a booking form.
  */
 
+import { BODY_REGION_IDS } from '@shared/body-regions.js';
+
 /** Flips a shape about the vertical centre line of the viewBox. */
 export const MIRROR_TRANSFORM = 'translate(240, 0) scale(-1, 1)';
 
@@ -137,5 +139,22 @@ export const regionsForView = (view) => REGIONS.filter((r) => r.views.includes(v
 
 export const getRegion = (id) => REGIONS.find((r) => r.id === id) || null;
 
-/** Region ids that can legitimately arrive as ?area= on the booking page. */
-export const REGION_IDS = REGIONS.map((r) => r.id);
+/**
+ * Region ids that can legitimately arrive as ?area= on the booking page.
+ *
+ * Re-exported from the shared list rather than derived from REGIONS, because
+ * the server validates against that same list — if the two ever disagreed,
+ * the body map would offer an area the API would then reject.
+ */
+export const REGION_IDS = BODY_REGION_IDS;
+
+// Fails loudly in development if the diagram and the shared list drift apart.
+if (import.meta.env?.DEV) {
+  const drawn = REGIONS.map((r) => r.id).sort().join();
+  if (drawn !== [...BODY_REGION_IDS].sort().join()) {
+    console.error('[bodymap] regions.js and shared/body-regions.js disagree', {
+      drawn: REGIONS.map((r) => r.id),
+      shared: BODY_REGION_IDS,
+    });
+  }
+}

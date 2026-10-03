@@ -138,6 +138,21 @@ node -e "console.log(encodeURIComponent('your-password-here'))"
 
 You do **not** need to create any tables. The server creates them on first start.
 
+#### One extension is required
+
+The schema uses a GiST exclusion constraint to make double-booking impossible at the
+database level, and that needs the `btree_gist` extension. The server creates it on
+first start, and **refuses to boot if it cannot** — running without the constraint
+would mean two patients could be sold the same consultation slot, which is not a
+failure worth degrading gracefully into.
+
+Supabase, Neon, Render Postgres and RDS all allow it. If your database does not, run
+this once from its SQL editor as a superuser and restart the app:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS btree_gist;
+```
+
 Neon is the main alternative and works identically — the app only needs a `DATABASE_URL`.
 It suspends and wakes on its own rather than pausing after a week, but has no table
 editor. Free-tier terms change, so check both if you are deciding fresh.

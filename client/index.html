@@ -35,10 +35,28 @@
       and loaded at two weights, so Hindi and Punjabi headings fall through to
       Noto — deliberate: a Latin serif has no Devanagari glyphs to fall back on.
     -->
+    <!--
+      Loaded without blocking the first paint. The stylesheet is requested as
+      `print` (which the browser does not wait for) and switched to `all` once
+      it arrives; the <noscript> copy covers browsers without JavaScript.
+
+      Lighthouse measured this request as 846ms of render-blocking on a mobile
+      connection. Every face already declares font-display:swap, so text paints
+      in the fallback and reflows to the real face — which is the right trade
+      on a site where the first thing a patient reads is a sentence.
+    -->
     <link
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Gurmukhi:wght@400;500;600;700&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'; this.onload=null;"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Gurmukhi:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
     <title>Dr. Richa Rani — Online Consultation | General Physician</title>
     <!--
       Razorpay Checkout is NOT loaded here. It is fetched on demand by

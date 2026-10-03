@@ -193,6 +193,9 @@ export default {
   },
 
   booking: {
+    blockedSlot: 'Doctor unavailable',
+    fromBodyMap: 'Carried over from the body map: {area}. Please add detail below — the first line is just a starting point.',
+    stepOf: 'Step {current} of {total}',
     prefillArea: 'Area of concern: {area}. ',
     prefillTopic: 'Area of concern: {area} — {topic}. ',
     eyebrow: 'Book a consultation',
@@ -368,6 +371,8 @@ export default {
   },
 
   errors: {
+    slotBlocked: 'The doctor is not available at that time. Please choose another slot.',
+    tooManyRequests: 'Too many attempts. Please wait about {seconds} seconds and try again.',
     network: 'We could not reach the clinic server. Please try again.',
     generic: 'Something went wrong on our side. Please try again.',
     name: 'Please enter the patient’s full name.',

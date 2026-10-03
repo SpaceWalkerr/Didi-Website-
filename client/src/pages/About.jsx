@@ -4,6 +4,7 @@ import { useI18n } from '../i18n/index.jsx';
 import PageIntro from '../design/PageIntro.jsx';
 import { RevealGroup, RevealItem } from '../design/Reveal.jsx';
 import { ArrowRightIcon, CheckIcon, ShieldIcon, StethoscopeIcon } from '../components/Icons.jsx';
+import Seo from '../components/seo/Seo.jsx';
 
 export default function About() {
   const { t, tList } = useI18n();
@@ -20,6 +21,7 @@ export default function About() {
 
   return (
     <>
+      <Seo title={t('about.eyebrow')} description={t('doctor.shortBio')} />
       <PageIntro
         eyebrow={t('about.eyebrow')}
         title={t('about.title', { name: t('doctor.name') })}

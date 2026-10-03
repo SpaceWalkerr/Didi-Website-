@@ -3,10 +3,13 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
 import { config, isProduction } from './config.js';
 import { db } from './db.js';
 import { paymentMode } from './services/payments.js';
+import { whatsappMode } from './services/whatsapp.js';
 import { preflight } from './preflight.js';
+import { rateLimit } from './middleware/rateLimit.js';
 import bookingsRouter from './routes/bookings.js';
 import paymentsRouter from './routes/payments.js';
 import adminRouter from './routes/admin.js';
@@ -17,6 +20,19 @@ preflight();
 
 const app = express();
 const here = path.dirname(fileURLToPath(import.meta.url));
+
+/*
+ * Gzip everything.
+ *
+ * This app serves its own JavaScript and CSS in the single-service Render
+ * deployment, and Express does not compress by default — so the bundle went
+ * out as ~360 KB of uncompressed text on every first visit. Lighthouse put the
+ * saving at 248 KiB, which on a mobile connection in India is the difference
+ * between a fast page and a slow one.
+ *
+ * Mounted first so it wraps every later response, API JSON included.
+ */
+app.use(compression());
 
 // When the client is served from this same origin the browser sends no Origin
 // header and CORS never applies; the list only matters for a split deployment.
@@ -42,7 +58,15 @@ app.use(express.json({ limit: '100kb' }));
  * at: the query keeps a free Postgres from going idle long enough to be paused.
  */
 app.get('/api/health', async (_req, res) => {
-  const body = { ok: true, storage: db.kind, paymentMode: paymentMode(), time: new Date().toISOString() };
+  const body = {
+    ok: true,
+    storage: db.kind,
+    paymentMode: paymentMode(),
+    // Which WhatsApp path is live, so the deployed mode is visible without
+    // reading environment variables off the host.
+    whatsapp: whatsappMode(),
+    time: new Date().toISOString(),
+  };
 
   try {
     await db.ping();
@@ -53,9 +77,58 @@ app.get('/api/health', async (_req, res) => {
   }
 });
 
-app.use('/api/bookings', bookingsRouter);
-app.use('/api/payments', paymentsRouter);
-app.use('/api/admin', adminRouter);
+/*
+ * Rate limits, tightest first.
+ *
+ * `trust proxy` matters here: on Render, Vercel and similar the socket address
+ * is the load balancer's, so without it every visitor would share one bucket
+ * and the first busy minute would lock out the whole internet. One hop is what
+ * these platforms put in front of the app.
+ */
+app.set('trust proxy', 1);
+
+/*
+ * Creating a booking holds a real slot and costs a Razorpay call, so it is the
+ * one endpoint worth limiting hard.
+ *
+ * Twelve an hour, not six: several patients legitimately share one IP — a
+ * family booking one after another, a household, or anyone behind carrier-grade
+ * NAT, which is most mobile users in India. A limit tuned to a single person
+ * turns into a wall for a mother booking for three children. Twelve still caps
+ * a squatter at twelve held slots an hour, which the 15-minute hold then
+ * releases anyway.
+ */
+const createBookingLimit = rateLimit({ name: 'booking-create', windowMs: 60 * 60 * 1000, max: 12 });
+// Reading slots is cheap and legitimately repeated as someone browses days.
+const readLimit = rateLimit({ name: 'read', windowMs: 60 * 1000, max: 120 });
+// Signature-checking endpoints: enough for genuine retries, not for grinding.
+const paymentLimit = rateLimit({ name: 'payment', windowMs: 60 * 1000, max: 20 });
+// The only thing between a guessed token and every patient's health data.
+const adminLimit = rateLimit({ name: 'admin', windowMs: 15 * 60 * 1000, max: 30 });
+
+// Creating a booking is limited hard; browsing slots on the same prefix is not.
+app.use(
+  '/api/bookings',
+  (req, res, next) =>
+    req.method === 'POST' && req.path === '/'
+      ? createBookingLimit(req, res, next)
+      : readLimit(req, res, next),
+  bookingsRouter,
+);
+
+/*
+ * The webhook is exempt. It is Razorpay's servers retrying on our behalf, from
+ * their IPs, and a 429 there means a paid booking never gets confirmed. It is
+ * authenticated by HMAC signature, which is a far stronger gate than an IP
+ * counter anyway.
+ */
+app.use(
+  '/api/payments',
+  (req, res, next) => (req.path === '/webhook' ? next() : paymentLimit(req, res, next)),
+  paymentsRouter,
+);
+
+app.use('/api/admin', adminLimit, adminRouter);
 
 // In production, serve the built client from the same origin.
 const clientDist = path.join(here, '..', '..', 'client', 'dist');
@@ -85,6 +158,7 @@ app.listen(config.port, () => {
   console.log(`\n  Server ready on http://localhost:${config.port}`);
   console.log(`  Storage    : ${db.kind}`);
   console.log(`  Payments   : ${paymentMode()}`);
+  console.log(`  WhatsApp   : ${whatsappMode()}`);
   if (paymentMode() === 'mock') {
     console.log('               (no Razorpay keys set — payments are simulated)');
   }

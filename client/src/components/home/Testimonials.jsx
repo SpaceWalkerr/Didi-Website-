@@ -44,7 +44,7 @@ export default function Testimonials() {
             key={index}
             className="flex flex-col rounded-2xl border border-dashed border-surface-300 bg-white/70 p-6"
           >
-            <blockquote className="flex-1 text-[15px] italic leading-relaxed text-slate-500">
+            <blockquote className="flex-1 text-[15px] italic leading-relaxed text-slate-600">
               “{item.quote}”
             </blockquote>
             <figcaption className="mt-5 flex items-center gap-3 border-t border-surface-200 pt-4">
@@ -52,15 +52,15 @@ export default function Testimonials() {
                 <UserIcon className="h-5 w-5" />
               </span>
               <span>
-                <span className="block text-[15px] font-medium text-slate-500">{item.name}</span>
-                <span className="block text-sm text-slate-400">{item.meta}</span>
+                <span className="block text-[15px] font-medium text-slate-600">{item.name}</span>
+                <span className="block text-sm text-slate-600">{item.meta}</span>
               </span>
             </figcaption>
           </RevealItem>
         ))}
       </RevealGroup>
 
-      <p className="mt-8 text-center text-sm text-slate-500">{t('testimonials.consentNote')}</p>
+      <p className="mt-8 text-center text-[15px] text-slate-600">{t('testimonials.consentNote')}</p>
     </Section>
   );
 }

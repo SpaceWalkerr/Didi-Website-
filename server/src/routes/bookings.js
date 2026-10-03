@@ -6,6 +6,8 @@ import { getSlots, validateSlot, isValidDateString, istToday, istDateString, boo
   from '../services/slots.js';
 import { createOrder, paymentMode } from '../services/payments.js';
 import { whatsappJoinLink, formatWhen } from '../services/notify.js';
+import { SlotConflictError } from '../db/errors.js';
+import { isBodyRegion } from '../../../shared/body-regions.js';
 
 // Human-friendly booking IDs the patient can quote on the phone.
 const newId = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 8);
@@ -72,7 +74,7 @@ const LANGUAGES = ['en', 'hi', 'pa', 'ru'];
  */
 router.post('/', async (req, res, next) => {
   try {
-    const { date, time, service: serviceId, patient = {}, language } = req.body || {};
+    const { date, time, service: serviceId, patient = {}, language, bodyRegion } = req.body || {};
 
     const fieldErrors = validatePatient(patient);
     if (Object.keys(fieldErrors).length) {
@@ -94,12 +96,9 @@ router.post('/', async (req, res, next) => {
 
     const service = getService(serviceId);
     const id = newId();
-
-    const order = await createOrder({
-      amountInRupees: service.price,
-      receipt: `rcpt_${id}`,
-      notes: { bookingId: id, service: service.name },
-    });
+    const holdExpiresAt = new Date(
+      Date.now() + BOOKING_RULES.pendingHoldMinutes * 60 * 1000,
+    ).toISOString();
 
     const booking = {
       id,
@@ -111,6 +110,10 @@ router.post('/', async (req, res, next) => {
       durationMinutes: service.durationMinutes,
       amount: service.price,
       currency: 'INR',
+      // Only an id the body map actually publishes is stored; anything else
+      // arrived from a hand-edited URL and is dropped rather than persisted.
+      bodyRegion: isBodyRegion(bodyRegion) ? bodyRegion : null,
+      holdExpiresAt,
       patient: {
         name: String(patient.name).trim(),
         age: patient.age ? Number(patient.age) : null,
@@ -123,7 +126,8 @@ router.post('/', async (req, res, next) => {
       },
       payment: {
         mode: paymentMode(),
-        orderId: order.id,
+        // Filled in below, once the slot is actually ours.
+        orderId: null,
         paymentId: null,
         status: 'created',
       },
@@ -132,7 +136,42 @@ router.post('/', async (req, res, next) => {
       updatedAt: new Date().toISOString(),
     };
 
-    await db.insert(booking);
+    /*
+     * Claim the slot BEFORE talking to Razorpay.
+     *
+     * The validateSlot() check above is a courtesy — it gives a fast, friendly
+     * error in the ordinary case. This insert is the real gate: the database's
+     * exclusion constraint rejects anything overlapping a live appointment, so
+     * two patients racing for the last slot cannot both win regardless of how
+     * the requests interleave.
+     *
+     * Doing it first also means a lost race costs nothing: no Razorpay order is
+     * created, so there is no abandoned order to reconcile later.
+     */
+    try {
+      await db.insert(booking);
+    } catch (err) {
+      if (err instanceof SlotConflictError) {
+        return res.status(409).json({ code: 'slotTaken', error: 'That slot has just been taken.' });
+      }
+      throw err;
+    }
+
+    let order;
+    try {
+      order = await createOrder({
+        amountInRupees: service.price,
+        receipt: `rcpt_${id}`,
+        notes: { bookingId: id, service: service.name },
+      });
+    } catch (err) {
+      // The slot is held by a booking that can never be paid for. Release it
+      // rather than leaving it to sit out the full hold window.
+      await db.update(id, { status: 'cancelled', payment: { status: 'failed' } });
+      throw err;
+    }
+
+    await db.update(id, { payment: { ...booking.payment, orderId: order.id } });
 
     res.status(201).json({
       bookingId: booking.id,

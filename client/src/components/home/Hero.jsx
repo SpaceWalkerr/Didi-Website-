@@ -1,8 +1,6 @@
 import { Link } from 'react-router-dom';
-import { m, useReducedMotion } from 'framer-motion';
 import { CONTACT, DOCTOR, STARTING_PRICE, waLink } from '@shared/practice.config.js';
 import { useI18n } from '../../i18n/index.jsx';
-import { fadeUp, maybe, stagger } from '../../site/motion.js';
 import Counter from '../../design/Counter.jsx';
 import Badge from '../../design/Badge.jsx';
 import { ArrowRightIcon, ShieldIcon, StethoscopeIcon, WhatsAppIcon } from '../Icons.jsx';
@@ -11,26 +9,26 @@ import { ArrowRightIcon, ShieldIcon, StethoscopeIcon, WhatsAppIcon } from '../Ic
  * Above the fold: who the doctor is, what they promise, and the two things a
  * visitor might want to do next.
  *
+ * Deliberately NOT animated in. Lighthouse identified the <h1> here as the
+ * largest contentful paint, and a fade-in held it at opacity 0 for the first
+ * half second — so the entrance animation was directly making the site measure
+ * (and feel) slower. Content already on screen when the page opens should not
+ * have to arrive. The scroll-triggered reveals further down are unaffected.
+ *
  * The photo is eager-loaded with explicit dimensions — it is the largest
  * contentful paint on mobile, so lazy-loading it would delay LCP rather than
  * help, and a missing intrinsic size would shift the layout when it arrives.
  */
 export default function Hero() {
   const { t } = useI18n();
-  const reduced = useReducedMotion();
 
   return (
     <section className="relative overflow-hidden bg-gradient-to-b from-brand-50 via-brand-50/30 to-white">
       <div className="container-page py-14 sm:py-20">
-        <m.div
-          initial="hidden"
-          animate="show"
-          variants={reduced ? { hidden: {}, show: {} } : stagger(0.09)}
-          className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]"
-        >
+        <div className="grid items-center gap-12 lg:grid-cols-[1.05fr_0.95fr]">
           {/* ── Copy ─────────────────────────────────────────────────── */}
           <div>
-            <m.div variants={maybe(fadeUp, reduced)}>
+            <div>
               <Badge tone="care">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-care-500 opacity-75 motion-safe:animate-ping" />
@@ -38,20 +36,19 @@ export default function Hero() {
                 </span>
                 {t('home.badge')}
               </Badge>
-            </m.div>
+            </div>
 
-            <m.h1
-              variants={maybe(fadeUp, reduced)}
+            <h1
               className="mt-5 text-[2.5rem] leading-[1.12] sm:text-5xl lg:text-[3.4rem]"
             >
               {t('doctor.tagline')}
-            </m.h1>
+            </h1>
 
-            <m.p variants={maybe(fadeUp, reduced)} className="lede mt-5 max-w-xl">
+            <p className="lede mt-5 max-w-xl">
               {t('doctor.shortBio')}
-            </m.p>
+            </p>
 
-            <m.div variants={maybe(fadeUp, reduced)} className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link to="/book" className="btn-primary text-base">
                 {t('common.book')}
                 <ArrowRightIcon />
@@ -65,11 +62,10 @@ export default function Hero() {
                 <WhatsAppIcon className="h-5 w-5" />
                 {t('common.chatWhatsApp')}
               </a>
-            </m.div>
+            </div>
 
             {/* ── Trust strip ────────────────────────────────────────── */}
-            <m.dl
-              variants={maybe(fadeUp, reduced)}
+            <dl
               className="mt-10 grid max-w-lg grid-cols-3 gap-4 border-t border-brand-200/70 pt-6"
             >
               {[
@@ -93,10 +89,9 @@ export default function Hero() {
                   </dd>
                 </div>
               ))}
-            </m.dl>
+            </dl>
 
-            <m.p
-              variants={maybe(fadeUp, reduced)}
+            <p
               className="mt-6 flex items-start gap-2 text-sm leading-relaxed text-slate-600"
             >
               <ShieldIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
@@ -104,11 +99,11 @@ export default function Hero() {
                 {t('doctor.qualification')} · {t('doctor.specialty')} ·{' '}
                 {t('common.regNo', { number: DOCTOR.registrationNumber })}, {t('doctor.council')}
               </span>
-            </m.p>
+            </p>
           </div>
 
           {/* ── Photo ────────────────────────────────────────────────── */}
-          <m.div variants={maybe(fadeUp, reduced)} className="relative mx-auto w-full max-w-sm lg:max-w-none">
+          <div className="relative mx-auto w-full max-w-sm lg:max-w-none">
             <div className="overflow-hidden rounded-3xl border border-brand-100 bg-white shadow-lift">
               {DOCTOR.photoUrl ? (
                 <img
@@ -136,8 +131,8 @@ export default function Hero() {
                 {CONTACT.whatsappDisplay}
               </p>
             </div>
-          </m.div>
-        </m.div>
+          </div>
+        </div>
       </div>
     </section>
   );

@@ -42,19 +42,35 @@ const isBlocking = (booking, now) => {
 };
 
 /**
- * Bookings on a given date that currently occupy time, as [start, end) minute ranges.
- * `excludeId` lets a booking ignore its own hold when it re-checks its slot.
+ * Ranges on a given date that are unavailable, as [start, end) minute pairs.
  *
- * Only that date is fetched, not the whole table — this runs every time a
+ * Two sources, deliberately kept separate in the result so the UI can say
+ * "already booked" versus "the doctor is unavailable" — a patient reads those
+ * very differently:
+ *   · live bookings (confirmed, or pending with an unexpired hold)
+ *   · slot blocks the doctor has set (leave, a half-day, being ill)
+ *
+ * `excludeId` lets a booking ignore its own hold when it re-checks its slot.
+ * Only this date is fetched, not the whole table — it runs every time a
  * patient taps a different day.
  */
-const busyRanges = async (date, now, excludeId) =>
-  (await db.onDate(date))
+const busyRanges = async (date, now, excludeId) => {
+  const [bookings, blocks] = await Promise.all([db.onDate(date), db.blocksOnDate(date)]);
+
+  const booked = bookings
     .filter((b) => b.id !== excludeId && isBlocking(b, now))
     .map((b) => {
       const start = toMinutes(b.time);
       return [start, start + b.durationMinutes];
     });
+
+  // A whole-day block is stored with NULL times; treat it as the entire day.
+  const blocked = blocks.map((b) =>
+    b.wholeDay || !b.start ? [0, 24 * 60] : [toMinutes(b.start), toMinutes(b.end)],
+  );
+
+  return { booked, blocked };
+};
 
 const overlaps = (aStart, aEnd, ranges) =>
   ranges.some(([bStart, bEnd]) => aStart < bEnd && bStart < aEnd);
@@ -68,8 +84,14 @@ export async function getSlots(date, serviceId, now = Date.now(), excludeId = nu
   const service = getService(serviceId);
   if (!service) throw new Error(`Unknown service: ${serviceId}`);
 
+  // Release holds that lapsed while nobody was looking. Without this an
+  // abandoned booking would keep its slot forever: the database constraint
+  // has no concept of time passing, so something has to move the row out of
+  // `pending` before the slot can be sold again.
+  await db.expireStale(new Date(now));
+
   const windows = AVAILABILITY[dayOfWeek(date)] || [];
-  const busy = await busyRanges(date, now, excludeId);
+  const { booked, blocked } = await busyRanges(date, now, excludeId);
   const earliest = now + minLeadMinutes * 60 * 1000;
   const slots = [];
 
@@ -81,12 +103,16 @@ export async function getSlots(date, serviceId, now = Date.now(), excludeId = nu
       const time = toHHMM(start);
       const startsAt = istEpoch(date, time);
 
+      const end = start + service.durationMinutes;
       let available = true;
       let reason = null;
       if (startsAt < earliest) {
         available = false;
         reason = 'past';
-      } else if (overlaps(start, start + service.durationMinutes, busy)) {
+      } else if (overlaps(start, end, blocked)) {
+        available = false;
+        reason = 'blocked';
+      } else if (overlaps(start, end, booked)) {
         available = false;
         reason = 'booked';
       }
@@ -120,6 +146,7 @@ export async function validateSlot(date, time, serviceId, now = Date.now(), excl
   const slot = slots.find((s) => s.time === time);
   if (!slot) return { code: 'slotOutsideHours' };
   if (slot.reason === 'past') return { code: 'slotPast' };
+  if (slot.reason === 'blocked') return { code: 'slotBlocked' };
   if (!slot.available) return { code: 'slotTaken' };
 
   return null;

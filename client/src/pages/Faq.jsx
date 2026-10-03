@@ -3,12 +3,14 @@ import { useI18n } from '../i18n/index.jsx';
 import PageIntro from '../design/PageIntro.jsx';
 import FaqAccordion from '../components/home/FaqAccordion.jsx';
 import { WhatsAppIcon } from '../components/Icons.jsx';
+import Seo from '../components/seo/Seo.jsx';
 
 export default function Faq() {
   const { t, tList } = useI18n();
 
   return (
     <>
+      <Seo title={t('faq.title')} description={t('faq.lede')} />
       <PageIntro eyebrow={t('faq.eyebrow')} title={t('faq.title')} lede={t('faq.lede')} />
 
       <div className="container-page py-12 sm:py-16">

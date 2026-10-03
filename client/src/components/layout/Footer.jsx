@@ -122,7 +122,7 @@ export default function Footer() {
 
       {/* Telemedicine compliance disclaimer — shown on every page. */}
       <div className="border-t border-surface-200">
-        <div className="container-page space-y-4 py-8 text-[13px] leading-relaxed text-slate-500">
+        <div className="container-page space-y-4 py-8 text-[14px] leading-relaxed text-slate-600">
           <p>
             <strong className="font-semibold text-slate-700">{t('footer.disclaimerLabel')}</strong>{' '}
             {t('footer.disclaimer1')}
@@ -134,9 +134,9 @@ export default function Footer() {
               translated page has to say which one governs. */}
           {!isEnglish && <p className="italic">{t('footer.translationNote')}</p>}
 
-          <p className="pt-2 text-slate-400">
+          <p className="pt-2 text-slate-600">
             {t('footer.rights', { year, name: t('doctor.name') })} ·{' '}
-            <Link to="/admin" className="transition-colors hover:text-slate-600">
+            <Link to="/admin" className="underline transition-colors hover:text-slate-900">
               {t('footer.clinicLogin')}
             </Link>
           </p>

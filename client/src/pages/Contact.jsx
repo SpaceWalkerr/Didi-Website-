@@ -4,6 +4,7 @@ import { useI18n } from '../i18n/index.jsx';
 import PageIntro from '../design/PageIntro.jsx';
 import { RevealGroup, RevealItem } from '../design/Reveal.jsx';
 import { AlertIcon, ArrowRightIcon, ClockIcon, MailIcon, PhoneIcon, WhatsAppIcon } from '../components/Icons.jsx';
+import Seo from '../components/seo/Seo.jsx';
 
 export default function Contact() {
   const { t } = useI18n();
@@ -51,6 +52,7 @@ export default function Contact() {
 
   return (
     <>
+      <Seo title={t('contact.title')} description={t('contact.description')} />
       <PageIntro
         eyebrow={t('contact.eyebrow')}
         title={t('contact.title')}

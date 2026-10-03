@@ -60,21 +60,23 @@ export const CONTACT = {
 export const SERVICES = [
   {
     id: 'general',
-    nameKey: 'general',
+    /** English, for Razorpay notes, stored records and the doctor's own alerts.
+     *  What the patient sees comes from i18n, keyed by `id`. */
+    name: 'General Consultation',
     durationMinutes: 20,
     price: 500,
     highlighted: true,
   },
   {
     id: 'followup',
-    nameKey: 'followup',
+    name: 'Follow-up Consultation',
     durationMinutes: 10,
     price: 250,
     highlighted: false,
   },
   {
     id: 'second-opinion',
-    nameKey: 'second-opinion',
+    name: 'Second Opinion',
     durationMinutes: 30,
     price: 900,
     highlighted: false,

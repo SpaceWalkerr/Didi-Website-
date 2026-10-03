@@ -3,6 +3,7 @@ import { CONTACT, DOCTOR, LEGAL_UPDATED, waLink } from '@shared/practice.config.
 import { useI18n } from '../i18n/index.jsx';
 import PageIntro from '../design/PageIntro.jsx';
 import { MailIcon, WhatsAppIcon } from '../components/Icons.jsx';
+import Seo from '../components/seo/Seo.jsx';
 
 /**
  * Renders one policy from `legal.<key>` in the active language.
@@ -32,6 +33,7 @@ export default function LegalPage({ docKey }) {
 
   return (
     <>
+      <Seo title={t(`legal.${docKey}.title`)} description={t(`legal.${docKey}.lede`)} />
       <PageIntro
         eyebrow={t('footer.legalTitle')}
         title={t(`legal.${docKey}.title`)}

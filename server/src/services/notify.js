@@ -1,4 +1,6 @@
 import { PRACTICE, config } from '../config.js';
+import { formatWhen } from './time.js';
+import { whatsappJoinLink } from './whatsapp.js';
 
 /**
  * Notification placeholders.
@@ -27,58 +29,6 @@ const log = (channel, to, subject, body) => {
       .join('\n'),
   );
 };
-
-/**
- * The message pre-filled in the patient's WhatsApp when they tap the join link,
- * in the language they booked in — it would be odd to read the site in Punjabi
- * and then be handed an English sentence to send.
- *
- * The booking ID, name and time are interpolated in every language, so the
- * doctor can act on the message whichever one arrives.
- */
-const JOIN_MESSAGES = {
-  en: ({ doctor, name, service, when, id }) =>
-    `Hello ${doctor}, this is ${name}. I have a ${service} booked for ${when} ` +
-    `(Booking ID: ${id}). I'm ready for the consultation.`,
-  hi: ({ doctor, name, when, id }) =>
-    `नमस्ते ${doctor}, मैं ${name} हूँ। मेरा परामर्श ${when} के लिए बुक है ` +
-    `(बुकिंग आईडी: ${id})। मैं तैयार हूँ।`,
-  pa: ({ doctor, name, when, id }) =>
-    `ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ ${doctor}, ਮੈਂ ${name} ਹਾਂ। ਮੇਰੀ ਸਲਾਹ ${when} ਲਈ ਬੁੱਕ ਹੈ ` +
-    `(ਬੁਕਿੰਗ ਆਈਡੀ: ${id})। ਮੈਂ ਤਿਆਰ ਹਾਂ।`,
-  ru: ({ doctor, name, when, id }) =>
-    `Здравствуйте, ${doctor}! Это ${name}. У меня назначена консультация на ${when} ` +
-    `(номер записи: ${id}). Я готов(а) начать.`,
-};
-
-/** wa.me deep link the patient taps at the appointment time. */
-export function whatsappJoinLink(booking) {
-  const build = JOIN_MESSAGES[booking.language] || JOIN_MESSAGES.en;
-  const message = build({
-    doctor: PRACTICE.doctorNameByLanguage?.[booking.language] || PRACTICE.doctorName,
-    name: booking.patient.name,
-    service: booking.serviceName,
-    when: formatWhen(booking, booking.language),
-    id: booking.id,
-  });
-  return `https://wa.me/${PRACTICE.whatsappNumber}?text=${encodeURIComponent(message)}`;
-}
-
-const LOCALES = { en: 'en-IN', hi: 'hi-IN', pa: 'pa-IN', ru: 'ru-RU' };
-
-export function formatWhen(booking, language = 'en') {
-  const when = new Date(`${booking.date}T${booking.time}:00+05:30`);
-  return new Intl.DateTimeFormat(LOCALES[language] || 'en-IN', {
-    timeZone: 'Asia/Kolkata',
-    weekday: 'short',
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  }).format(when);
-}
 
 export async function sendBookingConfirmation(booking) {
   const when = formatWhen(booking);
@@ -140,3 +90,10 @@ export async function notifyDoctor(booking) {
     ].join('\n'),
   );
 }
+
+/**
+ * Re-exported so existing callers keep one import for "everything about
+ * telling the patient". The implementations live in ./time.js and
+ * ./whatsapp.js — see those for why.
+ */
+export { formatWhen, whatsappJoinLink };

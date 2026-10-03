@@ -8,6 +8,7 @@ import PageIntro from '../design/PageIntro.jsx';
 import Badge from '../design/Badge.jsx';
 import { RevealGroup, RevealItem } from '../design/Reveal.jsx';
 import { ArrowRightIcon, CheckIcon, ClockIcon, WhatsAppIcon } from '../components/Icons.jsx';
+import Seo from '../components/seo/Seo.jsx';
 
 export default function Services() {
   const { t, tList } = useI18n();
@@ -31,6 +32,7 @@ export default function Services() {
 
   return (
     <>
+      <Seo title={t('services.title')} description={t('services.description')} />
       <PageIntro
         eyebrow={t('services.eyebrow')}
         title={t('services.title')}

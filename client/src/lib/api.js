@@ -2,9 +2,13 @@
 const BASE = import.meta.env.VITE_API_BASE || '';
 
 async function request(path, options = {}) {
+  // `options` is spread FIRST and `headers` rebuilt afterwards. The other way
+  // round, any caller passing its own headers — every admin call does, for the
+  // token — replaced the merged object wholesale and lost Content-Type, so
+  // Express never parsed the body and the server saw an empty request.
   const res = await fetch(`${BASE}/api${path}`, {
-    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
     ...options,
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
   });
 
   let data = null;
@@ -53,5 +57,22 @@ export const api = {
       method: 'PATCH',
       headers: { 'x-admin-token': token },
       body: JSON.stringify({ status }),
+    }),
+
+  // ── Slot blocks: the doctor marking themselves unavailable ──
+  adminBlocks: (token, from, to) =>
+    request(`/admin/blocks${from ? `?from=${from}&to=${to}` : ''}`, {
+      headers: { 'x-admin-token': token },
+    }),
+  adminAddBlock: (token, block) =>
+    request('/admin/blocks', {
+      method: 'POST',
+      headers: { 'x-admin-token': token },
+      body: JSON.stringify(block),
+    }),
+  adminRemoveBlock: (token, id) =>
+    request(`/admin/blocks/${id}`, {
+      method: 'DELETE',
+      headers: { 'x-admin-token': token },
     }),
 };

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { api } from '../lib/api.js';
 import { rupees } from '../lib/format.js';
 import { UserIcon, WhatsAppIcon } from '../components/Icons.jsx';
+import BlocksPanel from '../components/admin/BlocksPanel.jsx';
 
 const TOKEN_KEY = 'clinic-admin-token';
 
@@ -29,8 +30,10 @@ export default function Admin() {
   const [loginError, setLoginError] = useState(null);
 
   const [data, setData] = useState(null);
-  const [scope, setScope] = useState('upcoming');
+  // 'today' is the default: on a consulting day it is the only list that matters.
+  const [scope, setScope] = useState('today');
   const [error, setError] = useState(null);
+  const [showBlocks, setShowBlocks] = useState(false);
 
   const load = useCallback(
     async (activeToken = token, activeScope = scope) => {
@@ -90,7 +93,7 @@ export default function Admin() {
       <div className="container-page py-20">
         <form onSubmit={handleLogin} className="card mx-auto max-w-sm">
           <h1 className="text-xl">Clinic login</h1>
-          <p className="mt-2 text-sm text-slate-600">
+          <p className="mt-2 text-[15px] leading-relaxed text-slate-600">
             Enter the admin token to see upcoming bookings. It is set as{' '}
             <code className="rounded bg-slate-100 px-1">ADMIN_TOKEN</code> in server/.env.
           </p>
@@ -104,7 +107,11 @@ export default function Admin() {
             autoComplete="off"
             required
           />
-          {loginError && <p className="mt-2 text-sm text-red-600">{loginError}</p>}
+          {loginError && (
+            <p role="alert" className="mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-[15px] text-red-800">
+              {loginError}
+            </p>
+          )}
           <button type="submit" className="btn-primary mt-5 w-full">Sign in</button>
         </form>
       </div>
@@ -118,11 +125,20 @@ export default function Admin() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl">Bookings</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            All times are Indian Standard Time. Refreshes when you switch views.
+          <p className="mt-1 text-[15px] text-slate-600">
+            All times are Indian Standard Time.
+            {stats ? ` · ${stats.todayRemaining} left today` : ''}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowBlocks((v) => !v)}
+            aria-expanded={showBlocks}
+            className="btn-secondary !py-2"
+          >
+            {showBlocks ? 'Hide time off' : 'Time off'}
+          </button>
           <button type="button" onClick={() => load()} className="btn-secondary !py-2">Refresh</button>
           <button type="button" onClick={logout} className="btn-secondary !py-2">Sign out</button>
         </div>
@@ -131,27 +147,44 @@ export default function Admin() {
       {stats && (
         <dl className="mt-6 grid gap-4 sm:grid-cols-4">
           {[
+            ['Today', stats.today, true],
             ['Upcoming', stats.upcoming],
             ['Confirmed (all time)', stats.confirmed],
-            ['Total bookings', stats.total],
             ['Collected', rupees(stats.revenue)],
-          ].map(([label, value]) => (
-            <div key={label} className="rounded-xl border border-slate-200 bg-white p-4">
-              <dt className="text-xs font-medium uppercase tracking-wide text-slate-500">{label}</dt>
-              <dd className="mt-1 text-2xl font-semibold text-slate-900">{value}</dd>
+          ].map(([label, value, highlight]) => (
+            <div
+              key={label}
+              className={`rounded-xl border p-4 ${
+                highlight ? 'border-brand-300 bg-brand-50' : 'border-slate-200 bg-white'
+              }`}
+            >
+              <dt className="text-[13px] font-semibold uppercase tracking-wide text-slate-600">{label}</dt>
+              <dd className={`mt-1 font-display text-2xl font-semibold ${highlight ? 'text-brand-800' : 'text-slate-900'}`}>
+                {value}
+              </dd>
             </div>
           ))}
         </dl>
       )}
 
-      <div className="mt-8 flex gap-2">
-        {['upcoming', 'all'].map((value) => (
+      {showBlocks && (
+        <div className="mt-6">
+          <BlocksPanel token={token} onChange={() => load()} />
+        </div>
+      )}
+
+      <div className="mt-8 flex flex-wrap gap-2" role="tablist" aria-label="Which bookings to show">
+        {['today', 'upcoming', 'all'].map((value) => (
           <button
             key={value}
             type="button"
+            role="tab"
+            aria-selected={scope === value}
             onClick={() => setScope(value)}
-            className={`rounded-lg px-4 py-2 text-sm font-medium capitalize transition ${
-              scope === value ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+            className={`min-h-[2.5rem] rounded-lg px-4 py-2 text-[15px] font-medium capitalize transition-colors ${
+              scope === value
+                ? 'bg-brand-600 text-white'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             {value}
@@ -160,15 +193,19 @@ export default function Admin() {
       </div>
 
       {error && (
-        <p className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <p role="alert" className="mt-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-[15px] text-red-800">
           {error}
         </p>
       )}
 
       <div className="mt-6 space-y-4">
         {data?.bookings.length === 0 && (
-          <p className="card text-sm text-slate-500">
-            No {scope === 'upcoming' ? 'upcoming' : ''} bookings yet.
+          <p className="card text-[15px] text-slate-600">
+            {scope === 'today'
+              ? 'Nothing booked for today.'
+              : scope === 'upcoming'
+                ? 'No upcoming bookings.'
+                : 'No bookings yet.'}
           </p>
         )}
 
@@ -186,9 +223,14 @@ export default function Admin() {
                     {b.status.replace('-', ' ')}
                   </span>
                 </p>
-                <p className="mt-1 text-sm text-slate-500">
+                <p className="mt-1 text-[15px] text-slate-600">
                   {b.serviceName} · {b.durationMinutes} min · {rupees(b.amount)} · ID {b.id}
                 </p>
+                {b.bodyRegion && (
+                  <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1 text-[13px] font-medium text-brand-800 ring-1 ring-inset ring-brand-200">
+                    Body map: {b.bodyRegion}
+                  </p>
+                )}
               </div>
 
               {b.whatsappLink && (
@@ -196,7 +238,7 @@ export default function Admin() {
                   href={b.whatsappLink}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn-whatsapp !py-2 !text-xs"
+                  className="btn-whatsapp !py-2"
                 >
                   <WhatsAppIcon className="h-4 w-4" />
                   Open chat
@@ -205,14 +247,14 @@ export default function Admin() {
             </div>
 
             <div className="mt-4 grid gap-4 border-t border-slate-200 pt-4 sm:grid-cols-[16rem_1fr]">
-              <div className="text-sm">
+              <div className="text-[15px]">
                 <p className="flex items-center gap-1.5 font-medium text-slate-900">
                   <UserIcon className="h-4 w-4 text-slate-400" />
                   {b.patient.name}
                   {b.patient.age ? `, ${b.patient.age}` : ''}
                   {b.patient.gender ? ` · ${b.patient.gender}` : ''}
                 </p>
-                <p className="mt-0.5 text-xs text-slate-500">
+                <p className="mt-0.5 text-[13px] text-slate-600">
                   Booked in {LANGUAGE_NAMES[b.language] || 'English'}
                 </p>
                 <p className="mt-1.5 text-slate-600">
@@ -225,19 +267,23 @@ export default function Admin() {
                     {b.patient.email}
                   </a>
                 </p>
-                <p className="mt-2 text-xs text-slate-400">
+                <p className="mt-2 text-[13px] text-slate-500">
                   Payment: {b.payment.status} ({b.payment.mode})
                 </p>
               </div>
 
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <p className="text-[13px] font-semibold uppercase tracking-wide text-slate-600">
                   Symptom summary
                 </p>
-                <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+                <p className="mt-1.5 whitespace-pre-wrap text-[15px] leading-relaxed text-slate-700">
                   {b.patient.symptoms}
                 </p>
-                {b.note && <p className="mt-2 text-sm text-red-600">{b.note}</p>}
+                {b.note && (
+                  <p className="mt-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-[15px] text-red-800">
+                    {b.note}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -246,7 +292,7 @@ export default function Admin() {
                 <button
                   type="button"
                   onClick={() => setStatus(b.id, 'completed')}
-                  className="btn-secondary !py-2 !text-xs"
+                  className="btn-primary !py-2"
                 >
                   Mark completed
                 </button>
@@ -254,8 +300,17 @@ export default function Admin() {
               {b.status !== 'cancelled' && (
                 <button
                   type="button"
-                  onClick={() => setStatus(b.id, 'cancelled')}
-                  className="btn-secondary !py-2 !text-xs"
+                  onClick={() => {
+                    // This releases the slot and the patient has already paid,
+                    // so it is worth one deliberate confirmation.
+                    const ok = window.confirm(
+                      `Cancel ${b.patient.name}'s ${b.when} consultation?\n\n` +
+                        'The slot is released immediately. Any refund has to be issued ' +
+                        'separately in the Razorpay dashboard.',
+                    );
+                    if (ok) setStatus(b.id, 'cancelled');
+                  }}
+                  className="btn-secondary !py-2"
                 >
                   Cancel booking
                 </button>
