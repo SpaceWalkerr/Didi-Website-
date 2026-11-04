@@ -23,8 +23,8 @@ export const BRAND = {
   shortName: 'Dr. Richa Rani',
   /** Used in <title>, Open Graph and the schema.org markup. */
   tagline: 'Online Consultation — General Physician',
-  /** ⚠ PLACEHOLDER — set once the domain is live; needed for OG tags and sitemap.xml. */
-  siteUrl: 'https://example.com',
+  /** The live domain (no trailing slash). Drives canonical URLs, OG tags, schema.org and sitemap.xml. */
+  siteUrl: 'https://richarani.in',
 };
 
 export const DOCTOR = {

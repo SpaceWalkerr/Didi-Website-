@@ -12,8 +12,9 @@
     <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
 
     <!-- Link preview card, e.g. when a patient forwards the site on WhatsApp.
-         Set og:url to the real domain once the site is deployed — see
-         BRAND.siteUrl in shared/practice.config.js. -->
+         og:image must be an absolute URL (scrapers do not resolve relative
+         ones). If the domain changes, update it here and BRAND.siteUrl in
+         shared/practice.config.js. -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Dr. Richa Rani — Online Consultation" />
     <meta property="og:title" content="Dr. Richa Rani — Online Consultation" />
@@ -21,7 +22,8 @@
       property="og:description"
       content="MBBS · General Physician. Book a slot and consult from home over WhatsApp."
     />
-    <meta property="og:image" content="/images/og-image.jpg" />
+    <meta property="og:image" content="https://richarani.in/images/og-image.jpg" />
+    <meta property="og:url" content="https://richarani.in/" />
     <meta name="twitter:card" content="summary_large_image" />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />

@@ -8,4 +8,4 @@ Disallow: /book
 Disallow: /confirmation/
 Disallow: /admin
 
-Sitemap: https://example.com/sitemap.xml
+Sitemap: https://richarani.in/sitemap.xml
