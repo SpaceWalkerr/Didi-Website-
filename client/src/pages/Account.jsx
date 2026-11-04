@@ -12,6 +12,29 @@ import Seo from '../components/seo/Seo.jsx';
 import { WhatsAppIcon } from '../components/Icons.jsx';
 
 const SESSION_KEY = 'clinic-patient-session';
+/**
+ * Offline copy of "My bookings": the last list this phone loaded, so a
+ * patient on a train with no signal can still see when their consultation is
+ * and how to join. It holds only what the page shows (no symptoms, no phone
+ * number), stays on this device, and is deleted on sign-out.
+ */
+const OFFLINE_KEY = 'clinic-bookings-offline';
+const saveOffline = (email, me) => {
+  try {
+    const { phone, ...rest } = me; // eslint-disable-line no-unused-vars
+    localStorage.setItem(OFFLINE_KEY, JSON.stringify({ email, at: Date.now(), me: rest }));
+  } catch {
+    // Storage full or blocked: offline view simply unavailable.
+  }
+};
+const readOffline = (email) => {
+  try {
+    const v = JSON.parse(localStorage.getItem(OFFLINE_KEY) || 'null');
+    return v && v.email === email ? v : null;
+  } catch {
+    return null;
+  }
+};
 
 const readSession = () => {
   try {
@@ -240,6 +263,7 @@ export default function Account() {
   const [linkError, setLinkError] = useState(null);
   const [busy, setBusy] = useState(false);
   const [redeeming, setRedeeming] = useState(Boolean(params.get('token')));
+  const [offlineAt, setOfflineAt] = useState(null);
 
   const translate = useCallback(
     (err) => (err.messageKey ? t(err.messageKey, err.params || {}) : err.message),
@@ -248,6 +272,11 @@ export default function Account() {
 
   const signOut = useCallback(() => {
     storeSession(null);
+    try {
+      localStorage.removeItem(OFFLINE_KEY);
+    } catch {
+      // nothing to remove
+    }
     setSession(null);
     setMe(null);
   }, []);
@@ -276,10 +305,21 @@ export default function Account() {
   const load = useCallback(async () => {
     if (!session) return;
     try {
-      setMe(await api.accountMe(session.token));
+      const fresh = await api.accountMe(session.token);
+      setMe(fresh);
       setError(null);
+      setOfflineAt(null);
+      saveOffline(session.email, fresh);
     } catch (err) {
-      if (err.status === 401) {
+      const cached = !err.status ? readOffline(session.email) : null;
+      if (cached) {
+        // No connection: show the last saved list, read-only.
+        setMe(cached.me);
+        setOfflineAt(cached.at);
+        setError(null);
+      } else if (!err.status && !navigator.onLine) {
+        setError(t('offline.empty'));
+      } else if (err.status === 401) {
         signOut();
         setLinkError(translate(err));
       } else {
@@ -337,7 +377,15 @@ export default function Account() {
             </div>
 
             {error && (
-              <p role="alert" className="mt-5 rounded-xl border border-red-300 bg-red-50 p-3 text-[0.9375rem] text-red-900">{error}</p>
+              <p role="alert" className="mt-5 rounded-2xl border border-red-300 bg-red-50 p-3 text-[0.9375rem] text-red-900">{error}</p>
+            )}
+
+            {offlineAt && (
+              <p role="status" className="mt-5 rounded-2xl border border-amber-300 bg-amber-50 p-4 text-[0.9375rem] leading-relaxed text-amber-900">
+                {t('offline.banner', {
+                  when: new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(offlineAt)),
+                })}
+              </p>
             )}
 
             {me && (
@@ -346,7 +394,7 @@ export default function Account() {
                   <h2 id="upcoming-h" className="text-xl">{t('account.upcoming')}</h2>
                   <div className="mt-4 space-y-4">
                     {upcoming.length === 0 && <p className="text-slate-600">{t('account.noUpcoming')}</p>}
-                    {upcoming.map((b) => <BookingCard key={b.id} booking={b} onCancel={cancel} onRescheduled={load} session={session} busy={busy} />)}
+                    {upcoming.map((b) => <BookingCard key={b.id} booking={b} onCancel={cancel} onRescheduled={load} session={session} busy={busy || Boolean(offlineAt)} />)}
                   </div>
                 </section>
 
@@ -354,7 +402,7 @@ export default function Account() {
                   <h2 id="history-h" className="text-xl">{t('account.history')}</h2>
                   <div className="mt-4 space-y-4">
                     {history.length === 0 && <p className="text-slate-600">{t('account.noHistory')}</p>}
-                    {history.map((b) => <BookingCard key={b.id} booking={b} onCancel={cancel} onRescheduled={load} session={session} busy={busy} />)}
+                    {history.map((b) => <BookingCard key={b.id} booking={b} onCancel={cancel} onRescheduled={load} session={session} busy={busy || Boolean(offlineAt)} />)}
                   </div>
                 </section>
 

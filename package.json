@@ -23,7 +23,9 @@
     "test:api": "node scripts/test/api.mjs",
     "test:race": "node scripts/test/race.mjs",
     "test:payment": "node scripts/test/payment.mjs",
-    "test:dashboard": "node scripts/test/dashboard.mjs"
+    "test:dashboard": "node scripts/test/dashboard.mjs",
+    "test:e2e": "npm run build && playwright test",
+    "check:contrast": "node scripts/check-contrast.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.56.1",

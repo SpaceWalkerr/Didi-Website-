@@ -1,0 +1,92 @@
+/*
+ * Service worker — makes the site installable and keeps it usable offline.
+ *
+ *   · Navigations: network first, so patients always get the latest page; the
+ *     cached app shell is the fallback when there is no signal.
+ *   · /assets/* (fingerprinted by Vite) and /images/*: cache first.
+ *   · Google Fonts: stale-while-revalidate.
+ *   · /api/* is NEVER cached here. Health information does not belong in a
+ *     shared HTTP cache. "My bookings" keeps its own small offline copy on the
+ *     patient's phone instead (see src/pages/Account.jsx).
+ *   · Razorpay and every other third-party request pass straight through.
+ */
+const VERSION = 'v1';
+const SHELL = `shell-${VERSION}`;
+const ASSETS = `assets-${VERSION}`;
+const FONTS = `fonts-${VERSION}`;
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches
+      .open(SHELL)
+      .then((cache) => cache.addAll(['/', '/manifest.webmanifest', '/favicon.svg', '/images/icon-192.png']))
+      .then(() => self.skipWaiting()),
+  );
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) => Promise.all(keys.filter((k) => ![SHELL, ASSETS, FONTS].includes(k)).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim()),
+  );
+});
+
+self.addEventListener('fetch', (event) => {
+  const { request } = event;
+  if (request.method !== 'GET') return;
+  const url = new URL(request.url);
+
+  if (url.origin === self.location.origin) {
+    if (url.pathname.startsWith('/api/') || url.pathname === '/sw.js') return;
+
+    if (request.mode === 'navigate') {
+      event.respondWith(
+        fetch(request)
+          .then((res) => {
+            // Keep the latest shell for offline use. Every route serves the same HTML.
+            if (res.ok) {
+              const copy = res.clone();
+              caches.open(SHELL).then((c) => c.put('/', copy));
+            }
+            return res;
+          })
+          .catch(() => caches.match('/', { cacheName: SHELL })),
+      );
+      return;
+    }
+
+    if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/images/')) {
+      event.respondWith(
+        caches.open(ASSETS).then((cache) =>
+          cache.match(request).then(
+            (hit) =>
+              hit ||
+              fetch(request).then((res) => {
+                if (res.ok) cache.put(request, res.clone());
+                return res;
+              }),
+          ),
+        ),
+      );
+    }
+    return;
+  }
+
+  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
+    event.respondWith(
+      caches.open(FONTS).then((cache) =>
+        cache.match(request).then((hit) => {
+          const network = fetch(request)
+            .then((res) => {
+              if (res.ok || res.type === 'opaque') cache.put(request, res.clone());
+              return res;
+            })
+            .catch(() => hit);
+          return hit || network;
+        }),
+      ),
+    );
+  }
+});

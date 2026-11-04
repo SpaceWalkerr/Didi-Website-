@@ -1,15 +1,23 @@
 {
   "name": "Dr. Richa Rani — Online Consultation",
   "short_name": "Dr. Richa Rani",
-  "description": "Book an online consultation with a general physician.",
-  "start_url": "/",
+  "description": "Unhurried online consultations with a registered general physician, on WhatsApp.",
+  "id": "/",
+  "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0f8078",
+  "orientation": "portrait",
+  "background_color": "#fbf7f0",
+  "theme_color": "#0b4a46",
+  "lang": "en-IN",
+  "categories": ["health", "medical"],
   "icons": [
     { "src": "/images/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "/images/icon-512.png", "sizes": "512x512", "type": "image/png" },
     { "src": "/images/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Book a consultation", "short_name": "Book", "url": "/book", "icons": [{ "src": "/images/icon-192.png", "sizes": "192x192" }] },
+    { "name": "My bookings", "short_name": "Bookings", "url": "/account", "icons": [{ "src": "/images/icon-192.png", "sizes": "192x192" }] }
   ]
 }
