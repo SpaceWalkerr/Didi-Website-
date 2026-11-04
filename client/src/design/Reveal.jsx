@@ -1,4 +1,4 @@
-import { m, useReducedMotion } from 'framer-motion';
+import { LazyMotion, domAnimation, m, useReducedMotion } from 'framer-motion';
 import { fadeUp, inView, maybe, stagger } from '../site/motion.js';
 
 /**
@@ -19,6 +19,7 @@ export default function Reveal({
   const Tag = m[as] || m.div;
 
   return (
+    <LazyMotion features={domAnimation}>
     <Tag
       className={className}
       initial="hidden"
@@ -34,6 +35,7 @@ export default function Reveal({
     >
       {children}
     </Tag>
+    </LazyMotion>
   );
 }
 
@@ -46,16 +48,18 @@ export function RevealGroup({ children, as = 'div', gap = 0.08, delay = 0, class
   const Tag = m[as] || m.div;
 
   return (
-    <Tag
-      className={className}
-      initial="hidden"
-      whileInView="show"
-      viewport={inView}
-      variants={reduced ? { hidden: {}, show: {} } : stagger(gap, delay)}
-      {...rest}
-    >
-      {children}
-    </Tag>
+    <LazyMotion features={domAnimation}>
+      <Tag
+        className={className}
+        initial="hidden"
+        whileInView="show"
+        viewport={inView}
+        variants={reduced ? { hidden: {}, show: {} } : stagger(gap, delay)}
+        {...rest}
+      >
+        {children}
+      </Tag>
+    </LazyMotion>
   );
 }
 

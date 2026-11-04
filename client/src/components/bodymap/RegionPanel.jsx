@@ -1,4 +1,3 @@
-import { m, useReducedMotion } from 'framer-motion';
 import { Link } from '../../lib/router.jsx';
 import { AlertIcon, ArrowRightIcon, HeartPulseIcon, WhatsAppIcon } from '../Icons.jsx';
 import { useI18n } from '../../i18n/index.jsx';
@@ -14,7 +13,6 @@ import { waLink } from '@shared/practice.config.js';
  */
 export default function RegionPanel({ region, selectedTopic, onSelectTopic }) {
   const { t, tList } = useI18n();
-  const reduced = useReducedMotion();
 
   if (!region) {
     return (
@@ -34,12 +32,10 @@ export default function RegionPanel({ region, selectedTopic, onSelectTopic }) {
   if (selectedTopic) params.set('topic', selectedTopic);
 
   return (
-    <m.div
+    <div
       key={region.id}
-      initial={reduced ? false : { opacity: 0, y: 28 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: reduced ? 0 : 0.55, ease: [0.22, 0.61, 0.36, 1] }}
       className="flex flex-col rounded-4xl border border-slate-200/80 bg-paper p-6 shadow-lift sm:p-8"
+      style={{ animation: 'slide-up .55s var(--ease-calm) both' }}
     >
       <p className="eyebrow">{t('bodyMap.panelEyebrow')}</p>
       <h3 className="display-md mt-3">{label}</h3>
@@ -90,6 +86,6 @@ export default function RegionPanel({ region, selectedTopic, onSelectTopic }) {
           {t('bodyMap.askInstead')}
         </a>
       </div>
-    </m.div>
+    </div>
   );
 }

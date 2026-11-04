@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from '../lib/router.jsx';
 import { api } from '../lib/api.js';
 import { rupees } from '../lib/format.js';
-import { HIGHLIGHTED_SERVICE, waLink } from '../config.js';
+import { HIGHLIGHTED_SERVICE, SERVICES, waLink } from '../config.js';
 import { useI18n } from '../i18n/index.jsx';
 import PageIntro from '../design/PageIntro.jsx';
 import Badge from '../design/Badge.jsx';
@@ -12,9 +12,14 @@ import Seo from '../components/seo/Seo.jsx';
 
 export default function Services() {
   const { t, tList } = useI18n();
-  const [services, setServices] = useState([]);
+  /*
+   * First paint uses the shared practice config — the same module the server
+   * reads its fees from — so the cards are there immediately and nothing
+   * shifts. The API answer then replaces them (identical values unless the
+   * server is running a different config, in which case the server wins).
+   */
+  const [services, setServices] = useState(SERVICES);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   // Prices and durations come from the server; the wording comes from i18n,
   // keyed by service id — so switching language never changes the fee.
@@ -23,8 +28,7 @@ export default function Services() {
     api
       .meta()
       .then((data) => active && setServices(data.services))
-      .catch((err) => active && setError(err.messageKey ? t(err.messageKey) : err.message))
-      .finally(() => active && setLoading(false));
+      .catch((err) => active && setError(err.messageKey ? t(err.messageKey) : err.message));
     return () => {
       active = false;
     };
@@ -40,8 +44,6 @@ export default function Services() {
       />
 
       <div className="container-page py-12 sm:py-16">
-        {loading && <p className="text-slate-500">{t('services.loading')}</p>}
-
         {error && (
           <div className="card mb-8 border-amber-300 bg-amber-50">
             <p className="text-[0.9375rem] leading-relaxed text-amber-900">

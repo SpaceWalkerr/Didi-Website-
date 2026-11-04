@@ -366,3 +366,5 @@
 @keyframes seal-glow { 0%, 100% { transform: scale(1); opacity: .45; } 50% { transform: scale(1.35); opacity: 0; } }
 .seal-check { stroke-dasharray: 1; stroke-dashoffset: 1; animation: ecg-draw .7s cubic-bezier(.65,0,.35,1) .45s forwards; }
 @media (prefers-reduced-motion: reduce) { .seal-check { stroke-dashoffset: 0; animation: none; } .seal-glow { display: none; } }
+
+@keyframes slide-up { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }

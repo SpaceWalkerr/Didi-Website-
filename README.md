@@ -140,6 +140,46 @@ a lawyer reviews each translated disclaimer.
 
 ---
 
+## Design system and the "Time to listen" redesign
+
+The concept, palette, type, motion rules and the five signature moments are in
+[`docs/DESIGN_BRIEF.md`](docs/DESIGN_BRIEF.md). The pre-redesign audit is in
+[`docs/AUDIT.md`](docs/AUDIT.md), with before/after screenshots in `docs/screens/`.
+
+- **Colours** live in `client/src/design/tokens.js` (one table per theme) and
+  become CSS variables, so night mode re-themes every page. After changing a
+  colour, run `npm run check:contrast`.
+- **Comfort controls** (the "Aa" button): text size and night mode, remembered
+  per device and applied before first paint by the small script in
+  `client/index.html`.
+- **Feature flags** are in `shared/practice.config.js` → `FEATURES`.
+  Testimonials stay hidden until `FEATURES.testimonials` is `true` *and*
+  `TESTIMONIALS` holds real feedback each patient agreed in writing to publish.
+- **Photos**: the hero and About images are served from
+  `client/public/images/opt/` as AVIF, WebP and JPEG at several widths. If the
+  doctor's photo changes, regenerate those files (any image tool; keep the
+  names and the 4:5 crop for `doctor-*`, square for `about-*`).
+- **schema.org JSON-LD** is generated at build time from the config
+  (`shared/schema.js`) and written into `index.html`.
+- **PWA**: `client/public/sw.js` and `manifest.webmanifest`. The service worker
+  never caches `/api`. Bump `VERSION` in `sw.js` if you change its strategy.
+
+### Checks
+
+```bash
+npm run check:i18n       # every language has every key
+npm run check:contrast   # WCAG contrast of the colour pairs, both themes
+npm test                 # API, race, dashboard, reschedule, payment suites
+npm run test:e2e         # build + Playwright: journey, comfort modes, languages, 404, axe WCAG 2.1 AA
+```
+
+`test:e2e` needs the Playwright browser once: `npx playwright install chromium`.
+It starts its own sandboxed server (JSON store in a temp folder, no database,
+no email, Razorpay off, demo UPI ID) and stops at the payment screen.
+
+Screenshot helpers for design review are in `scripts/visual/` (they expect a
+running dev or production server; see the comment at the top of each).
+
 ## How booking works
 
 1. **Pick a slot** — the client asks `GET /api/bookings/slots` for a date and service. The server

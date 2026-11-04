@@ -40,6 +40,7 @@ The engineering underneath is strong, and most of it should not be touched.
 | B5 | Low | **Placeholder hint leaks into the UI.** If `photoUrl` is ever blank the hero says "Replace client/public/images/doctor-photo.png" (wrong extension, and a file path shown to patients). | `en.js → home.photoHint` |
 | B6 | Low | The language listbox trigger has an unlabeled chevron SVG without `aria-hidden`, and the listbox options are `<button role="option">` inside `<li>`, which some screen readers announce twice. | `LanguageSwitcher.jsx` |
 | B7 | Low | `PhysicianSchema` describes the three consultation types as `MedicalProcedure` / `NoninvasiveProcedure`, which they are not. | `components/seo/PhysicianSchema.jsx` |
+| B8 | Medium | **Body-map "Ask first" WhatsApp message is broken.** The template is "Hello {doctor}, …" but the link passed only `{area}`, so patients sent the clinic a message starting with the literal text `Hello {doctor},`. | `bodymap/RegionPanel.jsx` (found during the rebuild) |
 
 No horizontal overflow was found at 375, 768 or 1440 on any public route, and
 no console errors other than the expected 404 on the deliberately missing URL.
@@ -102,3 +103,19 @@ doctor can decide.
 - All legal pages and their wording.
 - `DOCTOR.yearsExperience = 2` is a real config fact; it is still shown on the
   About page, but no longer as a headline stat.
+
+## 6. Status after the redesign (branch `feature/time-to-listen`)
+
+| # | Resolution |
+|---|---|
+| B1 | Count-up removed from the hero; the `Counter` component is deleted. The trust strip shows only static facts. |
+| B2 | Scroll reveals are now CSS scroll-driven animations: content is visible by default, and only browsers that support them fade it in. Nothing waits on JavaScript or an observer. |
+| B3 | Placeholder cards removed. The section renders only when `FEATURES.testimonials` is on and `TESTIMONIALS` is non-empty (`shared/practice.config.js`). |
+| B4 | `og:locale` uses `en_IN` / `hi_IN` / `pa_IN`; Twitter title/description/image, `og:image` dimensions and alt text added; canonical in the static HTML. |
+| B5 | The hero no longer shows file paths; the fallback is an icon. |
+| B6 | Language options are plain buttons with `aria-pressed`; decorative SVGs are `aria-hidden`. |
+| B7 | Replaced by build-time JSON-LD (`shared/schema.js`): `Physician` + `MedicalBusiness`, an `OfferCatalog` of services, credentials and hours from config, and no ratings. |
+| B8 | Fixed: the doctor's name is now passed in. |
+
+**Payment wording (section 3) is unchanged on purpose.** It needs the doctor's
+decision first; see the content checklist in the hand-over notes.

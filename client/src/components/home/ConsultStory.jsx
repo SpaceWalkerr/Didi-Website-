@@ -21,7 +21,7 @@ function ScreenSlot({ t, locale }) {
       <div className="mt-3 grid grid-cols-4 gap-1.5">
         {days.map(([d, n], i) => (
           <div key={d} className={`rounded-xl py-2 text-center ${i === 1 ? 'bg-action text-white' : 'bg-slate-100 text-slate-700'}`}>
-            <span className="block truncate text-[0.6rem] uppercase tracking-wider opacity-80">{d}</span>
+            <span className="block truncate text-[0.65rem] uppercase tracking-wider">{d}</span>
             <span className="block text-base font-semibold leading-tight">{n}</span>
           </div>
         ))}
@@ -31,7 +31,7 @@ function ScreenSlot({ t, locale }) {
           <div
             key={time}
             className={`rounded-lg border py-2 text-center text-[0.8rem] font-medium ${
-              i === 2 ? 'story-pick border-action bg-action text-white' : i === 0 ? 'border-slate-200 text-slate-400 line-through' : 'border-slate-200 text-slate-700'
+              i === 2 ? 'story-pick border-action bg-action text-white' : i === 0 ? 'border-slate-200 text-slate-500 line-through' : 'border-slate-200 text-slate-700'
             }`}
           >
             {time}
@@ -227,10 +227,11 @@ export default function ConsultStory() {
             {/* Desktop: the steps as a list, the active one in full colour. */}
             <ol className="hidden space-y-7 lg:block">
               {steps.map((step, i) => (
-                <li key={step.title} className="flex gap-5 transition-opacity duration-500" style={{ opacity: active === i ? 1 : 0.32 }}>
-                  <span className="font-display text-2xl leading-none text-clay-700 tabular-nums">0{i + 1}</span>
+                // Inactive steps are dimmed with an AA-contrast colour, not opacity.
+                <li key={step.title} className="flex gap-5">
+                  <span className={`font-display text-2xl leading-none tabular-nums ${active === i ? 'text-clay-700' : 'text-slate-500'}`}>0{i + 1}</span>
                   <div>
-                    <h3 className="font-display text-2xl text-ink">{step.title}</h3>
+                    <h3 className={`font-display text-2xl ${active === i ? 'text-ink' : 'text-slate-500'}`}>{step.title}</h3>
                     <p className={`mt-2 max-w-sm leading-relaxed text-slate-600 transition-opacity duration-500 ${active === i ? 'opacity-100' : 'opacity-0'}`}>{step.body}</p>
                   </div>
                 </li>

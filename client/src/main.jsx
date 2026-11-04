@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import { RouterProvider } from 'react-router-dom';
 import { I18nProvider } from './i18n/index.jsx';
 import { ComfortProvider } from './lib/comfort.jsx';
-import MotionProvider from './design/Motion.jsx';
 import { router } from './App.jsx';
 import ErrorBoundary from './components/layout/ErrorBoundary.jsx';
 import './index.css';
@@ -13,9 +12,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       <ComfortProvider>
         <I18nProvider>
-          <MotionProvider>
-            <RouterProvider router={router} future={{ v7_startTransition: true }} />
-          </MotionProvider>
+          <RouterProvider router={router} future={{ v7_startTransition: true }} />
         </I18nProvider>
       </ComfortProvider>
     </ErrorBoundary>

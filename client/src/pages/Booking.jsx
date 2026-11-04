@@ -18,6 +18,7 @@ import Summary from '../components/booking/Summary.jsx';
 import { REGION_IDS } from '../components/bodymap/regions.js';
 import { AlertIcon, ArrowRightIcon, WhatsAppIcon } from '../components/Icons.jsx';
 import Seo from '../components/seo/Seo.jsx';
+import { Bone } from '../design/Skeleton.jsx';
 
 const emptyPatient = {
   name: '', age: '', gender: '', phone: '', email: '', symptoms: '', consent: false,
@@ -320,8 +321,18 @@ export default function Booking() {
               <h2 id="step1" className="display-md !text-[1.5rem]">{t('booking.step1Title')}</h2>
 
               <div className="mt-5 space-y-6">
-                {meta && (
+                {meta ? (
                   <ServicePicker services={meta.services} value={serviceId} onChange={setServiceId} />
+                ) : (
+                  // Same footprint as the picker, so nothing below moves when it arrives.
+                  <div aria-hidden="true">
+                    <Bone className="h-5 w-40 rounded-full" />
+                    <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                      {[0, 1, 2].map((i) => (
+                        <Bone key={i} className="h-[4.75rem] rounded-3xl sm:h-[7.25rem]" />
+                      ))}
+                    </div>
+                  </div>
                 )}
 
                 <DatePicker

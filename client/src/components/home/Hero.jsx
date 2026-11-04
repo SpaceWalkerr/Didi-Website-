@@ -134,10 +134,13 @@ export default function Hero() {
               </a>
             </div>
 
-            <NextSlotChip />
+            {/* Space is reserved so the chip arriving after load moves nothing. */}
+            <div className="min-h-[4.25rem]">
+              <NextSlotChip />
+            </div>
           </div>
 
-          <div className="relative pb-6 lg:pb-16" style={{ animation: 'fade 1.2s ease-out .15s both' }}>
+          <div className="relative pb-6 lg:pb-16">
             <Portrait t={t} />
           </div>
         </div>
