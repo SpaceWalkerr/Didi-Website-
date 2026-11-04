@@ -73,6 +73,7 @@ const toBooking = (row) => {
       signatureVerified: row.signature_verified ?? false,
     },
     language: row.language,
+    reminderSentAt: row.reminder_sent_at ? row.reminder_sent_at.toISOString() : null,
     note: row.note || null,
     confirmedAt: row.confirmed_at ? row.confirmed_at.toISOString() : null,
     createdAt: row.created_at.toISOString(),
@@ -404,6 +405,7 @@ async function applyPatch(pool, id, expectedStatus, patch) {
     if (patch.note !== undefined) add('note', patch.note);
     if (patch.confirmedAt !== undefined) add('confirmed_at', patch.confirmedAt);
     if (patch.bodyRegion !== undefined) add('body_region', patch.bodyRegion);
+    if (patch.reminderSentAt !== undefined) add('reminder_sent_at', patch.reminderSentAt);
     if (patch.holdExpiresAt !== undefined) add('hold_expires_at', patch.holdExpiresAt);
     // Clearing the hold on confirmation stops the expiry sweep from ever
     // touching a booking that has actually been paid for.

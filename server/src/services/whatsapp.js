@@ -88,39 +88,113 @@ const ClickToChatProvider = {
 };
 
 /**
- * ── Provider: WhatsApp Business Cloud API (not yet enabled) ─────────────
+ * ── Provider: WhatsApp Business Cloud API ───────────────────────────────
  *
- * Deliberately a stub that throws rather than silently doing nothing. A
- * half-working notification path on a medical booking site is worse than an
- * obviously missing one: a patient who is never told their appointment moved
- * has no way to know anything failed.
+ * Sends pre-approved TEMPLATE messages from the clinic's number, so the clinic
+ * can message first: "payment received", "confirmed" and a reminder before the
+ * slot. Outside a 24-hour customer-service window WhatsApp permits nothing but
+ * approved templates, which is why every message here is one.
  *
- * To implement:
- *   1. Meta Business account, verified sender number, permanent access token.
- *   2. Register message templates — outside a 24-hour customer service window
- *      WhatsApp only permits pre-approved templates, so the confirmation and
- *      reminder wording must be submitted and approved first.
- *   3. Set WHATSAPP_PHONE_NUMBER_ID and WHATSAPP_TOKEN, then POST to
- *      https://graph.facebook.com/v21.0/<phone-number-id>/messages
- *      with { messaging_product: 'whatsapp', to, type: 'template', template }.
- *   4. Keep joinLink() working — it stays the fallback whenever a template is
- *      rejected or the patient has never messaged the clinic.
+ * Setup (see DEPLOY.md): Meta business account, a number registered on the
+ * Cloud API, a permanent access token, and three approved templates. Each takes
+ * four body variables in this order:
+ *     {{1}} patient name   {{2}} date and time (IST)   {{3}} service   {{4}} booking ID
+ *
+ * Failures are reported, not hidden: a patient who is never told their
+ * appointment is confirmed cannot know anything went wrong. Callers treat sends
+ * as best-effort so a failed message never fails a paid booking, and the
+ * wa.me link on the confirmation page and in the email stays as the fallback.
  */
+const API_BASE = process.env.WHATSAPP_API_BASE || 'https://graph.facebook.com/v21.0';
+
+const cloud = {
+  get phoneNumberId() { return process.env.WHATSAPP_PHONE_NUMBER_ID || ''; },
+  get token() { return process.env.WHATSAPP_TOKEN || ''; },
+  /** Languages a template has been approved in; anything else falls back to English. */
+  get languages() {
+    return (process.env.WHATSAPP_TEMPLATE_LANGS || 'en')
+      .split(',').map((l) => l.trim()).filter(Boolean);
+  },
+  templates: {
+    received: process.env.WHATSAPP_TEMPLATE_RECEIVED || 'booking_received',
+    confirmed: process.env.WHATSAPP_TEMPLATE_CONFIRMED || 'booking_confirmed',
+    reminder: process.env.WHATSAPP_TEMPLATE_REMINDER || 'booking_reminder',
+  },
+};
+
+export const cloudApiConfigured = () => Boolean(cloud.phoneNumberId && cloud.token);
+
+async function postTemplate(to, name, language, params) {
+  const res = await fetch(`${API_BASE}/${cloud.phoneNumberId}/messages`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${cloud.token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      messaging_product: 'whatsapp',
+      to,
+      type: 'template',
+      template: {
+        name,
+        language: { code: language },
+        components: [{ type: 'body', parameters: params.map((text) => ({ type: 'text', text })) }],
+      },
+    }),
+    signal: AbortSignal.timeout(10000),
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(body?.error?.message || `WhatsApp API returned ${res.status}`);
+    err.code = body?.error?.code;
+    throw err;
+  }
+  return body?.messages?.[0]?.id || null;
+}
+
+/** Patient numbers are stored as 10 digits; WhatsApp wants the country code too. */
+const toInternational = (phone) => {
+  const digits = String(phone).replace(/\D/g, '');
+  return digits.length === 10 ? `91${digits}` : digits;
+};
+
+async function sendTemplate(kind, booking) {
+  const name = cloud.templates[kind];
+  // The date is written in the language of the template actually sent, so an
+  // English fallback never carries a Hindi date.
+  const paramsFor = (lang) => [
+    booking.patient.name,
+    formatWhen(booking, lang),
+    booking.serviceName,
+    booking.id,
+  ];
+  const to = toInternational(booking.patient.phone);
+  const wanted = cloud.languages.includes(booking.language) ? booking.language : 'en';
+
+  try {
+    const id = await postTemplate(to, name, wanted, paramsFor(wanted));
+    return { delivered: true, via: 'cloud-api', messageId: id, language: wanted };
+  } catch (err) {
+    // 132001: no such template in that language. English is always registered.
+    if (err.code === 132001 && wanted !== 'en') {
+      const id = await postTemplate(to, name, 'en', paramsFor('en'));
+      return { delivered: true, via: 'cloud-api', messageId: id, language: 'en' };
+    }
+    throw err;
+  }
+}
+
 const CloudApiProvider = {
   name: 'cloud-api',
 
   joinLink(booking) {
-    // Identical to click-to-chat; the link stays useful even with the API on.
+    // The link stays useful with the API on: the patient can still tap it to open the chat.
     return ClickToChatProvider.joinLink(booking);
   },
 
-  async send() {
-    throw new Error(
-      'WHATSAPP_PROVIDER is set to "cloud-api", but the Cloud API client has not ' +
-        'been implemented yet. See server/src/services/whatsapp.js. Unset the ' +
-        'variable to go back to click-to-chat links.',
-    );
+  /** Called when a booking is confirmed. */
+  async send(booking) {
+    return sendTemplate('confirmed', booking);
   },
+
+  sendTemplate,
 };
 
 const PROVIDERS = {
@@ -152,3 +226,17 @@ export async function sendJoinInstructions(booking) {
 
 /** Reported on /api/health so the deployed mode is visible without guessing. */
 export const whatsappMode = () => provider.name;
+
+/**
+ * Sends a non-confirmation message ('received' or 'reminder'). A no-op unless
+ * the Cloud API is the active provider; never throws.
+ */
+export async function sendWhatsappTemplate(kind, booking) {
+  if (provider !== CloudApiProvider) return { delivered: false, via: provider.name };
+  try {
+    return await CloudApiProvider.sendTemplate(kind, booking);
+  } catch (err) {
+    console.error(`WhatsApp ${kind} failed for booking ${booking.id}:`, err.message);
+    return { delivered: false, via: 'cloud-api', error: err.message };
+  }
+}

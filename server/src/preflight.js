@@ -1,5 +1,6 @@
 import { config, isProduction } from './config.js';
 import { paymentMode } from './services/payments.js';
+import { cloudApiConfigured } from './services/whatsapp.js';
 
 /**
  * Refuses to start a production server that is not safe to expose.
@@ -68,6 +69,14 @@ export function preflight() {
         '    loses the money and the slot, and nothing records it.\n' +
         '    Add the webhook in the Razorpay dashboard (see DEPLOY.md), or switch\n' +
         '    back to test keys.',
+    );
+  }
+
+  if (process.env.WHATSAPP_PROVIDER === 'cloud-api' && !cloudApiConfigured()) {
+    errors.push(
+      'WHATSAPP_PROVIDER is "cloud-api" but WHATSAPP_PHONE_NUMBER_ID or WHATSAPP_TOKEN\n' +
+        '    is missing, so no WhatsApp message would ever be sent. Set both, or unset\n' +
+        '    WHATSAPP_PROVIDER to use click-to-chat links. See DEPLOY.md.',
     );
   }
 

@@ -99,6 +99,9 @@ CREATE TABLE IF NOT EXISTS appointments (
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- Set once the WhatsApp reminder has been attempted, so it is never sent twice.
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ;
+
 CREATE INDEX IF NOT EXISTS appointments_date_idx    ON appointments (appt_date);
 CREATE INDEX IF NOT EXISTS appointments_status_idx  ON appointments (status);
 CREATE INDEX IF NOT EXISTS appointments_patient_idx ON appointments (patient_id);

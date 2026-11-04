@@ -8,6 +8,7 @@ import { config, isProduction } from './config.js';
 import { db } from './db.js';
 import { paymentMode } from './services/payments.js';
 import { whatsappMode } from './services/whatsapp.js';
+import { startReminders } from './services/reminders.js';
 import { preflight } from './preflight.js';
 import { rateLimit } from './middleware/rateLimit.js';
 import bookingsRouter from './routes/bookings.js';
@@ -177,6 +178,7 @@ app.listen(config.port, () => {
   console.log(`  Storage    : ${db.kind}`);
   console.log(`  Payments   : ${paymentMode()}`);
   console.log(`  WhatsApp   : ${whatsappMode()}`);
+  if (whatsappMode() === 'cloud-api') startReminders();
   if (paymentMode() === 'mock') {
     console.log('               (no Razorpay keys set — payments are simulated)');
   }

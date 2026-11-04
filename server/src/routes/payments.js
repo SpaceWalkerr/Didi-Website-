@@ -6,6 +6,7 @@ import { whatsappJoinLink, formatWhen } from '../services/notify.js';
 import { confirmPaidBooking } from '../services/confirm.js';
 import { config } from '../config.js';
 import { notifyPaymentSubmitted } from '../services/notify.js';
+import { sendWhatsappTemplate } from '../services/whatsapp.js';
 
 const router = Router();
 
@@ -211,6 +212,7 @@ router.post('/upi-submit', async (req, res, next) => {
     notifyPaymentSubmitted(updated || booking).catch((err) =>
       console.error('Notification failed:', err),
     );
+    sendWhatsappTemplate('received', updated || booking);
     res.json({ status: 'submitted', bookingId: booking.id });
   } catch (err) {
     next(err);

@@ -36,6 +36,12 @@ services:
         sync: false
       - key: RAZORPAY_WEBHOOK_SECRET
         sync: false             # required once the Razorpay keys are live
+      - key: WHATSAPP_PROVIDER
+        sync: false             # optional: cloud-api for automatic WhatsApp messages
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: WHATSAPP_TOKEN
+        sync: false
       - key: UPI_ID
         sync: false             # doctor's UPI ID for manual payments (no Razorpay needed)
       - key: SMTP_URL

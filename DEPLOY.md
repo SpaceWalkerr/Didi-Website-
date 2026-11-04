@@ -353,3 +353,62 @@ Act, 2023 carries real obligations:
 - **Take your own backups.** `pg_dump "$DATABASE_URL" > backup.sql` on a schedule.
 - Have a deletion process. A patient can ask for their data to be removed.
 - Never commit `server/data/` — it is gitignored, keep it that way.
+
+---
+
+## WhatsApp automation (optional)
+
+By default the site gives the patient a `wa.me` link and they message the clinic. With the
+**WhatsApp Business Cloud API** the website messages the patient itself:
+
+| When | Template | What the patient gets |
+| --- | --- | --- |
+| Patient submits their UPI reference | `booking_received` | "We have your payment details; the clinic will confirm shortly" |
+| Doctor presses **Confirm payment** | `booking_confirmed` | "Your consultation is confirmed for …" |
+| `WHATSAPP_REMINDER_MINUTES` (default 60) before the slot | `booking_reminder` | A reminder, once |
+
+Messages are sent best-effort: a failure is logged and never fails a booking. The email and the
+confirmation page keep working either way.
+
+### Set it up in Meta
+
+1. Create a **Meta Business account** (business.facebook.com) and a **developer app** at
+   developers.facebook.com, choosing the **Business** type and adding the **WhatsApp** product.
+2. **Add the clinic's number** under WhatsApp → API Setup. **Important:** a number registered on the Cloud
+   API generally cannot also be signed in to the WhatsApp Business *app* on a phone (check Meta's current
+   "coexistence" rules, which are still rolling out). Use a **separate number** for automation if the doctor
+   wants to keep chatting from the app.
+3. Copy the **Phone number ID**, and create a **permanent access token**: Business Settings → Users →
+   **System users** → add one → assign the WhatsApp app → generate a token with
+   `whatsapp_business_messaging` and `whatsapp_business_management`. The temporary token on the API Setup
+   page expires after 24 hours and is only for testing.
+4. **Create three message templates** (WhatsApp Manager → Message templates), category **Utility**,
+   language **English**. Each takes four variables in this order:
+   `{{1}}` patient name, `{{2}}` date and time (IST), `{{3}}` service, `{{4}}` booking ID.
+
+   | Name | Suggested text |
+   | --- | --- |
+   | `booking_received` | Hello {{1}}, we have received your payment details for a {{3}} on {{2}} IST (Booking ID {{4}}). Dr. Richa Rani's clinic will confirm shortly. |
+   | `booking_confirmed` | Hello {{1}}, your {{3}} with Dr. Richa Rani is confirmed for {{2}} IST (Booking ID {{4}}). Please message us here at the scheduled time to begin. |
+   | `booking_reminder` | Reminder: {{1}}, your {{3}} with Dr. Richa Rani starts at {{2}} IST (Booking ID {{4}}). Please keep any reports handy and message us here when it is time. |
+
+   Approval usually takes minutes to a day. Hindi, Punjabi and Russian versions are optional: register them
+   with the same names and list the codes in `WHATSAPP_TEMPLATE_LANGS` (e.g. `en,hi`). A patient whose
+   language has no template gets English.
+5. **Set these on Render** (and in `server/.env` to test locally):
+
+   | Key | Value |
+   | --- | --- |
+   | `WHATSAPP_PROVIDER` | `cloud-api` |
+   | `WHATSAPP_PHONE_NUMBER_ID` | from step 3 |
+   | `WHATSAPP_TOKEN` | the permanent token from step 3 |
+   | `WHATSAPP_TEMPLATE_LANGS` | `en` (or `en,hi`, …) |
+
+   The server refuses to start in production with `cloud-api` and a missing ID or token.
+6. Redeploy, then book a test appointment with **your own phone number** and check the three messages arrive.
+   `/api/health` reports `"whatsapp":"cloud-api"` when it is on.
+
+**Costs and limits.** Meta charges per message conversation (utility templates are a few paise each in
+India; check the current rate card). An unverified business account has a low daily limit of new
+recipients, so complete **business verification** in Business Settings before real volume. Patients must
+have a WhatsApp number; the 10-digit number they enter at booking is used.
