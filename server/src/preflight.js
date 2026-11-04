@@ -71,6 +71,13 @@ export function preflight() {
     );
   }
 
+  if (!config.notify.smtpUrl) {
+    console.warn(
+      '  WARNING: SMTP_URL is not set — patients and the doctor will NOT receive\n' +
+        '           confirmation emails (they are only logged). See server/.env.example.',
+    );
+  }
+
   if (errors.length) {
     console.error('\n  Refusing to start in production:\n');
     errors.forEach((message, i) => console.error(`  ${i + 1}. ${message}\n`));

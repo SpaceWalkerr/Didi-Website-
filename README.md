@@ -182,10 +182,11 @@ The mock payment endpoint (`/api/payments/mock-pay`) disables itself automatical
 
 ### 2. Email and SMS
 
-`server/src/services/notify.js` currently logs formatted messages to the console instead of sending
-them. Each function has one place to drop a provider call:
+`server/src/services/notify.js` sends confirmation emails (to the patient and to the doctor) over SMTP
+when `SMTP_URL` is set, and only logs them when it is not. SMS is still log-only.
 
-- **Email** — Resend, SendGrid, Amazon SES, or Nodemailer against the clinic's own SMTP
+- **Email** — set `SMTP_URL` (Gmail App Password, SES, Resend SMTP, etc.; example in `server/.env.example`).
+  The server warns at startup in production if it is missing
 - **SMS** — MSG91, Twilio or Gupshup. Note that transactional SMS in India requires **DLT template
   registration** before anything will be delivered
 - **WhatsApp** — optional. The current design has the *patient* tap a `wa.me` link, which needs no

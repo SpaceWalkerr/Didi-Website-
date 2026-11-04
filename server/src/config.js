@@ -61,7 +61,9 @@ export const config = {
   },
 
   notify: {
-    emailFrom: process.env.NOTIFY_EMAIL_FROM || 'clinic@example.com',
+    emailFrom: process.env.NOTIFY_EMAIL_FROM || '',
+    /** SMTP connection URL, e.g. smtps://user:app-password@smtp.gmail.com:465. Blank = log only. */
+    smtpUrl: process.env.SMTP_URL || '',
     smsSender: process.env.NOTIFY_SMS_SENDER || 'DRCLNC',
   },
 };

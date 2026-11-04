@@ -34,3 +34,7 @@ services:
         sync: false
       - key: RAZORPAY_KEY_SECRET
         sync: false
+      - key: RAZORPAY_WEBHOOK_SECRET
+        sync: false             # required once the Razorpay keys are live
+      - key: SMTP_URL
+        sync: false             # confirmation emails; see server/.env.example

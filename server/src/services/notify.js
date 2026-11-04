@@ -1,25 +1,47 @@
+import nodemailer from 'nodemailer';
 import { PRACTICE, config } from '../config.js';
 import { formatWhen } from './time.js';
 import { whatsappJoinLink } from './whatsapp.js';
 
 /**
- * Notification placeholders.
+ * Notifications.
  *
- * Right now these log to the console so the flow is complete and testable.
- * To go live, drop a provider call into each function — the rest of the app
- * does not need to change:
+ * Email is sent over SMTP when SMTP_URL is set, and logged otherwise so local
+ * development needs nothing. SMS is still log-only:
  *
- *   Email : Resend / SendGrid / Amazon SES / Nodemailer + the clinic's SMTP
  *   SMS   : MSG91 / Twilio / Gupshup   (DLT template registration is required in India)
  *   WhatsApp: the WhatsApp Business Cloud API, if the doctor wants automated reminders
  *             instead of the patient tapping the click-to-chat link.
  */
 
+let transport = null;
+export const emailEnabled = () => Boolean(config.notify.smtpUrl);
+
+/**
+ * Sends through SMTP when SMTP_URL is set, otherwise logs. Never throws: a
+ * failed email must not fail a confirmed, paid booking.
+ */
+async function sendEmail(to, subject, text) {
+  if (!emailEnabled()) return log('EMAIL', to, subject, text);
+  try {
+    transport ||= nodemailer.createTransport(config.notify.smtpUrl);
+    await transport.sendMail({
+      from: config.notify.emailFrom || PRACTICE.email,
+      to,
+      subject,
+      text,
+      replyTo: PRACTICE.email,
+    });
+  } catch (err) {
+    console.error(`Email to ${to} failed:`, err.message);
+  }
+}
+
 const log = (channel, to, subject, body) => {
   console.log(
     [
       '',
-      `── ${channel} (placeholder — not actually sent) ─────────────`,
+      `── ${channel} (SMS not sent — no provider configured) ─────────────`,
       `to      : ${to}`,
       subject ? `subject : ${subject}` : null,
       body,
@@ -34,8 +56,7 @@ export async function sendBookingConfirmation(booking) {
   const when = formatWhen(booking);
   const joinLink = whatsappJoinLink(booking);
 
-  log(
-    'EMAIL',
+  await sendEmail(
     booking.patient.email,
     `Your consultation with ${PRACTICE.doctorName} is confirmed — ${when}`,
     [
@@ -48,7 +69,8 @@ export async function sendBookingConfirmation(booking) {
       `Join on WhatsApp at the scheduled time: ${joinLink}`,
       '',
       'Please keep any previous prescriptions and reports handy.',
-      `From: ${config.notify.emailFrom}`,
+      '',
+      `${PRACTICE.doctorName}`,
     ].join('\n'),
   );
 
@@ -60,7 +82,7 @@ export async function sendBookingConfirmation(booking) {
       `Booking ${booking.id}. Join on WhatsApp: ${joinLink} -${config.notify.smsSender}`,
   );
 
-  return { email: 'queued', sms: 'queued' };
+  return { email: emailEnabled() ? 'sent' : 'logged', sms: 'logged' };
 }
 
 const LANGUAGE_NAMES = {
@@ -73,8 +95,7 @@ const LANGUAGE_NAMES = {
 export async function notifyDoctor(booking) {
   const language = LANGUAGE_NAMES[booking.language] || 'English';
 
-  log(
-    'EMAIL',
+  await sendEmail(
     PRACTICE.email,
     `New booking: ${booking.patient.name} — ${formatWhen(booking)}`,
     [

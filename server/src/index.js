@@ -34,6 +34,19 @@ const here = path.dirname(fileURLToPath(import.meta.url));
  */
 app.use(compression());
 
+// Baseline security headers. No CSP: Razorpay Checkout loads scripts and frames
+// from several of its own origins, and a wrong allowlist would break payments.
+app.use((_req, res, next) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'SAMEORIGIN',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+    'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
+    ...(isProduction && { 'Strict-Transport-Security': 'max-age=15552000' }),
+  });
+  next();
+});
+
 // When the client is served from this same origin the browser sends no Origin
 // header and CORS never applies; the list only matters for a split deployment.
 app.use(
@@ -133,6 +146,11 @@ app.use('/api/admin', adminLimit, adminRouter);
 // In production, serve the built client from the same origin.
 const clientDist = path.join(here, '..', '..', 'client', 'dist');
 if (fs.existsSync(clientDist)) {
+  // Vite fingerprints everything under /assets, so it can be cached forever.
+  app.use(
+    '/assets',
+    express.static(path.join(clientDist, 'assets'), { immutable: true, maxAge: '1y' }),
+  );
   app.use(express.static(clientDist));
   app.get(/^(?!\/api).*/, (_req, res) => res.sendFile(path.join(clientDist, 'index.html')));
 }

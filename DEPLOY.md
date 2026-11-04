@@ -217,6 +217,7 @@ To do it by hand — **New → Web Service**, connect the repo, then:
 | `RAZORPAY_KEY_ID` | `rzp_test_…` or the live key |
 | `RAZORPAY_KEY_SECRET` | from Razorpay |
 | `RAZORPAY_WEBHOOK_SECRET` | the webhook secret you chose — required with live keys |
+| `SMTP_URL` | SMTP URL for confirmation emails, e.g. `smtps://user%40gmail.com:app-password@smtp.gmail.com:465` — without it no emails are sent |
 
 You will not know the Render URL until the service exists, so set `CLIENT_ORIGIN` after
 the first deploy and let it redeploy.
