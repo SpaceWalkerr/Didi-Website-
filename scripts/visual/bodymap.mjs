@@ -1,0 +1,30 @@
+/** Taps a body-map region by its viewBox coordinates and captures the result. */
+import { chromium } from '@playwright/test';
+const [base = 'http://localhost:5173', out = '.', width = '375', theme = 'light'] = process.argv.slice(2);
+const w = Number(width);
+const b = await chromium.launch();
+const ctx = await b.newContext({ viewport: { width: w, height: w < 800 ? 800 : 900 }, deviceScaleFactor: w < 800 ? 2 : 1, hasTouch: w < 800 });
+await ctx.addInitScript((theme) => localStorage.setItem('clinic-comfort', JSON.stringify({ theme })), theme);
+const p = await ctx.newPage();
+const errors = [];
+p.on('pageerror', (e) => errors.push(e.message));
+await p.goto(base + '/#body-map', { waitUntil: 'networkidle' });
+await p.waitForTimeout(800);
+const svg = p.locator('svg.bm-svg');
+await svg.scrollIntoViewIfNeeded();
+const box = await svg.boundingBox();
+const at = (x, y) => ({ x: box.x + (x / 240) * box.width, y: box.y + (y / 540) * box.height });
+const tap = async (x, y) => { const pt = at(x, y); w < 800 ? await p.touchscreen.tap(pt.x, pt.y) : await p.mouse.click(pt.x, pt.y); };
+await tap(120, 150);
+await p.waitForTimeout(250);
+await p.screenshot({ path: `${out}/bm-${w}-${theme}-ripple.png` });
+await p.waitForTimeout(1200);
+const selected = await p.locator('.bm-region[data-selected="true"]').getAttribute('aria-label');
+await p.locator('svg.bm-svg').scrollIntoViewIfNeeded();
+await p.screenshot({ path: `${out}/bm-${w}-${theme}-chest.png` });
+await p.locator('#body-map h3').first().scrollIntoViewIfNeeded();
+await p.screenshot({ path: `${out}/bm-${w}-${theme}-card.png` });
+// keyboard: tab into the figure and pick with Enter
+await p.keyboard.press('Shift+Tab');
+console.log(JSON.stringify({ selected, errors }));
+await b.close();

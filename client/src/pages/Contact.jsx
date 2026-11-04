@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '../lib/router.jsx';
 import { CONTACT, waLink } from '@shared/practice.config.js';
 import { useI18n } from '../i18n/index.jsx';
 import PageIntro from '../design/PageIntro.jsx';
@@ -79,7 +79,7 @@ export default function Contact() {
               <ClockIcon className="h-5 w-5 text-brand-700" />
               {t('contact.hoursTitle')}
             </h2>
-            <dl className="mt-4 space-y-2 text-[15px]">
+            <dl className="mt-4 space-y-2 text-[0.9375rem]">
               {[
                 [t('hours.weekdays'), t('hours.weekdaysTime')],
                 [t('hours.saturday'), t('hours.saturdayTime')],
@@ -92,7 +92,7 @@ export default function Contact() {
               ))}
             </dl>
             <p className="hint mt-4">{t('contact.hoursNote')}</p>
-            <p className="mt-3 text-[15px] leading-relaxed text-slate-600">{t('contact.onlineOnly')}</p>
+            <p className="mt-3 text-[0.9375rem] leading-relaxed text-slate-600">{t('contact.onlineOnly')}</p>
           </div>
 
           <div className="card-warm flex flex-col">

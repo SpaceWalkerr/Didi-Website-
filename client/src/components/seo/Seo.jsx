@@ -16,6 +16,8 @@ import { useI18n } from '../../i18n/index.jsx';
  * search traffic ever matters more than it does for a practice found mainly by
  * word of mouth and WhatsApp, pre-rendering these routes is the upgrade.
  */
+const OG_LOCALE = { en: 'en_IN', hi: 'hi_IN', pa: 'pa_IN', ru: 'ru_RU' };
+
 const setMeta = (selector, attr, value) => {
   let el = document.head.querySelector(selector);
   if (!el) {
@@ -43,7 +45,10 @@ export default function Seo({ title, description, noIndex = false }) {
     setMeta('meta[property="og:title"]', 'content', full);
     setMeta('meta[property="og:description"]', 'content', desc);
     setMeta('meta[property="og:url"]', 'content', `${BRAND.siteUrl}${pathname}`);
-    setMeta('meta[property="og:locale"]', 'content', language);
+    // Open Graph wants language_TERRITORY ("en_IN"), not a bare "en".
+    setMeta('meta[property="og:locale"]', 'content', OG_LOCALE[language] || 'en_IN');
+    setMeta('meta[name="twitter:title"]', 'content', full);
+    setMeta('meta[name="twitter:description"]', 'content', desc);
 
     // Canonical: the language is a client-side preference, not a separate URL,
     // so every translation of a page points at the same canonical address.

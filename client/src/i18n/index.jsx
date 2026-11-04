@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import en from './en.js';
 
 /**
@@ -112,13 +113,42 @@ export function I18nProvider({ children }) {
   const [language, setLanguageState] = useState(() => detectLanguage());
   const [dicts, setDicts] = useState({ en });
 
-  const setLanguage = useCallback((code) => {
+  const dictsRef = useRef(dicts);
+  dictsRef.current = dicts;
+
+  /**
+   * Switching language fetches the dictionary first, then swaps the whole page
+   * inside a view transition, so English dissolves into Devanagari or
+   * Gurmukhi instead of flashing through a half-translated frame. Without the
+   * View Transitions API (or with reduced motion) it simply switches.
+   */
+  const setLanguage = useCallback(async (code) => {
     if (!isSupported(code)) return;
-    setLanguageState(code);
     try {
       window.localStorage.setItem(STORAGE_KEY, code);
     } catch {
       // Preference just won't persist; the site still works.
+    }
+
+    let loaded = null;
+    if (!dictsRef.current[code] && LOADERS[code]) {
+      try {
+        loaded = (await LOADERS[code]()).default;
+      } catch {
+        // Chunk failed (offline): switch anyway; `t` falls back to English.
+      }
+    }
+
+    const apply = () => {
+      if (loaded) setDicts((prev) => ({ ...prev, [code]: loaded }));
+      setLanguageState(code);
+    };
+
+    const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    if (document.startViewTransition && !reduced) {
+      document.startViewTransition(() => flushSync(apply));
+    } else {
+      apply();
     }
   }, []);
 

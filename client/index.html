@@ -2,73 +2,121 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Dr. Richa Rani — Online Consultation | General Physician</title>
     <meta
       name="description"
-      content="Book an online consultation with Dr. Richa Rani, MBBS — General Physician. Pick a slot, pay securely and consult from home over WhatsApp."
+      content="Book an unhurried online consultation with Dr. Richa Rani, MBBS — General Physician (Reg. No. 52532, Bihar State Medical Council). Pick a slot, pay online and consult from home over WhatsApp."
     />
-    <meta name="theme-color" content="#0f8078" />
+    <meta name="theme-color" content="#fbf7f0" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0b1615" media="(prefers-color-scheme: dark)" />
+    <meta name="color-scheme" content="light dark" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="apple-touch-icon" href="/images/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Dr. Richa Rani" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!--
+      Comfort settings (night mode, text size) are applied before first paint,
+      so a patient who chose night mode never sees a flash of cream at 1 a.m.
+      Kept tiny and dependency-free; src/lib/comfort.js owns the same keys.
+    -->
+    <script>
+      (function () {
+        var d = document.documentElement;
+        try {
+          var s = JSON.parse(localStorage.getItem('clinic-comfort') || '{}');
+          var theme = s.theme || 'auto';
+          var night = theme === 'night' || (theme === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+          if (night) d.setAttribute('data-theme', 'night');
+          if (s.text === 'large' || s.text === 'xl') d.setAttribute('data-text-size', s.text);
+        } catch (e) {}
+      })();
+    </script>
 
     <!-- Link preview card, e.g. when a patient forwards the site on WhatsApp.
-         og:image must be an absolute URL (scrapers do not resolve relative
-         ones). If the domain changes, update it here and BRAND.siteUrl in
-         shared/practice.config.js. -->
+         og:image must be absolute (scrapers do not resolve relative URLs). -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Dr. Richa Rani — Online Consultation" />
     <meta property="og:title" content="Dr. Richa Rani — Online Consultation" />
     <meta
       property="og:description"
-      content="MBBS · General Physician. Book a slot and consult from home over WhatsApp."
+      content="MBBS · General Physician. Unhurried online consultations — book a slot and consult from home over WhatsApp."
     />
-    <meta property="og:image" content="https://richarani.in/images/og-image.jpg" />
     <meta property="og:url" content="https://richarani.in/" />
+    <meta property="og:locale" content="en_IN" />
+    <meta property="og:locale:alternate" content="hi_IN" />
+    <meta property="og:locale:alternate" content="pa_IN" />
+    <meta property="og:image" content="https://richarani.in/images/og-image.jpg" />
+    <meta property="og:image:secure_url" content="https://richarani.in/images/og-image.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Dr. Richa Rani, General Physician — online consultations" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Dr. Richa Rani — Online Consultation" />
+    <meta
+      name="twitter:description"
+      content="MBBS · General Physician. Unhurried online consultations over WhatsApp."
+    />
+    <meta name="twitter:image" content="https://richarani.in/images/og-image.jpg" />
+    <meta name="twitter:image:alt" content="Dr. Richa Rani, General Physician — online consultations" />
+    <link rel="canonical" href="https://richarani.in/" />
+
+    <!--
+      The hero portrait is the largest contentful paint on most phones, so it
+      is requested at the same priority as the stylesheet. AVIF where
+      supported; the <picture> in Hero.jsx falls back to WebP and JPEG.
+    -->
+    <link
+      rel="preload"
+      as="image"
+      type="image/avif"
+      href="/images/opt/doctor-480.avif"
+      imagesrcset="/images/opt/doctor-480.avif 480w, /images/opt/doctor-720.avif 720w, /images/opt/doctor-960.avif 960w"
+      imagesizes="(min-width: 1024px) 460px, (min-width: 640px) 380px, 72vw"
+      fetchpriority="high"
+    />
 
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!--
-      Inter covers Latin and Cyrillic; Noto adds Devanagari (Hindi) and Gurmukhi
-      (Punjabi). Google Fonts declares each face with a unicode-range, so a
-      browser only downloads the script actually on screen.
+      Inter (text) and Fraunces (display, with one italic) for Latin. Noto Sans
+      and Noto Serif for Devanagari (Hindi) and Gurmukhi (Punjabi). Google Fonts
+      declares each face with a unicode-range, so a browser only downloads the
+      script actually on screen: an English reader never fetches Devanagari.
 
-      Fraunces is the warmer display face used for headings. It is Latin-only
-      and loaded at two weights, so Hindi and Punjabi headings fall through to
-      Noto — deliberate: a Latin serif has no Devanagari glyphs to fall back on.
-    -->
-    <!--
-      Loaded without blocking the first paint. The stylesheet is requested as
-      `print` (which the browser does not wait for) and switched to `all` once
-      it arrives; the <noscript> copy covers browsers without JavaScript.
-
-      Lighthouse measured this request as 846ms of render-blocking on a mobile
-      connection. Every face already declares font-display:swap, so text paints
-      in the fallback and reflows to the real face — which is the right trade
-      on a site where the first thing a patient reads is a sentence.
+      Loaded without blocking first paint (media=print, then all), with
+      font-display:swap. The <noscript> copy covers browsers without JS.
     -->
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Gurmukhi:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400&family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600&family=Noto+Sans+Gurmukhi:wght@400;500;600&family=Noto+Serif+Devanagari:wght@500;600&family=Noto+Serif+Gurmukhi:wght@500;600&display=swap"
       rel="stylesheet"
       media="print"
       onload="this.media='all'; this.onload=null;"
     />
     <noscript>
       <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Noto+Sans+Devanagari:wght@400;500;600;700&family=Noto+Sans+Gurmukhi:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400..600;1,9..144,400&family=Inter:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600&family=Noto+Sans+Gurmukhi:wght@400;500;600&family=Noto+Serif+Devanagari:wght@500;600&family=Noto+Serif+Gurmukhi:wght@500;600&display=swap"
         rel="stylesheet"
       />
     </noscript>
-    <title>Dr. Richa Rani — Online Consultation | General Physician</title>
     <!--
-      Razorpay Checkout is NOT loaded here. It is fetched on demand by
-      src/lib/razorpay.js at the moment a patient presses Pay, so visitors who
-      only read the site never download a third-party payment script.
+      Razorpay Checkout is NOT loaded here. src/lib/razorpay.js fetches it on
+      demand when a patient presses Pay.
     -->
+    <!-- schema.org JSON-LD is injected at build time from shared/practice.config.js (vite.config.js). -->
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <p style="padding:2rem;font-family:system-ui;max-width:40rem;margin:auto">
+        This site needs JavaScript to book a consultation. You can also message the clinic on
+        WhatsApp at <a href="https://wa.me/919117851233">+91 91178 51233</a>.
+      </p>
+    </noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

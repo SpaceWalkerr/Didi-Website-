@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '../../lib/router.jsx';
 import { useI18n } from '../../i18n/index.jsx';
 
 /** Inline field error. Tied to its input by id so it is announced on focus. */
@@ -6,7 +6,7 @@ function FieldError({ id, code }) {
   const { t } = useI18n();
   if (!code) return null;
   return (
-    <p id={id} className="mt-1.5 text-sm font-medium text-red-700">
+    <p id={id} className="mt-1.5 text-sm font-medium text-red-700" style={{ animation: 'rise .3s var(--ease-calm) both' }}>
       {t(`errors.${code}`)}
     </p>
   );
@@ -19,10 +19,10 @@ function FieldError({ id, code }) {
  * difference between one tap and typing a mobile number by hand. `inputMode`
  * brings up the numeric keypad for the number fields.
  */
-export default function PatientForm({ patient, errors, onChange, bodyRegion }) {
+export default function PatientForm({ patient, errors, onChange, onBlur = () => undefined, valid = {}, bodyRegion }) {
   const { t } = useI18n();
 
-  const err = (key) => (errors[key] ? 'input-error' : '');
+  const err = (key) => (errors[key] ? 'input-error' : valid[key] ? 'input-valid' : '');
   const describedBy = (key) => (errors[key] ? `${key}-error` : undefined);
 
   return (
@@ -30,7 +30,7 @@ export default function PatientForm({ patient, errors, onChange, bodyRegion }) {
       {/* Shown when the visitor arrived from the body map, so it is obvious
           where the pre-filled first line came from and that it can be edited. */}
       {bodyRegion && (
-        <p className="rounded-xl border border-brand-200 bg-brand-50/70 px-4 py-3 text-[15px] text-brand-900">
+        <p className="rounded-2xl border border-brand-200 bg-brand-50/70 px-4 py-3 text-[0.9375rem] text-brand-900">
           {t('booking.fromBodyMap', { area: t(`bodyMap.regions.${bodyRegion}.label`) })}
         </p>
       )}
@@ -41,7 +41,7 @@ export default function PatientForm({ patient, errors, onChange, bodyRegion }) {
           <input
             id="name" name="name" type="text" maxLength={100} autoComplete="name" required
             className={`input ${err('name')}`}
-            value={patient.name} onChange={onChange('name')}
+            value={patient.name} onChange={onChange('name')} onBlur={onBlur('name')}
             aria-invalid={Boolean(errors.name)} aria-describedby={describedBy('name')}
           />
           <FieldError id="name-error" code={errors.name} />
@@ -52,7 +52,7 @@ export default function PatientForm({ patient, errors, onChange, bodyRegion }) {
           <input
             id="age" name="age" type="number" min="0" max="120" inputMode="numeric"
             className={`input ${err('age')}`}
-            value={patient.age} onChange={onChange('age')}
+            value={patient.age} onChange={onChange('age')} onBlur={onBlur('age')}
             aria-invalid={Boolean(errors.age)} aria-describedby={describedBy('age')}
           />
           <FieldError id="age-error" code={errors.age} />
@@ -76,7 +76,7 @@ export default function PatientForm({ patient, errors, onChange, bodyRegion }) {
             id="phone" name="phone" type="tel" inputMode="numeric" autoComplete="tel-national" required
             placeholder={t('booking.fields.phonePlaceholder')}
             className={`input ${err('phone')}`}
-            value={patient.phone} onChange={onChange('phone')}
+            value={patient.phone} onChange={onChange('phone')} onBlur={onBlur('phone')}
             aria-invalid={Boolean(errors.phone)}
             aria-describedby={errors.phone ? 'phone-error' : 'phone-hint'}
           />
@@ -89,7 +89,7 @@ export default function PatientForm({ patient, errors, onChange, bodyRegion }) {
           <input
             id="email" name="email" type="email" maxLength={254} autoComplete="email" required
             className={`input ${err('email')}`}
-            value={patient.email} onChange={onChange('email')}
+            value={patient.email} onChange={onChange('email')} onBlur={onBlur('email')}
             aria-invalid={Boolean(errors.email)} aria-describedby={describedBy('email')}
           />
           <FieldError id="email-error" code={errors.email} />
@@ -102,7 +102,7 @@ export default function PatientForm({ patient, errors, onChange, bodyRegion }) {
           id="symptoms" name="symptoms" rows={5} maxLength={2000} required
           className={`input resize-y ${err('symptoms')}`}
           placeholder={t('booking.fields.symptomsPlaceholder')}
-          value={patient.symptoms} onChange={onChange('symptoms')}
+          value={patient.symptoms} onChange={onChange('symptoms')} onBlur={onBlur('symptoms')}
           aria-invalid={Boolean(errors.symptoms)}
           aria-describedby={errors.symptoms ? 'symptoms-error' : 'symptoms-hint'}
         />
@@ -117,8 +117,8 @@ export default function PatientForm({ patient, errors, onChange, bodyRegion }) {
         pre-ticked box or an "by continuing you agree" line.
       */}
       <div
-        className={`rounded-xl border p-4 ${
-          errors.consent ? 'border-red-400 bg-red-50' : 'border-slate-300 bg-surface'
+        className={`rounded-2xl border p-4 ${
+          errors.consent ? 'border-red-400 bg-red-50' : 'border-slate-200 bg-surface'
         }`}
       >
         <label htmlFor="consent" className="flex cursor-pointer gap-3">
@@ -126,11 +126,11 @@ export default function PatientForm({ patient, errors, onChange, bodyRegion }) {
             id="consent" name="consent" type="checkbox" required
             className="mt-1 h-5 w-5 shrink-0 rounded border-slate-400 text-brand-600
                        focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2"
-            checked={patient.consent} onChange={onChange('consent')}
+            checked={patient.consent} onChange={onChange('consent')} onBlur={onBlur('consent')}
             aria-invalid={Boolean(errors.consent)}
             aria-describedby={errors.consent ? 'consent-error' : undefined}
           />
-          <span className="text-[15px] leading-relaxed text-slate-700">{t('booking.consent')}</span>
+          <span className="text-[0.9375rem] leading-relaxed text-slate-700">{t('booking.consent')}</span>
         </label>
         <FieldError id="consent-error" code={errors.consent} />
         <p className="mt-2.5 pl-8 text-sm text-slate-600">

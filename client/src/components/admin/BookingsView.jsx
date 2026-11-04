@@ -46,7 +46,7 @@ export default function BookingsView({ token, onChange, initialScope = 'today' }
             role="tab"
             aria-selected={scope === value}
             onClick={() => setScope(value)}
-            className={`min-h-[2.5rem] rounded-lg px-4 py-2 text-[15px] font-medium capitalize transition-colors ${
+            className={`min-h-[2.5rem] rounded-lg px-4 py-2 text-[0.9375rem] font-medium capitalize transition-colors ${
               scope === value ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
@@ -60,7 +60,7 @@ export default function BookingsView({ token, onChange, initialScope = 'today' }
 
       <div className="mt-6 space-y-4">
         {data?.bookings.length === 0 && (
-          <p className="card text-[15px] text-slate-600">
+          <p className="card text-[0.9375rem] text-slate-600">
             {scope === 'today'
               ? 'Nothing booked for today.'
               : scope === 'upcoming'
@@ -88,11 +88,11 @@ export default function BookingsView({ token, onChange, initialScope = 'today' }
                     </span>
                   )}
                 </p>
-                <p className="mt-1 text-[15px] text-slate-600">
+                <p className="mt-1 text-[0.9375rem] text-slate-600">
                   {b.serviceName} · {b.durationMinutes} min · {rupees(b.amount)} · ID {b.id}
                 </p>
                 {b.bodyRegion && (
-                  <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1 text-[13px] font-medium text-brand-800 ring-1 ring-inset ring-brand-200">
+                  <p className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-2.5 py-1 text-[0.8125rem] font-medium text-brand-800 ring-1 ring-inset ring-brand-200">
                     Body map: {b.bodyRegion}
                   </p>
                 )}
@@ -112,14 +112,14 @@ export default function BookingsView({ token, onChange, initialScope = 'today' }
             </div>
 
             <div className="mt-4 grid gap-4 border-t border-slate-200 pt-4 sm:grid-cols-[16rem_1fr]">
-              <div className="text-[15px]">
+              <div className="text-[0.9375rem]">
                 <p className="flex items-center gap-1.5 font-medium text-slate-900">
                   <UserIcon className="h-4 w-4 text-slate-400" />
                   {b.patient.name}
                   {b.patient.age ? `, ${b.patient.age}` : ''}
                   {b.patient.gender ? ` · ${b.patient.gender}` : ''}
                 </p>
-                <p className="mt-0.5 text-[13px] text-slate-600">
+                <p className="mt-0.5 text-[0.8125rem] text-slate-600">
                   Booked in {LANGUAGE_NAMES[b.language] || 'English'}
                 </p>
                 <p className="mt-1.5 text-slate-600">
@@ -132,7 +132,7 @@ export default function BookingsView({ token, onChange, initialScope = 'today' }
                     {b.patient.email}
                   </a>
                 </p>
-                <p className="mt-2 text-[13px] text-slate-500">
+                <p className="mt-2 text-[0.8125rem] text-slate-500">
                   Payment: {b.payment.status} ({b.payment.mode})
                 </p>
                 {b.refundDue && (
@@ -141,21 +141,21 @@ export default function BookingsView({ token, onChange, initialScope = 'today' }
                   </p>
                 )}
                 {b.payment.mode === 'upi' && b.payment.paymentId && (
-                  <p className="mt-1 text-[13px] text-slate-700">
+                  <p className="mt-1 text-[0.8125rem] text-slate-700">
                     UTR: <span className="font-mono font-semibold">{b.payment.paymentId}</span>
                   </p>
                 )}
               </div>
 
               <div>
-                <p className="text-[13px] font-semibold uppercase tracking-wide text-slate-600">
+                <p className="text-[0.8125rem] font-semibold uppercase tracking-wide text-slate-600">
                   Symptom summary
                 </p>
-                <p className="mt-1.5 whitespace-pre-wrap text-[15px] leading-relaxed text-slate-700">
+                <p className="mt-1.5 whitespace-pre-wrap text-[0.9375rem] leading-relaxed text-slate-700">
                   {b.patient.symptoms}
                 </p>
                 {b.note && (
-                  <p className="mt-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-[15px] text-red-800">
+                  <p className="mt-2 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-[0.9375rem] text-red-800">
                     {b.note}
                   </p>
                 )}

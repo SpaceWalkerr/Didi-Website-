@@ -1,3 +1,4 @@
+import { useLocation } from 'react-router-dom';
 import { useI18n } from '../../i18n/index.jsx';
 import { CONTACT, waLink } from '@shared/practice.config.js';
 import { WhatsAppIcon } from '../Icons.jsx';
@@ -10,6 +11,11 @@ import { WhatsAppIcon } from '../Icons.jsx';
  */
 export default function WhatsAppFab() {
   const { t } = useI18n();
+  const { pathname } = useLocation();
+
+  // Booking, the ticket and the clinic dashboard have their own WhatsApp
+  // links, and a floating button there sits on top of form fields.
+  if (/^\/(book|confirmation|admin)/.test(pathname)) return null;
 
   return (
     <a
@@ -18,7 +24,7 @@ export default function WhatsAppFab() {
       rel="noopener noreferrer"
       aria-label={t('whatsapp.buttonAria', { number: CONTACT.whatsappDisplay })}
       className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full
-                 bg-whatsapp text-white shadow-lift transition hover:bg-whatsapp-dark
+                 bg-whatsapp text-white shadow-lift transition-[transform,background-color] duration-300 hover:bg-whatsapp-dark active:scale-95
                  focus-visible:ring-2 focus-visible:ring-whatsapp focus-visible:ring-offset-2"
       style={{ bottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
     >

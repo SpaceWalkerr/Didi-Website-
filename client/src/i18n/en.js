@@ -924,4 +924,163 @@ export default {
     title: 'We couldn’t find that page',
     body: 'The link may be out of date. You can head back to the home page or book a consultation directly.',
   },
+
+  // ── "Time to listen" redesign ────────────────────────────────────────────
+  comfort: {
+    button: 'Reading comfort',
+    title: 'Reading comfort',
+    textSize: 'Text size',
+    sizes: { normal: 'Normal', large: 'Large', xl: 'Extra large' },
+    appearance: 'Appearance',
+    themes: { auto: 'Match phone', light: 'Day', night: 'Night' },
+    note: 'Saved on this phone only.',
+  },
+
+  greeting: {
+    morning: 'Good morning',
+    afternoon: 'Good afternoon',
+    evening: 'Good evening',
+    night: 'Still awake? Take a breath',
+  },
+
+  hero: {
+    title: 'A doctor with time to {accent}.',
+    titleAccent: 'listen',
+    lede: 'Unhurried online consultations for everyday health concerns — on WhatsApp, from wherever you are.',
+    trustMinutes: '{count}-minute consultations',
+    trustWhatsApp: 'On WhatsApp, from home',
+    nextSlot: 'Next available',
+    today: 'Today',
+    tomorrow: 'Tomorrow',
+    photoCaption: 'Consulting online',
+  },
+
+  bodyMapPlus: {
+    zoomOut: 'Show whole body',
+    bookThis: 'Book for this',
+    tapAgain: 'Tap another area, or choose from the list.',
+  },
+
+  concierge: {
+    eyebrow: 'Not sure which to book?',
+    title: 'Which consultation is right for me?',
+    lede: 'Two quick questions to help you pick a booking type. You can still change it when you book.',
+    q1: 'Is this about something new, or a problem you have already discussed with {doctor}?',
+    q1New: 'Something new',
+    q1Seen: 'Already discussed',
+    q2New: 'Do you already have a diagnosis, prescription or reports from another doctor that you would like reviewed?',
+    q2Seen: 'Was that consultation in the last 30 days?',
+    yes: 'Yes',
+    no: 'No',
+    step: 'Question {current} of {total}',
+    resultEyebrow: 'Suggested booking type',
+    why: {
+      general: 'For a new concern, or one last discussed more than 30 days ago.',
+      followup: 'You were seen in the last 30 days, so a shorter review is usually enough.',
+      'second-opinion': 'A careful, independent look at a diagnosis, prescription or reports you already have.',
+    },
+    back: 'Back',
+    restart: 'Start again',
+    disclaimer: 'This only suggests a booking type. It is not a diagnosis or medical advice.',
+  },
+
+  story: {
+    eyebrow: 'How it works',
+    title: 'A consultation, start to finish',
+    lede: 'No app to install and no waiting room. Everything happens on the phone in your hand.',
+    illustration: 'Illustration only — not a real booking',
+    steps: [
+      { title: 'Pick a slot', body: 'Choose a consultation type and a time that suits you, up to 30 days ahead. All times are IST.' },
+      { title: 'Pay online', body: 'Pay the fee shown before you start — nothing more. Your slot is held while you pay.' },
+      { title: 'Receive your link', body: 'Once your payment is confirmed, your confirmation page gives you a WhatsApp link to join.' },
+      { title: 'Consult', body: 'At your time, tap the link and send the message that appears. The doctor begins the consultation on WhatsApp.' },
+    ],
+    screen: {
+      chooseTime: 'Choose a time',
+      fee: 'Consultation fee',
+      payNow: 'Pay',
+      held: 'Slot held',
+      confirmed: 'Consultation confirmed',
+      linkNote: 'Tap at your slot time',
+      join: 'Join on WhatsApp',
+      inProgress: 'Consultation in progress',
+    },
+  },
+
+  prepare: {
+    eyebrow: 'Before you consult',
+    title: 'What to keep ready',
+    lede: 'Tick things off as you go. This list stays on your phone — nothing is sent anywhere.',
+    items: [
+      'Your current medicines and doses, written down or photographed',
+      'Recent reports or prescriptions — clear photos are fine',
+      'Home readings if you take them, such as blood pressure or sugar',
+      'A quiet spot with a steady network',
+      'Phone charged, with WhatsApp updated',
+    ],
+    progress: '{done} of {total} ready',
+    done: 'All set. You are ready for your consultation.',
+    reset: 'Clear ticks',
+  },
+
+  homeTrust: {
+    eyebrow: 'Who you will be speaking to',
+    title: 'Registered, careful, and unhurried',
+    approachTitle: 'Approach',
+    registrationTitle: 'Registration',
+    privacyTitle: 'Your privacy',
+    privacyBody:
+      'What you share is used only for your care and is never sold or shared for marketing. Your UPI PIN and bank details never reach this website.',
+    privacyLink: 'Read the privacy policy',
+    aboutLink: 'More about the doctor',
+    gradAlt: 'Dr. Richa Rani at her convocation',
+  },
+
+  ticket: {
+    label: 'Appointment',
+    kind: 'Online consultation · WhatsApp',
+    statusConfirmed: 'Confirmed',
+    statusVerifying: 'Awaiting confirmation',
+    statusPending: 'Not completed',
+    date: 'Date',
+    time: 'Time (IST)',
+    type: 'Consultation',
+    id: 'Booking ID',
+    patient: 'Patient',
+    amount: 'Fee',
+    howTitle: 'How to join',
+    howBody: 'At your slot time, open this page or your confirmation email and tap “Join on WhatsApp”. Send the message that appears and the doctor will begin.',
+    addCalendar: 'Add to calendar',
+    share: 'Share on WhatsApp',
+    shareText: 'I have booked an online consultation with {doctor} on {when} (IST). {site}',
+    calendarTitle: 'Online consultation — {doctor}',
+    calendarBody: 'Join on WhatsApp at your slot time: {link}',
+    calendarBodyPending: 'Your booking is awaiting confirmation. The WhatsApp link will appear on your confirmation page once it is confirmed.',
+  },
+
+  hold: {
+    before: 'Once you continue to payment, your slot is held for {minutes} minutes.',
+    title: 'Your slot is held',
+    remaining: '{time} left',
+    expired: 'The hold has ended. If you have not paid yet, please choose your time again.',
+    aria: 'Slot held for {minutes} more minutes',
+  },
+
+  offline: {
+    banner: 'You are offline. Showing your bookings as last saved on this phone ({when}).',
+    empty: 'You are offline, and no bookings are saved on this phone yet. Please reconnect and try again.',
+  },
+
+  footerPlus: {
+    statement: 'Time to listen.',
+    statementBody: 'Careful, unhurried online consultations with a registered general physician.',
+    registrationTitle: 'Registration',
+    hoursTitle: 'Consulting hours (IST)',
+    contactTitle: 'Contact',
+  },
+
+  notFoundPlus: {
+    title: 'This page seems to have wandered off',
+    body: 'The link may be old or mistyped. Take a breath — everything you need is a tap away.',
+  },
 };

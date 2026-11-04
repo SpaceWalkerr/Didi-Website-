@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '../lib/router.jsx';
 import { CONTACT, DOCTOR, LEGAL_UPDATED, waLink } from '@shared/practice.config.js';
 import { useI18n } from '../i18n/index.jsx';
 import PageIntro from '../design/PageIntro.jsx';
@@ -48,7 +48,7 @@ export default function LegalPage({ docKey }) {
         <div className="mx-auto max-w-3xl">
           {/* A translated policy has to say which language version governs. */}
           {!isEnglish && (
-            <p className="mb-8 rounded-xl border border-amber-300 bg-amber-50 p-4 text-[15px] leading-relaxed text-amber-900">
+            <p className="mb-8 rounded-xl border border-amber-300 bg-amber-50 p-4 text-[0.9375rem] leading-relaxed text-amber-900">
               {t('legal.authoritative')}
             </p>
           )}

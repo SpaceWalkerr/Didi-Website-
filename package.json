@@ -23,9 +23,13 @@
     "test:api": "node scripts/test/api.mjs",
     "test:race": "node scripts/test/race.mjs",
     "test:payment": "node scripts/test/payment.mjs",
-    "test:dashboard": "node scripts/test/dashboard.mjs"
+    "test:dashboard": "node scripts/test/dashboard.mjs",
+    "test:e2e": "npm run build && playwright test",
+    "check:contrast": "node scripts/check-contrast.mjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
+    "@playwright/test": "^1.56.1",
     "concurrently": "^9.1.2"
   },
   "engines": {

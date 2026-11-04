@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../lib/router.jsx';
 import { api } from '../lib/api.js';
 import { rupees } from '../lib/format.js';
-import { HIGHLIGHTED_SERVICE, waLink } from '../config.js';
+import { HIGHLIGHTED_SERVICE, SERVICES, waLink } from '../config.js';
 import { useI18n } from '../i18n/index.jsx';
 import PageIntro from '../design/PageIntro.jsx';
 import Badge from '../design/Badge.jsx';
@@ -12,9 +12,14 @@ import Seo from '../components/seo/Seo.jsx';
 
 export default function Services() {
   const { t, tList } = useI18n();
-  const [services, setServices] = useState([]);
+  /*
+   * First paint uses the shared practice config — the same module the server
+   * reads its fees from — so the cards are there immediately and nothing
+   * shifts. The API answer then replaces them (identical values unless the
+   * server is running a different config, in which case the server wins).
+   */
+  const [services, setServices] = useState(SERVICES);
   const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(true);
 
   // Prices and durations come from the server; the wording comes from i18n,
   // keyed by service id — so switching language never changes the fee.
@@ -23,8 +28,7 @@ export default function Services() {
     api
       .meta()
       .then((data) => active && setServices(data.services))
-      .catch((err) => active && setError(err.messageKey ? t(err.messageKey) : err.message))
-      .finally(() => active && setLoading(false));
+      .catch((err) => active && setError(err.messageKey ? t(err.messageKey) : err.message));
     return () => {
       active = false;
     };
@@ -40,11 +44,9 @@ export default function Services() {
       />
 
       <div className="container-page py-12 sm:py-16">
-        {loading && <p className="text-slate-500">{t('services.loading')}</p>}
-
         {error && (
           <div className="card mb-8 border-amber-300 bg-amber-50">
-            <p className="text-[15px] leading-relaxed text-amber-900">
+            <p className="text-[0.9375rem] leading-relaxed text-amber-900">
               {t('services.loadError', { error })}
             </p>
             <a
@@ -65,7 +67,7 @@ export default function Services() {
             return (
               <RevealItem
                 key={service.id}
-                className={`flex flex-col rounded-2xl border bg-white p-6 shadow-card ${
+                className={`flex flex-col rounded-2xl border bg-paper p-6 shadow-card ${
                   highlighted ? 'border-brand-400 ring-1 ring-brand-300' : 'border-slate-200'
                 }`}
               >
@@ -95,7 +97,7 @@ export default function Services() {
 
                 <ul className="mt-5 flex-1 space-y-2.5">
                   {tList(`services.items.${service.id}.includes`).map((line) => (
-                    <li key={line} className="flex gap-2.5 text-[15px] leading-relaxed text-slate-700">
+                    <li key={line} className="flex gap-2.5 text-[0.9375rem] leading-relaxed text-slate-700">
                       <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-care-600" />
                       {line}
                     </li>

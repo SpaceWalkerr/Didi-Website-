@@ -25,19 +25,19 @@ function PatientHistory({ token, phone }) {
 
   return (
     <div className="space-y-3 border-t border-slate-200 bg-surface p-4">
-      <p className="text-[15px] text-slate-600">
+      <p className="text-[0.9375rem] text-slate-600">
         {data.patient.email} · +91 {data.patient.phone}
         {data.patient.age ? ` · ${data.patient.age}` : ''}
         {data.patient.gender ? ` · ${data.patient.gender}` : ''} · {LANGUAGE_NAMES[data.patient.language]}
       </p>
       {data.bookings.map((b) => (
-        <article key={b.id} className="rounded-xl border border-slate-200 bg-white p-4">
+        <article key={b.id} className="rounded-xl border border-slate-200 bg-paper p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="font-semibold text-slate-900">{b.when}</p>
             <StatusPill status={b.status} awaiting={b.awaitingVerification} />
           </div>
-          <p className="mt-1 text-[15px] text-slate-600">{b.serviceName} · {rupees(b.amount)} · ID {b.id}</p>
-          <p className="mt-2 whitespace-pre-wrap text-[15px] text-slate-700">
+          <p className="mt-1 text-[0.9375rem] text-slate-600">{b.serviceName} · {rupees(b.amount)} · ID {b.id}</p>
+          <p className="mt-2 whitespace-pre-wrap text-[0.9375rem] text-slate-700">
             <span className="font-semibold">Reported: </span>{b.symptoms}
           </p>
           <NotesEditor token={token} booking={b} onSaved={load} />
@@ -75,11 +75,11 @@ export default function PatientsView({ token }) {
       />
       <ErrorNote>{error}</ErrorNote>
 
-      {patients && patients.length === 0 && <p className="card mt-5 text-[15px] text-slate-600">No patients found.</p>}
+      {patients && patients.length === 0 && <p className="card mt-5 text-[0.9375rem] text-slate-600">No patients found.</p>}
 
       <ul className="mt-5 space-y-3">
         {patients?.map((p) => (
-          <li key={p.phone} className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <li key={p.phone} className="overflow-hidden rounded-xl border border-slate-200 bg-paper">
             <button
               type="button"
               aria-expanded={openPhone === p.phone}
@@ -88,11 +88,11 @@ export default function PatientsView({ token }) {
             >
               <span>
                 <span className="block font-semibold text-slate-900">{p.name}</span>
-                <span className="block text-[15px] text-slate-600">+91 {p.phone}</span>
+                <span className="block text-[0.9375rem] text-slate-600">+91 {p.phone}</span>
               </span>
-              <span className="text-right text-[15px] text-slate-600">
+              <span className="text-right text-[0.9375rem] text-slate-600">
                 <span className="block">{p.visits} visit{p.visits === 1 ? '' : 's'} · {rupees(p.totalSpent)}</span>
-                <span className="block text-[13px] text-slate-500">{p.lastVisit ? `Last: ${p.lastVisit}` : 'No completed visit yet'}</span>
+                <span className="block text-[0.8125rem] text-slate-500">{p.lastVisit ? `Last: ${p.lastVisit}` : 'No completed visit yet'}</span>
               </span>
             </button>
             {openPhone === p.phone && <PatientHistory token={token} phone={p.phone} />}

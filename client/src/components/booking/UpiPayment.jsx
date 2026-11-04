@@ -40,7 +40,7 @@ export default function UpiPayment({ upi, amount, bookingId, onSubmit, onCancel,
 
   return (
     <div className="mt-6 space-y-6">
-      <ol className="list-decimal space-y-1.5 pl-5 text-[15px] leading-relaxed text-slate-700">
+      <ol className="list-decimal space-y-1.5 pl-5 text-[0.9375rem] leading-relaxed text-slate-700">
         <li>{t('booking.upi.step1', { amount: rupees(amount) })}</li>
         <li>{t('booking.upi.step2')}</li>
         <li>{t('booking.upi.step3')}</li>
@@ -53,7 +53,7 @@ export default function UpiPayment({ upi, amount, bookingId, onSubmit, onCancel,
             alt={t('booking.upi.qrAlt')}
             width="176"
             height="176"
-            className="mx-auto rounded-lg bg-white p-2"
+            className="mx-auto rounded-lg bg-paper p-2"
           />
         )}
         <div>
@@ -75,7 +75,7 @@ export default function UpiPayment({ upi, amount, bookingId, onSubmit, onCancel,
       </div>
 
       {error && (
-        <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-[15px] text-red-900">
+        <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-4 text-[0.9375rem] text-red-900">
           {error}
         </p>
       )}

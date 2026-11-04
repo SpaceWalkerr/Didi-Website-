@@ -29,7 +29,7 @@ function DayBars({ series, today }) {
           </span>
         ))}
       </div>
-      <figcaption className="mt-2 text-[13px] text-slate-500">Confirmed and completed bookings. Lighter bars are upcoming.</figcaption>
+      <figcaption className="mt-2 text-[0.8125rem] text-slate-500">Confirmed and completed bookings. Lighter bars are upcoming.</figcaption>
     </figure>
   );
 }
@@ -88,15 +88,15 @@ export default function Overview({ token, onGoTo }) {
           <h2 id="verify-h" className="font-sans text-lg font-semibold text-amber-900">
             Payments waiting for you ({data.awaitingVerification.length})
           </h2>
-          <p className="mt-1 text-[15px] text-amber-900">
+          <p className="mt-1 text-[0.9375rem] text-amber-900">
             Check each amount and reference in your bank or UPI app, then confirm.
           </p>
           <ul className="mt-4 space-y-3">
             {data.awaitingVerification.map((b) => (
-              <li key={b.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-4">
+              <li key={b.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-paper p-4">
                 <div>
                   <p className="font-semibold text-slate-900">{b.patientName} · {rupees(b.amount)}</p>
-                  <p className="text-[15px] text-slate-600">{b.when} · UTR <span className="font-mono">{b.payment.paymentId}</span></p>
+                  <p className="text-[0.9375rem] text-slate-600">{b.when} · UTR <span className="font-mono">{b.payment.paymentId}</span></p>
                 </div>
                 <button type="button" onClick={() => confirm(b)} className="btn-primary !py-2">Confirm payment</button>
               </li>
@@ -110,15 +110,15 @@ export default function Overview({ token, onGoTo }) {
           <h2 id="refund-h" className="font-sans text-lg font-semibold text-red-900">
             Refunds to send ({data.refundsDue.length})
           </h2>
-          <p className="mt-1 text-[15px] text-red-900">
+          <p className="mt-1 text-[0.9375rem] text-red-900">
             These bookings were cancelled after payment. Send the money back by UPI, then mark it refunded in Bookings.
           </p>
           <ul className="mt-4 space-y-3">
             {data.refundsDue.map((b) => (
-              <li key={b.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-4">
+              <li key={b.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-paper p-4">
                 <div>
                   <p className="font-semibold text-slate-900">{b.patientName} · {rupees(b.amount)}</p>
-                  <p className="text-[15px] text-slate-600">+91 {b.phone} · {b.when} · UTR <span className="font-mono">{b.payment.paymentId || 'n/a'}</span></p>
+                  <p className="text-[0.9375rem] text-slate-600">+91 {b.phone} · {b.when} · UTR <span className="font-mono">{b.payment.paymentId || 'n/a'}</span></p>
                 </div>
                 <button type="button" onClick={() => onGoTo('bookings')} className="btn-secondary !py-2">Open bookings</button>
               </li>
@@ -131,17 +131,17 @@ export default function Overview({ token, onGoTo }) {
         <section aria-labelledby="today-h" className="card">
           <div className="flex items-center justify-between gap-3">
             <h2 id="today-h" className="font-sans text-lg font-semibold">Today's schedule</h2>
-            <button type="button" onClick={() => onGoTo('bookings')} className="text-[15px] font-medium text-brand-700 hover:underline">All bookings</button>
+            <button type="button" onClick={() => onGoTo('bookings')} className="text-[0.9375rem] font-medium text-brand-700 hover:underline">All bookings</button>
           </div>
           {data.todaysBookings.length === 0 ? (
-            <p className="mt-4 text-[15px] text-slate-500">Nothing booked for today.</p>
+            <p className="mt-4 text-[0.9375rem] text-slate-500">Nothing booked for today.</p>
           ) : (
             <ul className="mt-4 divide-y divide-slate-200">
               {data.todaysBookings.map((b) => (
                 <li key={b.id} className="flex flex-wrap items-center justify-between gap-2 py-3">
                   <div>
                     <p className="font-semibold text-slate-900">{b.time} · {b.patientName}</p>
-                    <p className="text-[15px] text-slate-600">{b.serviceName} · {b.durationMinutes} min</p>
+                    <p className="text-[0.9375rem] text-slate-600">{b.serviceName} · {b.durationMinutes} min</p>
                   </div>
                   <StatusPill status={b.status} awaiting={b.awaitingVerification} />
                 </li>

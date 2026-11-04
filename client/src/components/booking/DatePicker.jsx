@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { useI18n } from '../../i18n/index.jsx';
 
 /**
@@ -10,6 +11,16 @@ import { useI18n } from '../../i18n/index.jsx';
  */
 export default function DatePicker({ dates, value, onChange, minDate, maxDate, openDays }) {
   const { t } = useI18n();
+  const strip = useRef(null);
+
+  // Keep the chosen date in view (it may arrive from a link, days ahead).
+  useEffect(() => {
+    const el = strip.current?.querySelector('[aria-pressed="true"]');
+    if (!el || !strip.current) return;
+    const box = strip.current;
+    const left = el.offsetLeft - box.clientWidth / 2 + el.clientWidth / 2;
+    box.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
+  }, [value]);
 
   return (
     <div>
@@ -17,9 +28,11 @@ export default function DatePicker({ dates, value, onChange, minDate, maxDate, o
         {t('booking.date')}
       </p>
       <div
+        ref={strip}
         role="group"
         aria-labelledby="date-label"
-        className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-2"
+        className="scrollbar-none mask-fade-x -mx-5 flex snap-x gap-2 overflow-x-auto scroll-px-5 px-5 pb-2 pt-1 sm:-mx-1 sm:px-1"
+        data-allow-overflow
       >
         {dates
           .filter(
@@ -43,12 +56,12 @@ export default function DatePicker({ dates, value, onChange, minDate, maxDate, o
                 onClick={() => onChange(d.value)}
                 aria-pressed={selected}
                 aria-label={`${lead} ${d.day} ${d.month}`}
-                className={`min-h-[4.5rem] w-[4.25rem] shrink-0 snap-start rounded-xl border px-2 py-2.5
-                            text-center transition-colors focus-visible:ring-2
+                className={`min-h-[4.75rem] min-w-[4.5rem] shrink-0 snap-start rounded-2xl border px-2 py-2.5
+                            text-center transition-[transform,background-color,border-color,box-shadow] duration-300 ease-calm active:scale-95 focus-visible:ring-2
                             focus-visible:ring-brand-600 focus-visible:ring-offset-2 ${
                               selected
-                                ? 'border-brand-600 bg-brand-600 text-white'
-                                : 'border-slate-300 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50'
+                                ? 'border-action bg-action text-white shadow-[0_10px_24px_-12px_rgba(15,128,120,0.9)]'
+                                : 'border-slate-200 bg-paper text-slate-700 hover:border-brand-300'
                             }`}
               >
                 {/* opacity-80 on the teal selected state gave 3.67:1. The
@@ -65,7 +78,7 @@ export default function DatePicker({ dates, value, onChange, minDate, maxDate, o
                     them the button's text content reads "Today29Sept", which
                     no longer matches the accessible name. Voice-control users
                     say what they see, so the two have to agree. */}
-                <span aria-hidden="true" className="mt-0.5 block text-lg font-semibold leading-none">
+                <span aria-hidden="true" className="mt-1 block font-display text-xl font-medium leading-none">
                   {d.day}
                 </span>{' '}
                 <span

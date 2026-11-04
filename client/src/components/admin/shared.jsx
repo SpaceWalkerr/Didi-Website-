@@ -34,7 +34,7 @@ export function StatusPill({ status, awaiting }) {
 export function ErrorNote({ children }) {
   if (!children) return null;
   return (
-    <p role="alert" className="mt-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-[15px] text-red-800">
+    <p role="alert" className="mt-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-[0.9375rem] text-red-800">
       {children}
     </p>
   );
@@ -43,9 +43,9 @@ export function ErrorNote({ children }) {
 export function Stat({ label, value, highlight }) {
   return (
     <div
-      className={`rounded-xl border p-4 ${highlight ? 'border-brand-300 bg-brand-50' : 'border-slate-200 bg-white'}`}
+      className={`rounded-xl border p-4 ${highlight ? 'border-brand-300 bg-brand-50' : 'border-slate-200 bg-paper'}`}
     >
-      <dt className="text-[13px] font-semibold uppercase tracking-wide text-slate-600">{label}</dt>
+      <dt className="text-[0.8125rem] font-semibold uppercase tracking-wide text-slate-600">{label}</dt>
       <dd className={`mt-1 font-display text-2xl font-semibold ${highlight ? 'text-brand-800' : 'text-slate-900'}`}>
         {value}
       </dd>
@@ -83,7 +83,7 @@ export function NotesEditor({ token, booking, onSaved }) {
     <div className="mt-4 border-t border-slate-200 pt-4">
       {!open ? (
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <p className="max-w-prose whitespace-pre-wrap text-[15px] text-slate-700">
+          <p className="max-w-prose whitespace-pre-wrap text-[0.9375rem] text-slate-700">
             {booking.doctorNotes ? (
               <>
                 <span className="font-semibold text-slate-900">Private notes: </span>
@@ -93,7 +93,7 @@ export function NotesEditor({ token, booking, onSaved }) {
               <span className="text-slate-500">No notes yet.</span>
             )}
             {booking.followUpDate && (
-              <span className="mt-1 block text-[13px] text-slate-600">Follow-up: {booking.followUpDate}</span>
+              <span className="mt-1 block text-[0.8125rem] text-slate-600">Follow-up: {booking.followUpDate}</span>
             )}
           </p>
           <button type="button" onClick={() => setOpen(true)} className="btn-secondary !py-2">

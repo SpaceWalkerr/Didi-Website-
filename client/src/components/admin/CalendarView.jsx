@@ -38,7 +38,7 @@ export default function CalendarView({ token }) {
         <button type="button" onClick={() => setFrom(shift(from, -7))} className="btn-secondary !py-2">← Previous</button>
         <button type="button" onClick={() => setFrom(monday(today))} className="btn-secondary !py-2">This week</button>
         <button type="button" onClick={() => setFrom(shift(from, 7))} className="btn-secondary !py-2">Next →</button>
-        <p className="ml-1 text-[15px] font-medium text-slate-700">{longDay(from)} – {longDay(shift(from, 6))}</p>
+        <p className="ml-1 text-[0.9375rem] font-medium text-slate-700">{longDay(from)} – {longDay(shift(from, 6))}</p>
       </div>
       <ErrorNote>{error}</ErrorNote>
 
@@ -47,27 +47,27 @@ export default function CalendarView({ token }) {
           <section
             key={day.date}
             aria-label={longDay(day.date)}
-            className={`rounded-xl border p-4 ${day.date === today ? 'border-brand-400 bg-brand-50' : 'border-slate-200 bg-white'}`}
+            className={`rounded-xl border p-4 ${day.date === today ? 'border-brand-400 bg-brand-50' : 'border-slate-200 bg-paper'}`}
           >
-            <h3 className="font-sans text-[15px] font-semibold text-slate-900">{longDay(day.date)}</h3>
-            <p className="mt-0.5 text-[13px] text-slate-500">
+            <h3 className="font-sans text-[0.9375rem] font-semibold text-slate-900">{longDay(day.date)}</h3>
+            <p className="mt-0.5 text-[0.8125rem] text-slate-500">
               {day.hours.length ? day.hours.map(([s, e]) => `${s}–${e}`).join(', ') : 'Closed'}
             </p>
 
             {day.blocks.map((b) => (
-              <p key={b.id} className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-[13px] text-red-800">
+              <p key={b.id} className="mt-2 rounded-lg bg-red-50 px-2.5 py-1.5 text-[0.8125rem] text-red-800">
                 Time off: {b.wholeDay ? 'whole day' : `${b.start}–${b.end}`}{b.reason ? ` · ${b.reason}` : ''}
               </p>
             ))}
 
             {day.bookings.length === 0 ? (
-              <p className="mt-3 text-[13px] text-slate-400">No bookings</p>
+              <p className="mt-3 text-[0.8125rem] text-slate-400">No bookings</p>
             ) : (
               <ul className="mt-3 space-y-2">
                 {day.bookings.map((b) => (
-                  <li key={b.id} className="rounded-lg border border-slate-200 bg-white p-2.5">
-                    <p className="text-[15px] font-semibold text-slate-900">{b.time} · {b.patientName}</p>
-                    <p className="text-[13px] text-slate-600">{b.serviceName} · {b.durationMinutes} min</p>
+                  <li key={b.id} className="rounded-lg border border-slate-200 bg-paper p-2.5">
+                    <p className="text-[0.9375rem] font-semibold text-slate-900">{b.time} · {b.patientName}</p>
+                    <p className="text-[0.8125rem] text-slate-600">{b.serviceName} · {b.durationMinutes} min</p>
                     <div className="mt-1"><StatusPill status={b.status} awaiting={b.awaitingVerification} /></div>
                   </li>
                 ))}

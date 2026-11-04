@@ -18,3 +18,7 @@ jobs:
       - run: npm run build
       # Starts its own throwaway servers: JSON store, no database, no email.
       - run: npm test
+      - run: npm run check:contrast
+      # Browser journey + axe accessibility checks against a sandboxed server.
+      - run: npx playwright install --with-deps chromium
+      - run: npx playwright test

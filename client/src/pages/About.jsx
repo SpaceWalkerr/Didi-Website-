@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '../lib/router.jsx';
 import { DOCTOR } from '@shared/practice.config.js';
 import { useI18n } from '../i18n/index.jsx';
 import PageIntro from '../design/PageIntro.jsx';
@@ -32,7 +32,7 @@ export default function About() {
         <div className="grid gap-10 lg:grid-cols-[0.85fr_1.15fr] lg:gap-14">
           {/* ── Photo + verification ─────────────────────────────────── */}
           <div className="space-y-6">
-            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card">
+            <div className="overflow-hidden rounded-2xl border border-slate-200 bg-paper shadow-card">
               {DOCTOR.photoUrl ? (
                 <img
                   src={DOCTOR.photoUrl}
@@ -57,7 +57,7 @@ export default function About() {
                 <ShieldIcon className="h-5 w-5 text-care-700" />
                 {t('about.verifiedTitle')}
               </h2>
-              <p className="mt-2 text-[15px] leading-relaxed text-care-900/80">
+              <p className="mt-2 text-[0.9375rem] leading-relaxed text-care-900/80">
                 {t('about.verifiedBody')}
               </p>
               <p className="mt-3 font-medium text-care-900">
@@ -98,7 +98,7 @@ export default function About() {
               <dl className="mt-4 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200">
                 {rows.map(([label, value]) => (
                   <div key={label} className="grid gap-1 px-5 py-3.5 sm:grid-cols-[minmax(0,11rem)_1fr] sm:gap-4">
-                    <dt className="text-[15px] text-slate-500">{label}</dt>
+                    <dt className="text-[0.9375rem] text-slate-500">{label}</dt>
                     <dd className="font-medium text-slate-900">{value}</dd>
                   </div>
                 ))}
@@ -116,7 +116,7 @@ export default function About() {
                     <div>
                       <p className="font-medium text-slate-900">{credential.title}</p>
                       {credential.detail && (
-                        <p className="text-[15px] text-slate-600">{credential.detail}</p>
+                        <p className="text-[0.9375rem] text-slate-600">{credential.detail}</p>
                       )}
                     </div>
                   </RevealItem>
@@ -130,7 +130,7 @@ export default function About() {
               </h2>
               <ul className="mt-4 grid gap-2.5 sm:grid-cols-2">
                 {tList('doctor.focusAreas').map((area) => (
-                  <li key={area} className="flex gap-2.5 text-[15px] leading-relaxed text-slate-700">
+                  <li key={area} className="flex gap-2.5 text-[0.9375rem] leading-relaxed text-slate-700">
                     <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
                     {area}
                   </li>
@@ -142,7 +142,7 @@ export default function About() {
               <h2 id="about-hours" className="text-2xl">
                 {t('about.hoursTitle')}
               </h2>
-              <dl className="mt-4 space-y-2 text-[15px]">
+              <dl className="mt-4 space-y-2 text-[0.9375rem]">
                 {[
                   [t('hours.weekdays'), t('hours.weekdaysTime')],
                   [t('hours.saturday'), t('hours.saturdayTime')],

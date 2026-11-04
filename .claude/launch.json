@@ -4,8 +4,49 @@
     {
       "name": "client",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:client"],
+      "runtimeArgs": [
+        "run",
+        "dev:client"
+      ],
       "port": 5173
+    },
+    {
+      "name": "api-sandbox",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "DATABASE_URL=",
+        "SMTP_URL=",
+        "WHATSAPP_PROVIDER=",
+        "RAZORPAY_KEY_ID=",
+        "RAZORPAY_KEY_SECRET=",
+        "RAZORPAY_WEBHOOK_SECRET=",
+        "UPI_ID=demo-clinic@upi",
+        "ADMIN_TOKEN=local-sandbox-token",
+        "DATA_DIR=/tmp/clinic-sandbox-dev",
+        "PORT=4000",
+        "node",
+        "server/src/index.js"
+      ],
+      "port": 4000
+    },
+    {
+      "name": "prod-sandbox",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "DATABASE_URL=",
+        "SMTP_URL=",
+        "WHATSAPP_PROVIDER=",
+        "RAZORPAY_KEY_ID=",
+        "RAZORPAY_KEY_SECRET=",
+        "RAZORPAY_WEBHOOK_SECRET=",
+        "UPI_ID=demo-clinic@upi",
+        "ADMIN_TOKEN=local-sandbox-token",
+        "DATA_DIR=/tmp/clinic-sandbox-prod",
+        "PORT=4200",
+        "node",
+        "server/src/index.js"
+      ],
+      "port": 4200
     }
   ]
 }
