@@ -26,6 +26,7 @@
     "test:dashboard": "node scripts/test/dashboard.mjs"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "concurrently": "^9.1.2"
   },
   "engines": {
