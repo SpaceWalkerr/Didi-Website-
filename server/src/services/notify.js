@@ -197,6 +197,28 @@ export async function notifyDoctor(booking) {
   );
 }
 
+/** Tells the patient and the doctor that a confirmed booking moved. */
+export async function sendRescheduleNotice(booking, previousWhen) {
+  const when = formatWhen(booking);
+  await sendEmail(
+    booking.patient.email,
+    `Your consultation has moved to ${when}`,
+    [
+      `Dear ${booking.patient.name},`,
+      '',
+      `Your ${booking.serviceName} booking (ID ${booking.id}) has been moved from ${previousWhen} IST to ${when} IST.`,
+      `Join on WhatsApp at the new time: ${whatsappJoinLink(booking)}`,
+      '',
+      PRACTICE.doctorName,
+    ].join('\n'),
+  );
+  await sendEmail(
+    PRACTICE.email,
+    `Rescheduled: ${booking.patient.name} — now ${when}`,
+    [`${booking.patient.name} (${booking.patient.phone}) moved booking ${booking.id}.`, `Was: ${previousWhen} IST`, `Now: ${when} IST`].join('\n'),
+  );
+}
+
 /**
  * Re-exported so existing callers keep one import for "everything about
  * telling the patient". The implementations live in ./time.js and

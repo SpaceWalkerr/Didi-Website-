@@ -163,13 +163,23 @@ if (fs.existsSync(clientDist)) {
     express.static(path.join(clientDist, 'assets'), { immutable: true, maxAge: '1y' }),
   );
   app.use(express.static(clientDist));
-  app.get(/^(?!\/api).*/, (_req, res) => res.sendFile(path.join(clientDist, 'index.html')));
+  // Real client routes get the app; anything else gets the same app shell but
+  // a true 404, so search engines do not index junk URLs as pages.
+  const CLIENT_ROUTES = /^\/(about|services|faq|book|contact|privacy|terms|refund|account|admin)?\/?$|^\/confirmation\/[^/]+\/?$/;
+  const PRIVATE_ROUTES = /^\/(book|account|admin|confirmation\/.*)$/;
+  app.get(/^(?!\/api).*/, (req, res) =>
+    res.set(PRIVATE_ROUTES.test(req.path) ? { 'X-Robots-Tag': 'noindex, nofollow' } : {}).status(CLIENT_ROUTES.test(req.path) ? 200 : 404).sendFile(path.join(clientDist, 'index.html')),
+  );
 }
 
 app.use((_req, res) => res.status(404).json({ error: 'Not found.' }));
 
 // eslint-disable-next-line no-unused-vars
 app.use((err, _req, res, _next) => {
+  // Client mistakes (malformed JSON, oversized body) are 4xx, not our fault.
+  if (err.status >= 400 && err.status < 500) {
+    return res.status(err.status).json({ error: err.type === 'entity.too.large' ? 'Request too large.' : 'Invalid request.' });
+  }
   console.error(err);
   res.status(500).json({ error: 'Something went wrong on our side. Please try again.' });
 });

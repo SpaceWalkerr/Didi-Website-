@@ -85,6 +85,14 @@ await db.query(`UPDATE appointments SET status='cancelled' WHERE id='T0000012'`)
 await book('T0000013', '2026-10-02', '10:00', 20);
 pass('cancelled booking frees the slot');
 
+console.log('\n── Rescheduling is guarded by the same constraint ──');
+await book('T0000020', '2026-10-03', '11:00', 20);
+await book('T0000021', '2026-10-03', '12:00', 20);
+await rejects('moving a booking onto a taken slot rejected', () =>
+  db.query(`UPDATE appointments SET start_time='11:00', reschedule_count=reschedule_count+1 WHERE id='T0000021'`));
+await db.query(`UPDATE appointments SET start_time='13:00', reschedule_count=reschedule_count+1 WHERE id='T0000021'`);
+pass('moving to a free slot accepted');
+
 console.log('\n── CHECK constraints ──');
 const rejects4 = async (label, sql) => {
   try { await db.query(sql); fail(label + ' — was ACCEPTED'); }

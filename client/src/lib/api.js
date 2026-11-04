@@ -109,6 +109,13 @@ export const api = {
       headers: { Authorization: `Bearer ${session}` },
     }),
 
+  accountReschedule: (session, id, date, time) =>
+    request(`/account/bookings/${id}/reschedule`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session}` },
+      body: JSON.stringify({ date, time }),
+    }),
+
   // ── Slot blocks: the doctor marking themselves unavailable ──
   adminBlocks: (token, from, to) =>
     request(`/admin/blocks${from ? `?from=${from}&to=${to}` : ''}`, {

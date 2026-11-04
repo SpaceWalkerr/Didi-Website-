@@ -1,5 +1,5 @@
 /**
- * Run with:  npm run test:api      (needs the dev server on :4000)
+ * Run with:  npm run test:api      (needs the dev server on :4000; set the same DATA_DIR for both, and leave DATABASE_URL empty so no real data is touched)
  *
  * These talk to a running server over HTTP rather than importing it, so they
  * exercise the real routing, middleware and rate limiting — not a stub of it.
@@ -35,7 +35,7 @@ let date = null, slots = [];
 for (let i = 2; i <= 9 && !date; i++) {
   const r = await call(`/bookings/slots?date=${soon(i)}&service=general`);
   const free = (r.body?.slots || []).filter(s => s.available);
-  if (free.length > 8) { date = soon(i); slots = free.filter((_, j) => j % 2 === 0); }
+  if (free.length > 16) { date = soon(i); slots = free.filter((_, j) => j % 2 === 0); }
 }
 if (!date) { console.log('no bookable date found'); process.exit(1); }
 console.log(`\nUsing ${date} — ${slots.length} non-overlapping slots\n`);
@@ -58,13 +58,13 @@ const admin = await call('/admin/bookings?scope=all', { headers: { 'x-admin-toke
 const stored = admin.body?.bookings?.find(b => b.id === b1.body.bookingId);
 // bodyRegion is not yet exposed on the admin payload; read the store directly.
 const fsmod = await import('node:fs');
-const raw = JSON.parse(fsmod.readFileSync(path.join(REPO, 'server/data/bookings.json'),'utf8'));
+const raw = JSON.parse(fsmod.readFileSync(path.join(process.env.DATA_DIR || path.join(REPO, 'server/data'), 'bookings.json'),'utf8'));
 const row = raw.bookings.find(b => b.id === b1.body.bookingId);
 row?.bodyRegion === 'chest' ? pass('bodyRegion persisted') : fail(`bodyRegion was ${row?.bodyRegion}`);
 row?.holdExpiresAt ? pass('holdExpiresAt set on the pending booking') : fail('holdExpiresAt missing');
 
 const b2 = await book(slots[1].time, 2, { bodyRegion: '"><script>alert(1)</script>' });
-const row2 = JSON.parse(fsmod.readFileSync(path.join(REPO, 'server/data/bookings.json'),'utf8'))
+const row2 = JSON.parse(fsmod.readFileSync(path.join(process.env.DATA_DIR || path.join(REPO, 'server/data'), 'bookings.json'),'utf8'))
   .bookings.find(b => b.id === b2.body.bookingId);
 row2?.bodyRegion === null ? pass('unknown bodyRegion dropped, not stored') : fail(`stored junk: ${row2?.bodyRegion}`);
 

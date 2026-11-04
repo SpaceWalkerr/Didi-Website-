@@ -102,6 +102,9 @@ CREATE TABLE IF NOT EXISTS appointments (
 -- Set once the WhatsApp reminder has been attempted, so it is never sent twice.
 ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ;
 
+-- How many times the patient has moved this booking (policy: at most twice).
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reschedule_count INT NOT NULL DEFAULT 0;
+
 -- Private to the doctor: notes on the visit, and an optional follow-up date shown to the patient.
 ALTER TABLE appointments ADD COLUMN IF NOT EXISTS doctor_notes TEXT;
 ALTER TABLE appointments ADD COLUMN IF NOT EXISTS follow_up_date DATE;

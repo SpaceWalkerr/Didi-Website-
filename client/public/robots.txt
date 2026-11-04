@@ -2,11 +2,8 @@
 User-agent: *
 Allow: /
 
-# Transactional and private areas. A patient's own confirmation page should
-# never be indexable, and the clinic view is behind a token regardless.
-Disallow: /book
-Disallow: /confirmation/
-Disallow: /admin
-Disallow: /account
+# Transactional and private pages are NOT disallowed here on purpose: a crawler
+# blocked by robots.txt never reads the noindex tag on the page (or the
+# X-Robots-Tag header the server sends), so a blocked URL can still be listed.
 
 Sitemap: https://richarani.in/sitemap.xml

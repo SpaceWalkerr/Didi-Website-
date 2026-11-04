@@ -60,13 +60,24 @@ function validatePatient(patient = {}) {
   if (!isPhone(patient.phone || '')) errors.phone = 'phone';
   if (!isEmail(patient.email || '')) errors.email = 'email';
   if (!patient.symptoms || String(patient.symptoms).trim().length < 10) errors.symptoms = 'symptoms';
-  if (patient.age && (Number(patient.age) < 0 || Number(patient.age) > 120)) errors.age = 'age';
+  if (String(patient.name || '').length > 100) errors.name = 'name';
+  if (String(patient.email || '').length > 254) errors.email = 'email';
+  if (String(patient.symptoms || '').length > 2000) errors.symptoms = 'symptoms';
+  if (patient.age !== undefined && patient.age !== null && patient.age !== '') {
+    const age = Number(patient.age);
+    if (!Number.isFinite(age) || age < 0 || age > 120) errors.age = 'age';
+  }
   if (!patient.consent) errors.consent = 'consent';
   return errors;
 }
 
 /** Languages the site is published in; anything else is stored as 'en'. */
 const LANGUAGES = ['en', 'hi', 'pa', 'ru'];
+const GENDERS = ['female', 'male', 'other'];
+
+/** Shows enough for the patient to recognise their own details, not enough to harvest them. */
+const maskEmail = (e = '') => e.replace(/^(.).*(@.*)$/, '$1***$2');
+const maskPhone = (p = '') => (p.length > 4 ? `${'•'.repeat(p.length - 4)}${p.slice(-4)}` : p);
 
 /**
  * POST /api/bookings
@@ -118,7 +129,7 @@ router.post('/', async (req, res, next) => {
       patient: {
         name: String(patient.name).trim(),
         age: patient.age ? Number(patient.age) : null,
-        gender: patient.gender || null,
+        gender: GENDERS.includes(patient.gender) ? patient.gender : null,
         phone: normalisePhone(patient.phone),
         email: String(patient.email).trim().toLowerCase(),
         symptoms: String(patient.symptoms).trim(),
@@ -229,8 +240,8 @@ router.get('/:id', async (req, res, next) => {
     durationMinutes: booking.durationMinutes,
     amount: booking.amount,
     patientName: booking.patient.name,
-    patientEmail: booking.patient.email,
-    patientPhone: booking.patient.phone,
+    patientEmail: maskEmail(booking.patient.email),
+    patientPhone: maskPhone(booking.patient.phone),
     // A UTR has been submitted and the doctor has yet to confirm the payment.
     paymentSubmitted: booking.status === 'pending' && Boolean(booking.payment?.paymentId),
     whatsappLink: booking.status === 'confirmed' ? whatsappJoinLink(booking) : null,

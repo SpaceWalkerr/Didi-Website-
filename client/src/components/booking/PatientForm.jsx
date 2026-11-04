@@ -39,7 +39,7 @@ export default function PatientForm({ patient, errors, onChange, bodyRegion }) {
         <div>
           <label htmlFor="name" className="label">{t('booking.fields.name')}</label>
           <input
-            id="name" name="name" type="text" autoComplete="name" required
+            id="name" name="name" type="text" maxLength={100} autoComplete="name" required
             className={`input ${err('name')}`}
             value={patient.name} onChange={onChange('name')}
             aria-invalid={Boolean(errors.name)} aria-describedby={describedBy('name')}
@@ -87,7 +87,7 @@ export default function PatientForm({ patient, errors, onChange, bodyRegion }) {
         <div>
           <label htmlFor="email" className="label">{t('booking.fields.email')}</label>
           <input
-            id="email" name="email" type="email" autoComplete="email" required
+            id="email" name="email" type="email" maxLength={254} autoComplete="email" required
             className={`input ${err('email')}`}
             value={patient.email} onChange={onChange('email')}
             aria-invalid={Boolean(errors.email)} aria-describedby={describedBy('email')}
@@ -99,7 +99,7 @@ export default function PatientForm({ patient, errors, onChange, bodyRegion }) {
       <div>
         <label htmlFor="symptoms" className="label">{t('booking.fields.symptoms')}</label>
         <textarea
-          id="symptoms" name="symptoms" rows={5} required
+          id="symptoms" name="symptoms" rows={5} maxLength={2000} required
           className={`input resize-y ${err('symptoms')}`}
           placeholder={t('booking.fields.symptomsPlaceholder')}
           value={patient.symptoms} onChange={onChange('symptoms')}

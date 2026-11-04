@@ -70,7 +70,7 @@ export default function Booking() {
 
   const detailsRef = useRef(null);
   const errorRef = useRef(null);
-  const dates = useMemo(() => upcomingDates(21, locale), [locale]);
+  const dates = useMemo(() => upcomingDates(31, locale), [locale]);
   const service = meta?.services.find((s) => s.id === serviceId) || null;
 
   /** Server errors arrive as codes; turn one into a sentence in this language. */
@@ -252,7 +252,7 @@ export default function Booking() {
         )}
 
         <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             {/* ── Step 1: slot ─────────────────────────────────────────── */}
             <section aria-labelledby="step1" className="card">
               <h2 id="step1" className="text-xl">{t('booking.step1Title')}</h2>

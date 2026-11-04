@@ -137,7 +137,7 @@ export async function validateSlot(date, time, serviceId, now = Date.now(), excl
   if (!isValidDateString(date)) return { code: 'slotInvalidDate' };
 
   const service = getService(serviceId);
-  if (!service) return { code: 'slotInvalidDate' };
+  if (!service) return { code: 'serviceInvalid' };
 
   const maxDate = istDateString(new Date(now + maxDaysAhead * 24 * 60 * 60 * 1000));
   if (date < istToday()) return { code: 'slotInvalidDate' };

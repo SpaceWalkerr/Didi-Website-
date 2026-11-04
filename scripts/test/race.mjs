@@ -1,5 +1,5 @@
 /**
- * Run with:  npm run test:race      (needs the dev server on :4000)
+ * Run with:  npm run test:race      (needs the dev server on :4000; set the same DATA_DIR for both, and leave DATABASE_URL empty so no real data is touched)
  *
  * These talk to a running server over HTTP rather than importing it, so they
  * exercise the real routing, middleware and rate limiting — not a stub of it.
@@ -51,7 +51,7 @@ console.log(`  409 conflict : ${conflict.length}`);
 console.log(`  anything else: ${other.length}` + (other.length ? ' -> ' + JSON.stringify(other.map(o=>({s:o.status,b:o.body}))) : ''));
 
 // The store must physically contain exactly one live booking for that slot.
-const raw = JSON.parse(fs.readFileSync(path.join(REPO, 'server/data/bookings.json'),'utf8'));
+const raw = JSON.parse(fs.readFileSync(path.join(process.env.DATA_DIR || path.join(REPO, 'server/data'), 'bookings.json'),'utf8'));
 const live = raw.bookings.filter(b =>
   b.date===date && b.time===slot && ['pending','confirmed','needs-attention'].includes(b.status));
 

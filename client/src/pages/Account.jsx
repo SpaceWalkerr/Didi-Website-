@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { api } from '../lib/api.js';
-import { formatDateTime, rupees } from '../lib/format.js';
+import { formatDateTime, rupees, upcomingDates } from '../lib/format.js';
+import DatePicker from '../components/booking/DatePicker.jsx';
+import SlotGrid from '../components/booking/SlotGrid.jsx';
 import { waLink } from '@shared/practice.config.js';
 import { useI18n } from '../i18n/index.jsx';
 import PageIntro from '../design/PageIntro.jsx';
@@ -88,8 +90,77 @@ function SignIn({ onLinkError }) {
   );
 }
 
-function BookingCard({ booking, onCancel, busy }) {
+/** Inline picker for moving a confirmed booking to another free slot. */
+function ReschedulePanel({ booking, session, onDone, onClose }) {
   const { t, locale } = useI18n();
+  const [meta, setMeta] = useState(null);
+  const [date, setDate] = useState(booking.date);
+  const [slots, setSlots] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [time, setTime] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+  const dates = useMemo(() => upcomingDates(31, locale), [locale]);
+
+  const fail = (err) => setError(err.messageKey ? t(err.messageKey, err.params || {}) : err.message);
+
+  useEffect(() => {
+    api.meta().then(setMeta).catch(fail);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    let live = true;
+    setLoading(true);
+    setTime('');
+    api
+      .slots(date, booking.serviceId)
+      .then((r) => live && setSlots(r.slots))
+      .catch((err) => live && fail(err))
+      .finally(() => live && setLoading(false));
+    return () => { live = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date, booking.serviceId]);
+
+  async function confirm() {
+    setSaving(true);
+    setError(null);
+    try {
+      await api.accountReschedule(session.token, booking.id, date, time);
+      await onDone();
+    } catch (err) {
+      fail(err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="mt-4 space-y-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+      <h4 className="font-sans text-base font-semibold text-slate-900">{t('account.rescheduleTitle')}</h4>
+      <p className="text-sm text-slate-600">{t('account.rescheduleNote')}</p>
+      {error && (
+        <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-3 text-[15px] text-red-900">{error}</p>
+      )}
+      <div className="min-w-0">
+        <DatePicker dates={dates} value={date} onChange={setDate} minDate={meta?.minDate} maxDate={meta?.maxDate} />
+      </div>
+      <SlotGrid slots={slots} loading={loading} value={time} onChange={setTime} />
+      <div className="flex flex-wrap gap-2">
+        <button type="button" disabled={!time || saving} onClick={confirm} className="btn-primary !py-2">
+          {saving ? t('account.sending') : t('account.rescheduleConfirm')}
+        </button>
+        <button type="button" onClick={onClose} className="btn-secondary !py-2">
+          {t('account.rescheduleKeep')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function BookingCard({ booking, onCancel, onRescheduled, session, busy }) {
+  const { t, locale } = useI18n();
+  const [rescheduling, setRescheduling] = useState(false);
   const statusKey = booking.status === 'pending' && booking.paymentSubmitted ? 'verifying' : booking.status;
 
   return (
@@ -128,6 +199,11 @@ function BookingCard({ booking, onCancel, busy }) {
             {t('account.cancel')}
           </button>
         )}
+        {booking.canReschedule && !rescheduling && (
+          <button type="button" disabled={busy} onClick={() => setRescheduling(true)} className="btn-secondary !py-2">
+            {t('account.reschedule')}
+          </button>
+        )}
         {!booking.canCancel && ['pending', 'confirmed'].includes(booking.status) && (
           <a
             href={waLink(t('confirmation.questionMessage', { id: booking.id }))}
@@ -137,6 +213,18 @@ function BookingCard({ booking, onCancel, busy }) {
           </a>
         )}
       </div>
+
+      {rescheduling && (
+        <ReschedulePanel
+          booking={booking}
+          session={session}
+          onClose={() => setRescheduling(false)}
+          onDone={async () => {
+            await onRescheduled();
+            setRescheduling(false);
+          }}
+        />
+      )}
     </article>
   );
 }
@@ -257,7 +345,7 @@ export default function Account() {
                   <h2 id="upcoming-h" className="text-xl">{t('account.upcoming')}</h2>
                   <div className="mt-4 space-y-4">
                     {upcoming.length === 0 && <p className="text-slate-600">{t('account.noUpcoming')}</p>}
-                    {upcoming.map((b) => <BookingCard key={b.id} booking={b} onCancel={cancel} busy={busy} />)}
+                    {upcoming.map((b) => <BookingCard key={b.id} booking={b} onCancel={cancel} onRescheduled={load} session={session} busy={busy} />)}
                   </div>
                 </section>
 
@@ -265,7 +353,7 @@ export default function Account() {
                   <h2 id="history-h" className="text-xl">{t('account.history')}</h2>
                   <div className="mt-4 space-y-4">
                     {history.length === 0 && <p className="text-slate-600">{t('account.noHistory')}</p>}
-                    {history.map((b) => <BookingCard key={b.id} booking={b} onCancel={cancel} busy={busy} />)}
+                    {history.map((b) => <BookingCard key={b.id} booking={b} onCancel={cancel} onRescheduled={load} session={session} busy={busy} />)}
                   </div>
                 </section>
 

@@ -61,7 +61,7 @@ export default function Footer() {
           <ul className="mt-4 space-y-2.5 text-[15px]">
             {quickLinks.map(([to, label]) => (
               <li key={to}>
-                <Link to={to} className="text-slate-600 transition-colors hover:text-brand-800">
+                <Link to={to} className="inline-block py-1.5 text-slate-600 transition-colors hover:text-brand-800">
                   {label}
                 </Link>
               </li>
@@ -76,7 +76,7 @@ export default function Footer() {
           <ul className="mt-4 space-y-2.5 text-[15px]">
             {policyLinks.map(([to, label]) => (
               <li key={to}>
-                <Link to={to} className="text-slate-600 transition-colors hover:text-brand-800">
+                <Link to={to} className="inline-block py-1.5 text-slate-600 transition-colors hover:text-brand-800">
                   {label}
                 </Link>
               </li>
@@ -135,10 +135,7 @@ export default function Footer() {
           {!isEnglish && <p className="italic">{t('footer.translationNote')}</p>}
 
           <p className="pt-2 text-slate-600">
-            {t('footer.rights', { year, name: t('doctor.name') })} ·{' '}
-            <Link to="/admin" className="underline transition-colors hover:text-slate-900">
-              {t('footer.clinicLogin')}
-            </Link>
+            {t('footer.rights', { year, name: t('doctor.name') })}
           </p>
         </div>
       </div>

@@ -76,6 +76,7 @@ const toBooking = (row) => {
     doctorNotes: row.doctor_notes || null,
     followUpDate: row.follow_up_date ? dateString(row.follow_up_date) : null,
     reminderSentAt: row.reminder_sent_at ? row.reminder_sent_at.toISOString() : null,
+    rescheduleCount: row.reschedule_count || 0,
     note: row.note || null,
     confirmedAt: row.confirmed_at ? row.confirmed_at.toISOString() : null,
     createdAt: row.created_at.toISOString(),
@@ -424,6 +425,9 @@ async function applyPatch(pool, id, expectedStatus, patch) {
     if (patch.doctorNotes !== undefined) add('doctor_notes', patch.doctorNotes);
     if (patch.followUpDate !== undefined) add('follow_up_date', patch.followUpDate);
     if (patch.reminderSentAt !== undefined) add('reminder_sent_at', patch.reminderSentAt);
+    if (patch.date !== undefined) add('appt_date', patch.date);
+    if (patch.time !== undefined) add('start_time', patch.time);
+    if (patch.rescheduleCount !== undefined) add('reschedule_count', patch.rescheduleCount);
     if (patch.holdExpiresAt !== undefined) add('hold_expires_at', patch.holdExpiresAt);
     // Clearing the hold on confirmation stops the expiry sweep from ever
     // touching a booking that has actually been paid for.
@@ -471,6 +475,8 @@ async function applyPatch(pool, id, expectedStatus, patch) {
     return toBooking(fresh[0]);
   } catch (err) {
     await client.query('ROLLBACK');
+    // Moving a booking onto a taken slot trips the same no-overlap constraint as inserting one.
+    if (err.code === EXCLUSION_VIOLATION) throw new SlotConflictError();
     throw err;
   } finally {
     client.release();
