@@ -70,7 +70,8 @@ test('home → body map → concierge → book → slot → details → payment 
   await page.getByRole('button', { name: /Continue to UPI payment/ }).click();
 
   // Payment screen (UPI, as in production). Stop here: no money moves.
-  await expect(page.getByText('Your slot is held')).toBeVisible();
+  // exact: the UPI hold note below also starts with "Your slot is held …".
+  await expect(page.getByText('Your slot is held', { exact: true })).toBeVisible();
   await expect(page.getByText('demo-clinic@upi')).toBeVisible();
   await expect(page.getByLabel(/UTR/)).toBeVisible();
 
