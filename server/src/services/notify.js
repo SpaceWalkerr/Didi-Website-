@@ -2,6 +2,9 @@ import nodemailer from 'nodemailer';
 import { PRACTICE, config } from '../config.js';
 import { formatWhen } from './time.js';
 import { whatsappJoinLink } from './whatsapp.js';
+import { BRAND } from '../../../shared/practice.config.js';
+
+const ADMIN_URL = `${BRAND.siteUrl}/admin`;
 
 /**
  * Notifications.
@@ -97,7 +100,8 @@ export async function notifyPaymentSubmitted(booking) {
       `Slot       : ${formatWhen(booking)} IST`,
       '',
       'Check your bank/UPI app for this amount and reference, then open the',
-      'clinic view (/admin) and press "Confirm payment". The slot is held until you do.',
+      `clinic view and press "Confirm payment". The slot is held until you do.`,
+      ADMIN_URL,
     ].join('\n'),
   );
 }
@@ -125,6 +129,8 @@ export async function notifyDoctor(booking) {
       '',
       'Symptom summary:',
       booking.patient.symptoms,
+      '',
+      `All bookings: ${ADMIN_URL}`,
     ].join('\n'),
   );
 }
