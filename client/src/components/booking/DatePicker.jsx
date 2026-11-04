@@ -48,7 +48,7 @@ export default function DatePicker({ dates, value, onChange, minDate, maxDate, o
                             focus-visible:ring-brand-600 focus-visible:ring-offset-2 ${
                               selected
                                 ? 'border-brand-600 bg-brand-600 text-white'
-                                : 'border-slate-300 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50'
+                                : 'border-slate-300 bg-paper text-slate-700 hover:border-brand-300 hover:bg-brand-50'
                             }`}
               >
                 {/* opacity-80 on the teal selected state gave 3.67:1. The

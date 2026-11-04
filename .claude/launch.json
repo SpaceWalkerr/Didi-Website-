@@ -6,6 +6,25 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:client"],
       "port": 5173
+    },
+    {
+      "name": "api-sandbox",
+      "runtimeExecutable": "env",
+      "runtimeArgs": [
+        "DATABASE_URL=",
+        "SMTP_URL=",
+        "WHATSAPP_PROVIDER=",
+        "RAZORPAY_KEY_ID=",
+        "RAZORPAY_KEY_SECRET=",
+        "RAZORPAY_WEBHOOK_SECRET=",
+        "UPI_ID=demo-clinic@upi",
+        "ADMIN_TOKEN=local-sandbox-token",
+        "DATA_DIR=/private/tmp/claude-501/-Users-suraj-Desktop-Didi-Website-/63c6983a-c0de-4d76-99ae-f68fb6d8f0e7/scratchpad/sandbox-data",
+        "PORT=4000",
+        "node",
+        "server/src/index.js"
+      ],
+      "port": 4000
     }
   ]
 }

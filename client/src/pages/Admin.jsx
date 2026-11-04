@@ -65,7 +65,7 @@ export default function Admin() {
         <Seo title="Clinic sign in" description="Clinic dashboard" noIndex />
         <form onSubmit={handleLogin} className="card mx-auto max-w-sm">
           <h1 className="text-xl">Clinic sign in</h1>
-          <p className="mt-2 text-[15px] leading-relaxed text-slate-600">
+          <p className="mt-2 text-[0.9375rem] leading-relaxed text-slate-600">
             For the doctor only. Use the clinic email and the clinic password.
           </p>
           <label htmlFor="admin-email" className="label mt-5">Email</label>
@@ -79,7 +79,7 @@ export default function Admin() {
             onChange={(e) => setPassword(e.target.value)} required
           />
           {loginError && (
-            <p role="alert" className="mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-[15px] text-red-800">
+            <p role="alert" className="mt-3 rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-[0.9375rem] text-red-800">
               {loginError}
             </p>
           )}
@@ -97,7 +97,7 @@ export default function Admin() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl">Clinic dashboard</h1>
-          <p className="mt-1 text-[15px] text-slate-600">All times are Indian Standard Time.</p>
+          <p className="mt-1 text-[0.9375rem] text-slate-600">All times are Indian Standard Time.</p>
         </div>
         <button type="button" onClick={logout} className="btn-secondary !py-2">Sign out</button>
       </div>
@@ -108,7 +108,7 @@ export default function Admin() {
             <button
               key={id} type="button" role="tab" aria-selected={tab === id}
               onClick={() => setTab(id)}
-              className={`min-h-[2.5rem] whitespace-nowrap rounded-lg px-4 py-2 text-[15px] font-medium transition-colors ${
+              className={`min-h-[2.5rem] whitespace-nowrap rounded-lg px-4 py-2 text-[0.9375rem] font-medium transition-colors ${
                 tab === id ? 'bg-brand-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               }`}
             >

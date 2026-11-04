@@ -120,3 +120,26 @@ export const waLink = (message) =>
   `https://wa.me/${CONTACT.whatsappNumber}?text=${encodeURIComponent(message)}`;
 
 export const getService = (id) => SERVICES.find((s) => s.id === id);
+
+/**
+ * Optional sections that stay hidden until there is real content for them.
+ * Nothing on the site is ever filled with invented material to make a section
+ * look complete.
+ */
+export const FEATURES = {
+  /**
+   * Patient feedback. Turn on only once TESTIMONIALS below holds genuine
+   * feedback that each patient has agreed in writing to publish. The section
+   * also stays hidden while the list is empty, whatever this flag says.
+   */
+  testimonials: false,
+  /** "Next available slot" chip in the hero, read live from the booking API. */
+  nextSlotChip: true,
+};
+
+/**
+ * ⚠ EMPTY ON PURPOSE — real, consented patient feedback only.
+ * Shape: { quote: '…', name: 'First name + initial', meta: 'Consultation type · Month Year' }
+ * Never include clinical details, and keep each patient's written consent on file.
+ */
+export const TESTIMONIALS = [];

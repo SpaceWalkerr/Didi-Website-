@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '../../lib/router.jsx';
 import { useI18n } from '../../i18n/index.jsx';
 
 /** Inline field error. Tied to its input by id so it is announced on focus. */
@@ -30,7 +30,7 @@ export default function PatientForm({ patient, errors, onChange, bodyRegion }) {
       {/* Shown when the visitor arrived from the body map, so it is obvious
           where the pre-filled first line came from and that it can be edited. */}
       {bodyRegion && (
-        <p className="rounded-xl border border-brand-200 bg-brand-50/70 px-4 py-3 text-[15px] text-brand-900">
+        <p className="rounded-xl border border-brand-200 bg-brand-50/70 px-4 py-3 text-[0.9375rem] text-brand-900">
           {t('booking.fromBodyMap', { area: t(`bodyMap.regions.${bodyRegion}.label`) })}
         </p>
       )}
@@ -130,7 +130,7 @@ export default function PatientForm({ patient, errors, onChange, bodyRegion }) {
             aria-invalid={Boolean(errors.consent)}
             aria-describedby={errors.consent ? 'consent-error' : undefined}
           />
-          <span className="text-[15px] leading-relaxed text-slate-700">{t('booking.consent')}</span>
+          <span className="text-[0.9375rem] leading-relaxed text-slate-700">{t('booking.consent')}</span>
         </label>
         <FieldError id="consent-error" code={errors.consent} />
         <p className="mt-2.5 pl-8 text-sm text-slate-600">

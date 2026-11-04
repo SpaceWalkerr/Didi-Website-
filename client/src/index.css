@@ -4,51 +4,86 @@
 
 /*
  * ─────────────────────────────────────────────────────────────────────────
- *  Design tokens and component classes.
+ *  "Time to listen" — global layer.
  *
- *  Type scale is deliberately large: the body floor is 16px and most prose
- *  sits at 17px, because a meaningful share of these patients are older or
- *  reading on a phone in bright light.
+ *  Colours come from CSS custom properties (see src/design/tokens.js), so
+ *  night mode is a single attribute on <html>. Type is in rem, so the text
+ *  size control scales the whole layout the way browser zoom does instead of
+ *  overflowing fixed boxes.
+ *
+ *  Motion rule: loops and transitions animate transform and opacity only.
  * ─────────────────────────────────────────────────────────────────────────
  */
 
 @layer base {
   :root {
-    --header-height: 4rem;
+    --header-height: 4.25rem;
+    --ease-calm: cubic-bezier(.22, .61, .36, 1);
+    --ease-breathe: cubic-bezier(.65, 0, .35, 1);
   }
+
+  /* Comfort control: text size. Set before first paint by the boot script in index.html. */
+  html { font-size: 100%; }
+  html[data-text-size='large'] { font-size: 112.5%; }
+  html[data-text-size='xl'] { font-size: 125%; }
 
   html {
     scroll-behavior: smooth;
     /* Anchored sections must clear the sticky header. */
     scroll-padding-top: calc(var(--header-height) + 1rem);
     -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+    background: rgb(var(--c-cream));
   }
 
   body {
-    @apply bg-white text-[17px] leading-relaxed text-slate-700 antialiased;
+    @apply bg-cream text-[1.0625rem] leading-relaxed text-slate-700 antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+    text-rendering: optimizeLegibility;
   }
 
   h1, h2, h3 {
-    @apply font-display font-semibold tracking-[-0.015em] text-slate-900;
+    @apply font-display font-semibold tracking-[-0.02em] text-ink;
+    font-optical-sizing: auto;
+    text-wrap: balance;
   }
 
   h4, h5, h6 {
-    @apply font-sans font-semibold tracking-tight text-slate-900;
+    @apply font-sans font-semibold tracking-tight text-ink;
   }
+
+  p { text-wrap: pretty; }
+
+  /*
+   * Devanagari and Gurmukhi: vowel signs sit above and below the line, so the
+   * tight Latin display leading clips them. Letter-spacing breaks conjuncts.
+   */
+  :lang(hi) :is(h1, h2, h3, .display),
+  :lang(pa) :is(h1, h2, h3, .display) {
+    letter-spacing: 0 !important;
+    line-height: 1.32 !important;
+  }
+  :lang(hi) body, :lang(pa) body { line-height: 1.75; }
+  :lang(hi) .eyebrow, :lang(pa) .eyebrow { letter-spacing: 0.02em; text-transform: none; font-size: 0.875rem; }
 
   /* Visible focus for keyboard users — critical on a form-heavy medical site. */
   :focus-visible {
-    @apply outline-none ring-2 ring-brand-600 ring-offset-2 ring-offset-white;
+    @apply outline-none ring-2 ring-brand-600 ring-offset-2 ring-offset-paper;
     border-radius: 0.375rem;
   }
+  [data-theme='night'] :focus-visible { @apply ring-brand-700; }
 
   /* Never let a long email or URL blow out the mobile layout. */
-  a, p, li { overflow-wrap: break-word; }
+  a, p, li, dd, h1, h2, h3 { overflow-wrap: break-word; }
+
+  ::selection { background: rgb(var(--c-brand-200)); color: rgb(var(--c-ink)); }
+
+  img { color: transparent; }
 
   /*
    * Honour the OS "reduce motion" setting globally. Framer Motion is told
-   * separately via useReducedMotion(), but CSS transitions, the smooth-scroll
-   * above and any third-party animation need shutting off here too.
+   * separately via useReducedMotion(), but CSS animation, the smooth scroll
+   * and view transitions need shutting off here too.
    */
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
@@ -58,29 +93,75 @@
       transition-duration: 0.01ms !important;
       scroll-behavior: auto !important;
     }
+    ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) {
+      animation: none !important;
+    }
   }
 }
+
+/* ── View transitions (routes and language) ─────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root) { animation: vt-out 220ms var(--ease-calm) both; }
+  ::view-transition-new(root) { animation: vt-in 380ms var(--ease-calm) both; }
+  /* The header does not move between pages, so it should not fade. */
+  ::view-transition-old(site-header), ::view-transition-new(site-header) { animation: none; }
+}
+@keyframes vt-out { to { opacity: 0; transform: translateY(-6px); } }
+@keyframes vt-in { from { opacity: 0; transform: translateY(10px); } }
+
+/* Fallback for browsers without the View Transitions API. */
+.route-fade { animation: vt-in 420ms var(--ease-calm) both; }
 
 @layer components {
   .container-page {
     @apply mx-auto w-full max-w-6xl px-5 sm:px-6 lg:px-8;
   }
 
+  /* ── Display type ────────────────────────────────────────────────────── */
+  .display-xl {
+    @apply font-display font-medium text-ink;
+    font-size: clamp(2.5rem, 6.4vw + 0.5rem, 5.25rem);
+    line-height: 1.02;
+    letter-spacing: -0.035em;
+    font-variation-settings: 'opsz' 144;
+  }
+  .display-lg {
+    @apply font-display font-medium text-ink;
+    font-size: clamp(2.05rem, 3.6vw + 0.9rem, 3.5rem);
+    line-height: 1.06;
+    letter-spacing: -0.028em;
+    font-variation-settings: 'opsz' 120;
+  }
+  .display-md {
+    @apply font-display font-medium text-ink;
+    font-size: clamp(1.6rem, 1.6vw + 1.1rem, 2.25rem);
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+  }
+  /* The one italic accent word per headline. */
+  .accent-word {
+    @apply font-normal italic text-brand-700;
+    font-variation-settings: 'opsz' 144;
+  }
+  :lang(hi) .accent-word, :lang(pa) .accent-word { font-style: normal; }
+
   /* ── Buttons ─────────────────────────────────────────────────────────── */
   /* min-h-[2.75rem] keeps every tap target at the 44px touch minimum. */
   .btn {
-    @apply inline-flex min-h-[2.75rem] items-center justify-center gap-2 rounded-xl px-5 py-3
-           text-[15px] font-semibold transition-colors duration-200
+    @apply relative inline-flex min-h-[2.75rem] select-none items-center justify-center gap-2 rounded-full px-5 py-3
+           text-[0.9375rem] font-semibold leading-tight transition-[transform,background-color,border-color,color,box-shadow] duration-200 ease-calm
            focus-visible:ring-2 focus-visible:ring-offset-2
-           disabled:cursor-not-allowed disabled:opacity-60;
+           active:scale-[0.97]
+           disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100;
+    touch-action: manipulation;
   }
 
   .btn-primary {
-    @apply btn bg-brand-600 text-white shadow-sm hover:bg-brand-700 focus-visible:ring-brand-600;
+    @apply btn bg-action text-white shadow-[0_10px_24px_-12px_rgba(15,128,120,0.8)] hover:bg-action-hover focus-visible:ring-brand-600;
   }
 
   .btn-secondary {
-    @apply btn border border-brand-200 bg-white text-brand-700
+    @apply btn border border-brand-200 bg-paper text-brand-700
            hover:border-brand-300 hover:bg-brand-50 focus-visible:ring-brand-600;
   }
 
@@ -89,41 +170,48 @@
   }
 
   .btn-whatsapp {
-    /* See the `whatsapp` token in tailwind.config.js — the official brand
-       green fails AA badly against white, so this is a darkened stand-in. */
+    /* The official brand green fails AA against white; this is a darkened stand-in. */
     @apply btn bg-whatsapp text-white hover:bg-whatsapp-dark focus-visible:ring-whatsapp;
   }
 
+  .btn-lg { @apply min-h-[3.25rem] px-7 text-base; }
+
   /* ── Surfaces ────────────────────────────────────────────────────────── */
   .card {
-    @apply rounded-2xl border border-slate-200/80 bg-white p-6 shadow-card;
+    @apply rounded-3xl border border-slate-200/80 bg-paper p-6 shadow-card;
   }
 
   .card-warm {
-    @apply rounded-2xl border border-surface-300/60 bg-surface p-6;
+    @apply rounded-3xl border border-surface-300/60 bg-surface p-6;
   }
 
   .section {
-    @apply py-16 sm:py-20 lg:py-24;
+    @apply py-20 sm:py-24 lg:py-28;
   }
 
   .section-warm {
-    @apply section border-y border-surface-200 bg-surface;
+    @apply section bg-surface;
   }
+
+  .hairline { @apply border-slate-200/80; }
 
   /* ── Forms ───────────────────────────────────────────────────────────── */
   .label {
-    @apply mb-1.5 block text-[15px] font-medium text-slate-800;
+    @apply mb-1.5 block text-[0.9375rem] font-medium text-slate-800;
   }
 
   .input {
-    @apply w-full min-h-[2.75rem] rounded-xl border border-slate-300 bg-white px-3.5 py-2.5
-           text-base text-slate-900 placeholder:text-slate-400
-           focus:border-brand-600 focus:outline-none focus:ring-2 focus:ring-brand-100;
+    @apply w-full min-h-[3rem] rounded-2xl border border-slate-300 bg-paper px-4 py-2.5
+           text-base text-slate-900 placeholder:text-slate-500 transition-[border-color,box-shadow] duration-200
+           focus:border-brand-600 focus:outline-none focus:ring-4 focus:ring-brand-100;
   }
 
   .input-error {
     @apply border-red-500 focus:border-red-600 focus:ring-red-100;
+  }
+
+  .input-valid {
+    @apply border-care-400;
   }
 
   .hint {
@@ -132,15 +220,20 @@
 
   /* ── Type helpers ────────────────────────────────────────────────────── */
   .eyebrow {
-    @apply text-xs font-semibold uppercase tracking-[0.14em] text-brand-700;
+    @apply inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-brand-700;
   }
+  .eyebrow::before {
+    content: '';
+    @apply inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-clay-500;
+  }
+  .eyebrow-plain::before { display: none; }
 
   .lede {
     @apply text-lg leading-relaxed text-slate-600;
   }
 
   .prose-legal {
-    @apply space-y-4 text-[16px] leading-[1.75] text-slate-700;
+    @apply space-y-4 text-base leading-[1.75] text-slate-700;
   }
 
   .prose-legal h2 {
@@ -155,36 +248,114 @@
     @apply list-disc space-y-2 pl-5 marker:text-brand-500;
   }
 
-
-  /* ── Body map ────────────────────────────────────────────────────────── */
-  /*
-   * Focus here is drawn with `stroke`, not Tailwind's `ring`: ring compiles to
-   * box-shadow, which SVG shapes do not render. A keyboard user would get no
-   * focus indicator at all on the figure.
-   */
-  .bm-region {
-    @apply cursor-pointer fill-brand-100 stroke-brand-300 outline-none transition-[fill,stroke] duration-200;
-    stroke-width: 1.5;
-    /* Removes the 300ms tap delay and stops a double-tap zooming the page. */
+  /* ── Chips ───────────────────────────────────────────────────────────── */
+  .chip {
+    @apply inline-flex min-h-[2.75rem] items-center rounded-full border border-slate-300 bg-paper px-4 py-2 text-left text-[0.9375rem] text-slate-700
+           transition-[transform,background-color,border-color,color] duration-200 ease-calm
+           hover:border-brand-300 hover:bg-brand-50 active:scale-[0.97]
+           focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2;
     touch-action: manipulation;
   }
-
-  .bm-region:hover {
-    @apply fill-brand-200 stroke-brand-400;
+  .chip[aria-pressed='true'] {
+    @apply border-action bg-action text-white hover:bg-action;
   }
 
-  .bm-region[data-selected='true'] {
-    @apply fill-brand-500 stroke-brand-700;
+  /* ── Skeleton ────────────────────────────────────────────────────────── */
+  .skeleton {
+    @apply relative overflow-hidden rounded-xl bg-slate-100;
   }
-
-  .bm-region:focus-visible {
-    @apply stroke-brand-800;
-    stroke-width: 3.5;
+  .skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgb(var(--c-paper) / 0.7), transparent);
+    animation: shimmer 1.6s var(--ease-breathe) infinite;
   }
 
   /* Skip link — offscreen until focused. */
   .skip-link {
     @apply sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100]
-           focus:rounded-lg focus:bg-brand-700 focus:px-4 focus:py-2.5 focus:text-white;
+           focus:rounded-lg focus:bg-deep focus:px-4 focus:py-2.5 focus:text-white;
   }
 }
+
+@layer utilities {
+  /* Ambient loops pause when their section is off-screen (see useInViewClass). */
+  .paused, .paused * { animation-play-state: paused !important; }
+
+  /*
+   * Scroll reveal as a pure progressive enhancement: content is fully visible
+   * by default, and only browsers with scroll-driven animations (Chrome and
+   * Android WebView, where most patients are) fade it in — off the main
+   * thread, transform and opacity only. Nothing ever waits on JavaScript or an
+   * observer to become readable.
+   */
+  .reveal { opacity: 1; }
+  @supports (animation-timeline: view()) {
+    @media (prefers-reduced-motion: no-preference) {
+      .reveal {
+        animation: reveal-in linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 55%;
+      }
+    }
+  }
+
+  .scrollbar-none { scrollbar-width: none; }
+  .scrollbar-none::-webkit-scrollbar { display: none; }
+
+  .mask-fade-x {
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 1.25rem, #000 calc(100% - 1.25rem), transparent);
+            mask-image: linear-gradient(90deg, transparent, #000 1.25rem, #000 calc(100% - 1.25rem), transparent);
+  }
+}
+
+@keyframes reveal-in { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes shimmer { to { transform: translateX(100%); } }
+@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
+@keyframes drift { 0% { transform: translate3d(-4%, -2%, 0) rotate(0deg); } 50% { transform: translate3d(3%, 3%, 0) rotate(8deg); } 100% { transform: translate3d(-4%, -2%, 0) rotate(0deg); } }
+@keyframes pulse-soft { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.9); opacity: 0; } }
+@keyframes rise { from { opacity: 0; transform: translateY(0.45em); } to { opacity: 1; transform: none; } }
+@keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ripple { from { transform: scale(0.2); opacity: .55; } to { transform: scale(1); opacity: 0; } }
+@keyframes float-y { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+/* ── Hero: ECG trace, portrait, light ──────────────────────────────────── */
+.ecg-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: ecg-draw 2.8s cubic-bezier(.45,.05,.25,1) .35s forwards; }
+@keyframes ecg-draw { to { stroke-dashoffset: 0; } }
+.ecg-dot { opacity: 0; animation: fade .6s ease-out 2.9s forwards; }
+.ecg-ring { animation: pulse-soft 3.2s var(--ease-breathe) 3.2s infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .ecg-draw { stroke-dashoffset: 0; animation: none; }
+  .ecg-dot { opacity: 1; animation: none; }
+}
+
+.portrait-breathe { animation: breathe 9s var(--ease-breathe) infinite; transform-origin: 50% 60%; }
+.portrait-orbit { animation: orbit 28s linear infinite; }
+.hero-light { animation: drift 16s var(--ease-breathe) infinite; }
+.hero-light-2 { animation: drift 22s var(--ease-breathe) -8s infinite reverse; }
+@keyframes orbit { to { transform: rotate(360deg); } }
+.live-dot::after { content: ''; position: absolute; inset: 0; border-radius: 9999px; background: currentColor; animation: pulse-soft 2.6s var(--ease-breathe) infinite; }
+
+/* ── Body map ──────────────────────────────────────────────────────────── */
+/*
+ * Focus is drawn on the region's own contour (stroke), not with a box-shadow
+ * ring, because SVG shapes do not render box-shadow.
+ */
+.bm-region { cursor: pointer; outline: none; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.bm-hi, .bm-sel { opacity: 0; transition: opacity .35s var(--ease-calm); }
+.bm-contour { stroke: rgb(var(--c-brand-800)); stroke-width: 0; opacity: 0; transition: opacity .2s; }
+.bm-seam { stroke: rgb(var(--c-paper)); stroke-width: 1.6; opacity: .95; }
+@media (hover: hover) { .bm-region:hover .bm-hi { opacity: .55; } }
+.bm-region:focus-visible .bm-hi { opacity: .7; }
+.bm-region:focus-visible .bm-contour { stroke-width: 4; opacity: 1; }
+.bm-region[data-selected='true'] .bm-sel { opacity: 1; }
+.bm-region[data-selected='true'] .bm-seam { stroke: rgb(var(--c-paper)); }
+.bm-ripple { fill: rgb(var(--c-paper)); transform-box: fill-box; transform-origin: center; animation: ripple .75s var(--ease-calm) forwards; }
+.bm-breathe { animation: breathe 7s var(--ease-breathe) infinite; transform-origin: 50% 55%; }
+
+/* ── Story phone ───────────────────────────────────────────────────────── */
+.story-ring { animation: story-ring 3s var(--ease-breathe) infinite; }
+.story-ring-2 { animation-delay: 1.5s; }
+@keyframes story-ring { from { transform: scale(1); opacity: .8; } to { transform: scale(2.1); opacity: 0; } }

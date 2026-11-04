@@ -1,19 +1,18 @@
 import { Suspense, lazy } from 'react';
-import { Routes, Route } from 'react-router-dom';
-import { useI18n } from './i18n/index.jsx';
+import { createBrowserRouter, Outlet, useLocation } from 'react-router-dom';
 import Navbar from './components/layout/Navbar.jsx';
 import Footer from './components/layout/Footer.jsx';
 import SkipLink from './components/layout/SkipLink.jsx';
 import WhatsAppFab from './components/layout/WhatsAppFab.jsx';
 import ScrollToTop from './components/layout/ScrollToTop.jsx';
+import { PageSkeleton } from './design/Skeleton.jsx';
 import Home from './pages/Home.jsx';
 
 /**
  * Home is imported eagerly — it is the landing page, and code-splitting it
  * would only add a round trip before anything renders. Every other route is
  * lazy, so a first-time visitor on a phone downloads the home page and nothing
- * else. The booking and admin pages are the heaviest and the least often
- * visited, which is exactly the trade this makes.
+ * else.
  */
 const About = lazy(() => import('./pages/About.jsx'));
 const Services = lazy(() => import('./pages/Services.jsx'));
@@ -28,46 +27,27 @@ const Account = lazy(() => import('./pages/Account.jsx'));
 const Admin = lazy(() => import('./pages/Admin.jsx'));
 const NotFound = lazy(() => import('./pages/NotFound.jsx'));
 
-/**
- * Reserves vertical space while a route chunk loads, so the footer does not
- * jump up the page and then back down — that jump is a layout shift, and it
- * is visible on a slow connection, which is exactly when it matters.
- */
-function RouteFallback() {
-  const { t } = useI18n();
-  return (
-    <div className="container-page flex min-h-[60vh] items-center justify-center py-24">
-      <p className="text-slate-500" role="status">
-        {t('common.loading')}
-      </p>
-    </div>
-  );
-}
+/** Browsers without view transitions get a short CSS fade on route change instead. */
+const supportsViewTransitions = typeof document !== 'undefined' && 'startViewTransition' in document;
 
-export default function App() {
+function Layout() {
+  const { pathname } = useLocation();
   return (
     <div className="flex min-h-screen flex-col">
       <SkipLink />
       <ScrollToTop />
       <Navbar />
 
-      <main id="main" tabIndex={-1} className="flex-1">
-        <Suspense fallback={<RouteFallback />}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/about" element={<About />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/faq" element={<Faq />} />
-            <Route path="/book" element={<Booking />} />
-            <Route path="/confirmation/:bookingId" element={<Confirmation />} />
-            <Route path="/contact" element={<Contact />} />
-            <Route path="/privacy" element={<Privacy />} />
-            <Route path="/terms" element={<Terms />} />
-            <Route path="/refund" element={<Refund />} />
-            <Route path="/account" element={<Account />} />
-            <Route path="/admin" element={<Admin />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+      <main
+        id="main"
+        tabIndex={-1}
+        key={supportsViewTransitions ? undefined : pathname}
+        className={`flex-1 focus:outline-none ${supportsViewTransitions ? '' : 'route-fade'}`}
+      >
+        {/* The skeleton reserves height while a route chunk loads, so the
+            footer does not jump up the page and back down (layout shift). */}
+        <Suspense fallback={<PageSkeleton />}>
+          <Outlet />
         </Suspense>
       </main>
 
@@ -76,3 +56,35 @@ export default function App() {
     </div>
   );
 }
+
+export const router = createBrowserRouter(
+  [
+    {
+      element: <Layout />,
+      children: [
+        { path: '/', element: <Home /> },
+        { path: '/about', element: <About /> },
+        { path: '/services', element: <Services /> },
+        { path: '/faq', element: <Faq /> },
+        { path: '/book', element: <Booking /> },
+        { path: '/confirmation/:bookingId', element: <Confirmation /> },
+        { path: '/contact', element: <Contact /> },
+        { path: '/privacy', element: <Privacy /> },
+        { path: '/terms', element: <Terms /> },
+        { path: '/refund', element: <Refund /> },
+        { path: '/account', element: <Account /> },
+        { path: '/admin', element: <Admin /> },
+        { path: '*', element: <NotFound /> },
+      ],
+    },
+  ],
+  {
+    future: {
+      v7_relativeSplatPath: true,
+      v7_fetcherPersist: true,
+      v7_normalizeFormMethod: true,
+      v7_partialHydration: true,
+      v7_skipActionErrorRevalidation: true,
+    },
+  },
+);

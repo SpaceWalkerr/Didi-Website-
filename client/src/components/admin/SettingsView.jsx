@@ -45,7 +45,7 @@ function HoursEditor({ token }) {
   return (
     <section aria-labelledby="hours-h" className="card">
       <h2 id="hours-h" className="font-sans text-lg font-semibold">Consulting hours</h2>
-      <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600">
+      <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-slate-600">
         Patients can book only inside these windows. Changes apply to new bookings immediately;
         appointments already booked outside the new hours are <strong className="font-semibold">not</strong> cancelled.
       </p>
@@ -53,8 +53,8 @@ function HoursEditor({ token }) {
       <div className="mt-5 space-y-3">
         {ORDER.map((d) => (
           <fieldset key={d} className="rounded-xl border border-slate-200 p-4">
-            <legend className="px-1 text-[15px] font-semibold text-slate-900">{DAYS[d]}</legend>
-            {hours[d].length === 0 && <p className="text-[15px] text-slate-500">Closed</p>}
+            <legend className="px-1 text-[0.9375rem] font-semibold text-slate-900">{DAYS[d]}</legend>
+            {hours[d].length === 0 && <p className="text-[0.9375rem] text-slate-500">Closed</p>}
             {hours[d].map(([start, end], i) => (
               <div key={i} className="mt-2 flex flex-wrap items-center gap-2">
                 <input
@@ -79,7 +79,7 @@ function HoursEditor({ token }) {
       <ErrorNote>{error}</ErrorNote>
       <div className="mt-5 flex items-center gap-3">
         <button type="button" onClick={save} disabled={busy} className="btn-primary">{busy ? 'Saving…' : 'Save hours'}</button>
-        {saved && <span role="status" className="text-[15px] font-medium text-care-800">Saved. New bookings use these hours.</span>}
+        {saved && <span role="status" className="text-[0.9375rem] font-medium text-care-800">Saved. New bookings use these hours.</span>}
       </div>
     </section>
   );

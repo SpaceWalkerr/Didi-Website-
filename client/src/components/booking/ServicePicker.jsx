@@ -23,7 +23,7 @@ export default function ServicePicker({ services, value, onChange }) {
                           focus-within:ring-2 focus-within:ring-brand-600 focus-within:ring-offset-2 ${
                             selected
                               ? 'border-brand-600 bg-brand-50/70 ring-1 ring-brand-300'
-                              : 'border-slate-300 bg-white hover:border-brand-300 hover:bg-brand-50/40'
+                              : 'border-slate-300 bg-paper hover:border-brand-300 hover:bg-brand-50/40'
                           }`}
             >
               <input

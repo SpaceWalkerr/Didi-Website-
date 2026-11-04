@@ -1,63 +1,56 @@
 /** @type {import('tailwindcss').Config} */
+import plugin from 'tailwindcss/plugin';
+import { THEMES } from './src/design/tokens.js';
+
+/**
+ * Colours are CSS custom properties holding RGB channels ("15 128 120"), so a
+ * single `data-theme="night"` on <html> re-themes every utility on the site,
+ * including pages that were written before night mode existed. The values
+ * live in src/design/tokens.js (one table per theme) and are checked for
+ * contrast by scripts/check-contrast.mjs.
+ */
+const v = (name) => `rgb(var(--c-${name}) / <alpha-value>)`;
+const ramp = (name, steps = [50, 100, 200, 300, 400, 500, 600, 700, 800, 900]) =>
+  Object.fromEntries(steps.map((s) => [s, v(`${name}-${s}`)]));
+
+const toVars = (table) =>
+  Object.fromEntries(
+    Object.entries(table).map(([key, hex]) => {
+      const n = parseInt(hex.slice(1), 16);
+      return [`--c-${key}`, `${(n >> 16) & 255} ${(n >> 8) & 255} ${n & 255}`];
+    }),
+  );
+
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}', '../shared/**/*.js'],
   theme: {
     extend: {
       colors: {
+        /** Calm clinical teal. brand-600 is the action colour in both themes. */
+        brand: ramp('brand'),
+        slate: ramp('slate'),
+        care: ramp('care'),
+        amber: ramp('amber'),
+        red: ramp('red'),
+        /** Warm surfaces — the "not clinical-cold" layer. */
+        surface: { DEFAULT: v('surface'), 100: v('surface-100'), 200: v('surface-200'), 300: v('surface-300') },
+        /** The one warm accent. Decoration first; text only via clay-700. */
+        clay: { 100: v('clay-100'), 300: v('clay-300'), 500: v('clay-500'), 700: v('clay-700') },
+        sand: { 100: v('sand-100'), 200: v('sand-200') },
+        cream: v('cream'),
+        paper: v('paper'),
+        ink: v('ink'),
+        /** Constant deep teal for bold panels; white text on it in both themes. */
+        deep: { DEFAULT: '#0b4a46', 700: '#0d5a55', 900: '#08302d' },
+        /** Constant action teal: buttons keep white text in both themes. */
+        action: { DEFAULT: '#0f8078', hover: '#0d6660' },
         /**
-         * Calm clinical teal. The ramp is deliberately darker than Tailwind's
-         * stock teal so that `brand-600` clears WCAG AA (4.8:1) as text on
-         * white — patients using this site skew older, and a 3:1 accent that
-         * looks fine to a designer is genuinely hard for them to read.
-         */
-        brand: {
-          50: '#f2fbf9',
-          100: '#d8f3ee',
-          200: '#b0e7de',
-          300: '#7fd5c9',
-          400: '#48bbae',
-          500: '#279e92',
-          600: '#0f8078', // 4.80:1 on white — AA for body text
-          700: '#0d6660', // 6.80:1 on white — AA for everything
-          800: '#0f524e',
-          900: '#104441',
-        },
-        /**
-         * WhatsApp green, darkened to clear WCAG AA.
-         *
-         * The official brand green (#25D366) gives white text 1.8:1, and even
-         * a first correction to #128C4B only reached 4.3:1 — under the 4.5:1
-         * floor. These two clear it at 5.5:1 and 6.9:1 while still reading
-         * unmistakably as WhatsApp.
+         * WhatsApp green, darkened to clear WCAG AA with white text (5.5:1 and
+         * 6.9:1). The official #25D366 gives 1.8:1.
          */
         whatsapp: { DEFAULT: '#0f7a41', dark: '#0c6836' },
-
-        /** Warm off-white section backgrounds — the "not clinical-cold" layer. */
-        surface: {
-          DEFAULT: '#faf8f4',
-          100: '#f5f1ea',
-          200: '#ece5d9',
-          300: '#dfd4c2',
-        },
-        /** Soft healing green — confirmations and reassurance only. */
-        care: {
-          50: '#f0fdf6',
-          100: '#dcfce9',
-          200: '#bbf7d4',
-          300: '#86efb6',
-          400: '#4ade8f',
-          500: '#22c56e',
-          600: '#16a357',
-          700: '#158047',
-          800: '#16653c',
-          900: '#145334',
-        },
       },
       fontFamily: {
-        /**
-         * Inter for Latin/Cyrillic, then the Noto faces so Devanagari and
-         * Gurmukhi render in a matching weight rather than a system fallback.
-         */
         sans: [
           'Inter',
           'Noto Sans Devanagari',
@@ -70,12 +63,13 @@ export default {
           'sans-serif',
         ],
         /**
-         * Warmer display face for headings. Fraunces covers Latin only, so
-         * Hindi and Punjabi headings fall through to Noto — deliberate, not a
-         * bug: a serif fallback for Devanagari would look far worse.
+         * Fraunces for Latin; Noto Serif for Devanagari and Gurmukhi so Hindi
+         * and Punjabi headings keep a serif voice instead of dropping to sans.
          */
         display: [
           'Fraunces',
+          'Noto Serif Devanagari',
+          'Noto Serif Gurmukhi',
           'Noto Sans Devanagari',
           'Noto Sans Gurmukhi',
           'ui-serif',
@@ -89,12 +83,18 @@ export default {
         lg: ['1.0625rem', { lineHeight: '1.7' }],
       },
       boxShadow: {
-        card: '0 1px 2px rgba(16, 40, 38, 0.04), 0 8px 24px rgba(16, 40, 38, 0.06)',
-        lift: '0 2px 4px rgba(16, 40, 38, 0.05), 0 16px 40px rgba(16, 40, 38, 0.10)',
+        card: '0 1px 2px rgb(var(--c-shadow) / 0.05), 0 10px 30px -12px rgb(var(--c-shadow) / 0.14)',
+        lift: '0 2px 6px rgb(var(--c-shadow) / 0.06), 0 24px 60px -20px rgb(var(--c-shadow) / 0.28)',
+        glow: '0 0 0 1px rgb(var(--c-brand-200) / 0.6), 0 18px 50px -18px rgb(var(--c-brand-500) / 0.55)',
       },
       borderRadius: {
         '2xl': '1rem',
         '3xl': '1.5rem',
+        '4xl': '2rem',
+      },
+      transitionTimingFunction: {
+        calm: 'cubic-bezier(.22,.61,.36,1)',
+        breathe: 'cubic-bezier(.65,0,.35,1)',
       },
       keyframes: {
         'fade-up': {
@@ -107,5 +107,12 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    plugin(({ addBase }) => {
+      addBase({
+        ':root': { ...toVars(THEMES.light), colorScheme: 'light' },
+        ':root[data-theme="night"]': { ...toVars(THEMES.night), colorScheme: 'dark' },
+      });
+    }),
+  ],
 };

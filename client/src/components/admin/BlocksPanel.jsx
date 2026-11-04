@@ -75,14 +75,14 @@ export default function BlocksPanel({ token, onChange }) {
       <h2 id="blocks-heading" className="font-sans text-lg font-semibold">
         Time off
       </h2>
-      <p className="mt-1.5 text-[15px] leading-relaxed text-slate-600">
+      <p className="mt-1.5 text-[0.9375rem] leading-relaxed text-slate-600">
         Blocked time disappears from the booking page. Appointments already booked into it
         are <strong className="font-semibold">not</strong> cancelled — cancel those yourself
         from the list, so nobody who has paid is dropped silently.
       </p>
 
       {error && (
-        <p role="alert" className="mt-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-[15px] text-red-800">
+        <p role="alert" className="mt-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-[0.9375rem] text-red-800">
           {error}
         </p>
       )}
@@ -103,7 +103,7 @@ export default function BlocksPanel({ token, onChange }) {
                 onChange={(e) => setWholeDay(e.target.checked)}
                 className="h-5 w-5 rounded border-slate-400 text-brand-600 focus-visible:ring-2 focus-visible:ring-brand-600"
               />
-              <span className="text-[15px] text-slate-700">Whole day</span>
+              <span className="text-[0.9375rem] text-slate-700">Whole day</span>
             </label>
           </div>
         </div>
@@ -137,12 +137,12 @@ export default function BlocksPanel({ token, onChange }) {
         </button>
       </form>
 
-      <h3 className="mt-6 text-[15px] font-semibold text-slate-700">
+      <h3 className="mt-6 text-[0.9375rem] font-semibold text-slate-700">
         Blocked ({blocks.length})
       </h3>
 
       {blocks.length === 0 ? (
-        <p className="mt-2 text-[15px] text-slate-500">Nothing blocked in the next 30 days.</p>
+        <p className="mt-2 text-[0.9375rem] text-slate-500">Nothing blocked in the next 30 days.</p>
       ) : (
         <ul className="mt-3 divide-y divide-slate-200 rounded-xl border border-slate-200">
           {blocks.map((b) => (
@@ -153,7 +153,7 @@ export default function BlocksPanel({ token, onChange }) {
                     weekday: 'short', day: 'numeric', month: 'short', year: 'numeric',
                   })}
                 </p>
-                <p className="text-[15px] text-slate-600">
+                <p className="text-[0.9375rem] text-slate-600">
                   {b.wholeDay ? 'Whole day' : `${b.start} – ${b.end}`}
                   {b.reason ? ` · ${b.reason}` : ''}
                 </p>

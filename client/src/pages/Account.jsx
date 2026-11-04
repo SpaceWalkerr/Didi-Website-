@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link } from '../lib/router.jsx';
 import { api } from '../lib/api.js';
 import { formatDateTime, rupees, upcomingDates } from '../lib/format.js';
 import DatePicker from '../components/booking/DatePicker.jsx';
@@ -74,7 +75,7 @@ function SignIn({ onLinkError }) {
       <h2 className="text-xl">{t('account.signInTitle')}</h2>
       <p className="mt-2 leading-relaxed text-slate-600">{t('account.signInBody')}</p>
       {error && (
-        <p role="alert" className="mt-4 rounded-xl border border-red-300 bg-red-50 p-3 text-[15px] text-red-900">
+        <p role="alert" className="mt-4 rounded-xl border border-red-300 bg-red-50 p-3 text-[0.9375rem] text-red-900">
           {error}
         </p>
       )}
@@ -140,7 +141,7 @@ function ReschedulePanel({ booking, session, onDone, onClose }) {
       <h4 className="font-sans text-base font-semibold text-slate-900">{t('account.rescheduleTitle')}</h4>
       <p className="text-sm text-slate-600">{t('account.rescheduleNote')}</p>
       {error && (
-        <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-3 text-[15px] text-red-900">{error}</p>
+        <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-3 text-[0.9375rem] text-red-900">{error}</p>
       )}
       <div className="min-w-0">
         <DatePicker dates={dates} value={date} onChange={setDate} minDate={meta?.minDate} maxDate={meta?.maxDate} openDays={meta?.openDays} />
@@ -182,7 +183,7 @@ function BookingCard({ booking, onCancel, onRescheduled, session, busy }) {
       </div>
 
       {booking.followUpDate && (
-        <p className="mt-3 rounded-lg bg-brand-50 px-3 py-2 text-[15px] text-brand-900">
+        <p className="mt-3 rounded-lg bg-brand-50 px-3 py-2 text-[0.9375rem] text-brand-900">
           {t('account.followUp', { date: formatDateTime(booking.followUpDate, '12:00', locale).split(',').slice(0, 3).join(',') })}
         </p>
       )}
@@ -327,7 +328,7 @@ export default function Account() {
                 <p className="text-xl font-semibold text-slate-900">
                   {me ? t('account.hello', { name: me.name }) : session.email}
                 </p>
-                <p className="text-[15px] text-slate-500">{me?.email || session.email}</p>
+                <p className="text-[0.9375rem] text-slate-500">{me?.email || session.email}</p>
               </div>
               <div className="flex gap-2">
                 <Link to="/book" className="btn-primary !py-2">{t('account.bookNew')}</Link>
@@ -336,7 +337,7 @@ export default function Account() {
             </div>
 
             {error && (
-              <p role="alert" className="mt-5 rounded-xl border border-red-300 bg-red-50 p-3 text-[15px] text-red-900">{error}</p>
+              <p role="alert" className="mt-5 rounded-xl border border-red-300 bg-red-50 p-3 text-[0.9375rem] text-red-900">{error}</p>
             )}
 
             {me && (
@@ -357,7 +358,7 @@ export default function Account() {
                   </div>
                 </section>
 
-                <p className="mt-8 rounded-xl bg-surface p-4 text-[15px] leading-relaxed text-slate-600">{t('account.help')}</p>
+                <p className="mt-8 rounded-xl bg-surface p-4 text-[0.9375rem] leading-relaxed text-slate-600">{t('account.help')}</p>
               </>
             )}
           </div>

@@ -2,7 +2,7 @@
 const base = {
   fill: 'none',
   stroke: 'currentColor',
-  strokeWidth: 1.8,
+  strokeWidth: 1.6,
   strokeLinecap: 'round',
   strokeLinejoin: 'round',
 };
@@ -85,5 +85,96 @@ export const UserIcon = ({ className = 'h-5 w-5' }) => (
   <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden="true">
     <circle cx="12" cy="8" r="4" />
     <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+  </svg>
+);
+
+export const SunIcon = ({ className = 'h-5 w-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden="true">
+    <circle cx="12" cy="12" r="4" />
+    <path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4 6 18M18 6l1.4-1.4" />
+  </svg>
+);
+
+export const MoonIcon = ({ className = 'h-5 w-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden="true">
+    <path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" />
+  </svg>
+);
+
+export const PhoneAutoIcon = ({ className = 'h-5 w-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden="true">
+    <rect x="6" y="2.5" width="12" height="19" rx="2.5" />
+    <path d="M10.5 18.5h3" />
+  </svg>
+);
+
+/** "Aa" — the reading comfort control. */
+export const TextSizeIcon = ({ className = 'h-5 w-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden="true">
+    <path d="M3 19 8.5 5h1L15 19M5.2 14h7.6" />
+    <path d="M15.5 19l3.2-8h.6l3.2 8M16.7 16h4.6" />
+  </svg>
+);
+
+export const HeartPulseIcon = ({ className = 'h-5 w-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden="true">
+    <path d="M20.4 12.6A5 5 0 0 0 12 6.4a5 5 0 0 0-8.4 6.2L12 21l3.4-3.4" />
+    <path d="M3 12h4l1.5-2.5L11 15l2-3h3" />
+  </svg>
+);
+
+export const ShareIcon = ({ className = 'h-5 w-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden="true">
+    <circle cx="18" cy="5.5" r="2.5" />
+    <circle cx="6" cy="12" r="2.5" />
+    <circle cx="18" cy="18.5" r="2.5" />
+    <path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1" />
+  </svg>
+);
+
+export const CalendarPlusIcon = ({ className = 'h-5 w-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden="true">
+    <rect x="3" y="5" width="18" height="16" rx="2.5" />
+    <path d="M8 3v4M16 3v4M3 10h18M12 13.5v5M9.5 16h5" />
+  </svg>
+);
+
+export const ArrowLeftIcon = ({ className = 'h-4 w-4' }) => (
+  <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden="true">
+    <path d="M20 12H5M11 6l-6 6 6 6" />
+  </svg>
+);
+
+export const RefreshIcon = ({ className = 'h-4 w-4' }) => (
+  <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden="true">
+    <path d="M4 12a8 8 0 0 1 14-5.3L20 9M20 4v5h-5M20 12a8 8 0 0 1-14 5.3L4 15M4 20v-5h5" />
+  </svg>
+);
+
+export const LockIcon = ({ className = 'h-5 w-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden="true">
+    <rect x="4.5" y="10.5" width="15" height="10" rx="2.5" />
+    <path d="M8 10.5V8a4 4 0 0 1 8 0v2.5" />
+  </svg>
+);
+
+export const ZoomOutIcon = ({ className = 'h-4 w-4' }) => (
+  <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden="true">
+    <path d="M9 3H4v5M15 3h5v5M9 21H4v-5M15 21h5v-5" />
+  </svg>
+);
+
+export const SparkIcon = ({ className = 'h-5 w-5' }) => (
+  <svg className={className} viewBox="0 0 24 24" {...base} aria-hidden="true">
+    <path d="M12 3c.6 4.2 2.8 6.4 7 7-4.2.6-6.4 2.8-7 7-.6-4.2-2.8-6.4-7-7 4.2-.6 6.4-2.8 7-7Z" />
+  </svg>
+);
+
+/** Brand mark: a calm heartbeat inside a soft circle. */
+export const BrandMark = ({ className = 'h-9 w-9' }) => (
+  <svg className={className} viewBox="0 0 40 40" aria-hidden="true">
+    <circle cx="20" cy="20" r="19" fill="#0f8078" />
+    <path d="M8 21h6.2l2.3-5.2 3.6 10 2.6-6.4 1.6 1.6H32" fill="none" stroke="#fffdf9" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+    <circle cx="32" cy="21" r="1.7" fill="#e2a587" />
   </svg>
 );

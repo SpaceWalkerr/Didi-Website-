@@ -248,7 +248,7 @@ export default function Booking() {
         {meta?.paymentMode === 'mock' && (
           <div className="mt-6 flex items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4">
             <AlertIcon className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
-            <p className="text-[15px] leading-relaxed text-amber-900">
+            <p className="text-[0.9375rem] leading-relaxed text-amber-900">
               <strong className="font-semibold">{t('booking.demoTitle')}</strong>{' '}
               {t('booking.demoBody')}
             </p>
@@ -302,7 +302,7 @@ export default function Booking() {
                     ref={errorRef}
                     tabIndex={-1}
                     role="alert"
-                    className="mt-5 rounded-xl border border-red-300 bg-red-50 p-4 text-[15px] leading-relaxed text-red-900"
+                    className="mt-5 rounded-xl border border-red-300 bg-red-50 p-4 text-[0.9375rem] leading-relaxed text-red-900"
                   >
                     {submitError}
                   </div>

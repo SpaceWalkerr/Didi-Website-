@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '../lib/router.jsx';
 import { useI18n } from '../i18n/index.jsx';
 import Seo from '../components/seo/Seo.jsx';
 

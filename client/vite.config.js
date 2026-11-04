@@ -2,12 +2,26 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { buildPracticeSchema } from '../shared/schema.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.join(here, '..');
 
+/**
+ * Writes the schema.org JSON-LD into index.html at build (and dev) time, from
+ * the same config the server reads. `<` is escaped so the JSON can never close
+ * the script element early.
+ */
+const practiceSchema = () => ({
+  name: 'practice-schema',
+  transformIndexHtml(html) {
+    const json = JSON.stringify(buildPracticeSchema()).replace(/</g, '\\u003c');
+    return html.replace('</head>', `    <script type="application/ld+json">${json}</script>\n  </head>`);
+  },
+});
+
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), practiceSchema()],
   resolve: {
     // Practice facts live outside client/ because the server imports the same
     // module — one file to edit, and the server stays authoritative on fees.
@@ -25,11 +39,8 @@ export default defineConfig({
         /**
          * React and the router go in one long-lived chunk — they change with
          * upgrades, not with content, so they stay cached across deploys.
-         *
-         * Framer Motion is deliberately NOT listed here. Naming it as a manual
-         * chunk pulls the entire package in whole and defeats the point of
-         * using LazyMotion with `m`: letting Rollup tree-shake it down to the
-         * feature set actually imported.
+         * Framer Motion is deliberately not listed: LazyMotion + `m` lets
+         * Rollup tree-shake it to the features actually imported.
          */
         manualChunks: { vendor: ['react', 'react-dom', 'react-router-dom'] },
       },

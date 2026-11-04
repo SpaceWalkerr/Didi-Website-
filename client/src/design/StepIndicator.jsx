@@ -24,7 +24,7 @@ export default function StepIndicator({ steps, current, label }) {
                                 ? 'bg-care-600 text-white'
                                 : active
                                   ? 'bg-brand-600 text-white'
-                                  : 'border border-slate-300 bg-white text-slate-500'
+                                  : 'border border-slate-300 bg-paper text-slate-500'
                             }`}
               >
                 {done ? (

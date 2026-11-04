@@ -1,9 +1,9 @@
 /**
  * A page section with a consistent heading block.
  *
- * `tone` switches between the white and warm off-white bands that alternate
- * down the page. Every section takes an `id` so the nav and the skip links can
- * target it, and labels itself by its own heading for screen-reader landmarks.
+ * `tone` switches between the cream, warm and deep bands that alternate down
+ * the page. Every section takes an `id` so the nav and skip links can target
+ * it, and labels itself by its own heading for screen-reader landmarks.
  */
 export default function Section({
   id,
@@ -11,39 +11,36 @@ export default function Section({
   eyebrow,
   title,
   lede,
-  align = 'center',
+  align = 'left',
   children,
   className = '',
   headingLevel: H = 'h2',
+  aside,
 }) {
   const headingId = id ? `${id}-heading` : undefined;
   const tones = {
-    plain: 'section bg-white',
+    plain: 'section bg-cream',
+    paper: 'section bg-paper',
     warm: 'section-warm',
-    brand: 'section bg-brand-700 text-brand-50',
+    deep: 'section bg-deep text-white',
   };
+  const deep = tone === 'deep';
 
   return (
-    <section id={id} aria-labelledby={headingId} className={`${tones[tone]} ${className}`}>
+    <section id={id} aria-labelledby={headingId} className={`${tones[tone] || tones.plain} ${className}`}>
       <div className="container-page">
         {(eyebrow || title || lede) && (
-          <div className={align === 'center' ? 'mx-auto max-w-2xl text-center' : 'max-w-2xl'}>
-            {eyebrow && (
-              <p className={tone === 'brand' ? 'eyebrow text-brand-200' : 'eyebrow'}>{eyebrow}</p>
-            )}
-            {title && (
-              <H
-                id={headingId}
-                className={`mt-2.5 text-3xl sm:text-[2.1rem] ${tone === 'brand' ? 'text-white' : ''}`}
-              >
-                {title}
-              </H>
-            )}
-            {lede && (
-              <p className={`mt-4 ${tone === 'brand' ? 'text-lg leading-relaxed text-brand-100' : 'lede'}`}>
-                {lede}
-              </p>
-            )}
+          <div className={`flex flex-col gap-6 ${align === 'center' ? 'items-center text-center' : 'lg:flex-row lg:items-end lg:justify-between'}`}>
+            <div className={align === 'center' ? 'mx-auto max-w-2xl' : 'max-w-2xl'}>
+              {eyebrow && <p className={`eyebrow ${deep ? '!text-[#9fe0d5]' : ''}`}>{eyebrow}</p>}
+              {title && (
+                <H id={headingId} className={`display-lg mt-4 ${deep ? '!text-white' : ''}`}>
+                  {title}
+                </H>
+              )}
+              {lede && <p className={`mt-5 text-lg leading-relaxed ${deep ? 'text-white/80' : 'text-slate-600'}`}>{lede}</p>}
+            </div>
+            {aside}
           </div>
         )}
         {children}

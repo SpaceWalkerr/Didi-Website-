@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
+import { Link } from '../lib/router.jsx';
 import { api } from '../lib/api.js';
 import { formatDateTime, rupees } from '../lib/format.js';
 import { CONTACT, waLink } from '@shared/practice.config.js';
@@ -105,10 +106,10 @@ export default function Confirmation() {
                 <div
                   key={label}
                   className={`grid gap-1 px-5 py-3.5 sm:grid-cols-[10rem_1fr] sm:gap-4 ${
-                    i % 2 ? 'bg-white' : 'bg-surface'
+                    i % 2 ? 'bg-paper' : 'bg-surface'
                   }`}
                 >
-                  <dt className="text-[15px] text-slate-500">{label}</dt>
+                  <dt className="text-[0.9375rem] text-slate-500">{label}</dt>
                   <dd className="break-words font-medium text-slate-900">{value}</dd>
                 </div>
               ))}
@@ -129,14 +130,14 @@ export default function Confirmation() {
                   <WhatsAppIcon className="h-5 w-5" />
                   {t('confirmation.joinCta')}
                 </a>
-                <p className="mt-3 text-[15px] text-care-900">{t('confirmation.joinNote')}</p>
+                <p className="mt-3 text-[0.9375rem] text-care-900">{t('confirmation.joinNote')}</p>
               </div>
             )}
           </div>
 
           <div className="card mt-6">
             <h2 className="font-sans text-lg font-semibold">{t('confirmation.beforeTitle')}</h2>
-            <ul className="mt-4 space-y-3 text-[15px] leading-relaxed text-slate-600">
+            <ul className="mt-4 space-y-3 text-[0.9375rem] leading-relaxed text-slate-600">
               {tList('confirmation.beforeItems').map((item) => (
                 <li key={item} className="flex gap-2.5">
                   <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
@@ -166,7 +167,7 @@ export default function Confirmation() {
 
           <div className="mt-6 flex items-start gap-3 rounded-2xl border border-amber-300 bg-amber-50 p-4">
             <AlertIcon className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
-            <p className="text-[15px] leading-relaxed text-amber-900">
+            <p className="text-[0.9375rem] leading-relaxed text-amber-900">
               {t('emergency.notice')}{' '}
               {t('confirmation.emergencySuffix', { number: CONTACT.whatsappDisplay })}
             </p>

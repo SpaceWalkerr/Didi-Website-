@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../lib/router.jsx';
 import { api } from '../lib/api.js';
 import { rupees } from '../lib/format.js';
 import { HIGHLIGHTED_SERVICE, waLink } from '../config.js';
@@ -44,7 +44,7 @@ export default function Services() {
 
         {error && (
           <div className="card mb-8 border-amber-300 bg-amber-50">
-            <p className="text-[15px] leading-relaxed text-amber-900">
+            <p className="text-[0.9375rem] leading-relaxed text-amber-900">
               {t('services.loadError', { error })}
             </p>
             <a
@@ -65,7 +65,7 @@ export default function Services() {
             return (
               <RevealItem
                 key={service.id}
-                className={`flex flex-col rounded-2xl border bg-white p-6 shadow-card ${
+                className={`flex flex-col rounded-2xl border bg-paper p-6 shadow-card ${
                   highlighted ? 'border-brand-400 ring-1 ring-brand-300' : 'border-slate-200'
                 }`}
               >
@@ -95,7 +95,7 @@ export default function Services() {
 
                 <ul className="mt-5 flex-1 space-y-2.5">
                   {tList(`services.items.${service.id}.includes`).map((line) => (
-                    <li key={line} className="flex gap-2.5 text-[15px] leading-relaxed text-slate-700">
+                    <li key={line} className="flex gap-2.5 text-[0.9375rem] leading-relaxed text-slate-700">
                       <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-care-600" />
                       {line}
                     </li>

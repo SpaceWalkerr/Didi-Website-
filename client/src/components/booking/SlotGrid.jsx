@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link } from '../../lib/router.jsx';
 import { waLink } from '@shared/practice.config.js';
 import { formatTime } from '../../lib/format.js';
 import { useI18n } from '../../i18n/index.jsx';
@@ -22,7 +22,7 @@ export default function SlotGrid({ slots, loading, value, onChange }) {
 
   if (!slots.length) {
     return (
-      <p className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-[15px] text-amber-900">
+      <p className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-[0.9375rem] text-amber-900">
         {t('booking.noConsultDay')}
       </p>
     );
@@ -32,7 +32,7 @@ export default function SlotGrid({ slots, loading, value, onChange }) {
 
   if (!available.length) {
     return (
-      <p className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-[15px] leading-relaxed text-amber-900">
+      <p className="mt-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-[0.9375rem] leading-relaxed text-amber-900">
         {t('booking.allBooked')
           .split('{link}')
           .flatMap((part, i) =>
@@ -76,14 +76,14 @@ export default function SlotGrid({ slots, loading, value, onChange }) {
             aria-pressed={selected}
             aria-label={why ? `${label} — ${why}` : label}
             title={why || undefined}
-            className={`min-h-[2.75rem] rounded-xl border px-2 py-2.5 text-[15px] font-medium
+            className={`min-h-[2.75rem] rounded-xl border px-2 py-2.5 text-[0.9375rem] font-medium
                         transition-colors focus-visible:ring-2 focus-visible:ring-brand-600
                         focus-visible:ring-offset-2 ${
                           !slot.available
                             ? 'cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400 line-through'
                             : selected
                               ? 'border-brand-600 bg-brand-600 text-white'
-                              : 'border-slate-300 bg-white text-slate-700 hover:border-brand-300 hover:bg-brand-50'
+                              : 'border-slate-300 bg-paper text-slate-700 hover:border-brand-300 hover:bg-brand-50'
                         }`}
           >
             {label}

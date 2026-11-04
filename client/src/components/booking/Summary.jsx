@@ -17,10 +17,10 @@ export default function Summary({ service, date, time, rules, paymentMode }) {
   ];
 
   return (
-    <aside className="rounded-2xl border border-slate-200 bg-white p-6 shadow-card lg:sticky lg:top-24">
+    <aside className="rounded-2xl border border-slate-200 bg-paper p-6 shadow-card lg:sticky lg:top-24">
       <h2 className="font-display text-xl">{t('booking.summaryTitle')}</h2>
 
-      <dl className="mt-4 space-y-3 text-[15px]">
+      <dl className="mt-4 space-y-3 text-[0.9375rem]">
         {rows.map(([label, value]) => (
           <div key={label} className="flex justify-between gap-4">
             <dt className="text-slate-500">{label}</dt>
