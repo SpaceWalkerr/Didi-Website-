@@ -1,4 +1,4 @@
-# Online Consultation Website — Solo General Physician
+# Online Consultation Website - Solo General Physician
 
 A small, production-shaped website for a single doctor's telemedicine practice in India:
 marketing pages, a slot-based booking flow with online payment, WhatsApp as the consultation
