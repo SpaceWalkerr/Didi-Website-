@@ -94,7 +94,7 @@ function SignIn({ onLinkError }) {
 function ReschedulePanel({ booking, session, onDone, onClose }) {
   const { t, locale } = useI18n();
   const [meta, setMeta] = useState(null);
-  const [date, setDate] = useState(booking.date);
+  const [date, setDate] = useState(booking.date); // always an open day: it was bookable
   const [slots, setSlots] = useState([]);
   const [loading, setLoading] = useState(false);
   const [time, setTime] = useState('');
@@ -143,7 +143,7 @@ function ReschedulePanel({ booking, session, onDone, onClose }) {
         <p role="alert" className="rounded-xl border border-red-300 bg-red-50 p-3 text-[15px] text-red-900">{error}</p>
       )}
       <div className="min-w-0">
-        <DatePicker dates={dates} value={date} onChange={setDate} minDate={meta?.minDate} maxDate={meta?.maxDate} />
+        <DatePicker dates={dates} value={date} onChange={setDate} minDate={meta?.minDate} maxDate={meta?.maxDate} openDays={meta?.openDays} />
       </div>
       <SlotGrid slots={slots} loading={loading} value={time} onChange={setTime} />
       <div className="flex flex-wrap gap-2">

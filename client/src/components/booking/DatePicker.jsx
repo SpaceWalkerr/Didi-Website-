@@ -8,7 +8,7 @@ import { useI18n } from '../../i18n/index.jsx';
  * screen reader would otherwise read as disconnected words — and which, in the
  * previous version of this page, produced buttons with no usable name at all.
  */
-export default function DatePicker({ dates, value, onChange, minDate, maxDate }) {
+export default function DatePicker({ dates, value, onChange, minDate, maxDate, openDays }) {
   const { t } = useI18n();
 
   return (
@@ -22,7 +22,12 @@ export default function DatePicker({ dates, value, onChange, minDate, maxDate })
         className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-2"
       >
         {dates
-          .filter((d) => (!minDate || d.value >= minDate) && (!maxDate || d.value <= maxDate))
+          .filter(
+            (d) =>
+              (!minDate || d.value >= minDate) &&
+              (!maxDate || d.value <= maxDate) &&
+              (!openDays?.length || openDays.includes(d.dow)),
+          )
           .map((d) => {
             const selected = value === d.value;
             // The first line shows "Today" instead of the weekday on today's

@@ -52,6 +52,8 @@ export const upcomingDates = (count = 21, locale = 'en-IN') => {
       day: fmt(d, { day: 'numeric' }),
       month: fmt(d, { month: 'short' }),
       isToday: i === 0,
+      // Weekday in IST, 0 = Sunday — matches the server's openDays.
+      dow: new Date(`${iso(d)}T12:00:00+05:30`).getUTCDay(),
     };
   });
 };

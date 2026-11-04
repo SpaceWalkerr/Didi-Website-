@@ -86,8 +86,12 @@ export default function Booking() {
 
   // Default to the first date once we know the booking window.
   useEffect(() => {
-    if (meta && !date) setDate(meta.minDate);
-  }, [meta, date]);
+    if (!meta || date) return;
+    const firstOpen = dates.find(
+      (d) => d.value >= meta.minDate && (!meta.openDays?.length || meta.openDays.includes(d.dow)),
+    );
+    setDate(firstOpen?.value || meta.minDate);
+  }, [meta, date, dates]);
 
   const loadSlots = useCallback(async () => {
     if (!date || !serviceId) return;
@@ -268,6 +272,7 @@ export default function Booking() {
                   onChange={setDate}
                   minDate={meta?.minDate}
                   maxDate={meta?.maxDate}
+                  openDays={meta?.openDays}
                 />
 
                 <div>

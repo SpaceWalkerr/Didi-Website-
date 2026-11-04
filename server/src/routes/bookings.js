@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { customAlphabet } from 'nanoid';
 import { SERVICES, getService, PRACTICE, BOOKING_RULES, config } from '../config.js';
 import { db } from '../db.js';
+import { getAvailability } from '../services/availability.js';
 import { getSlots, validateSlot, isValidDateString, istToday, istDateString, bookingRules }
   from '../services/slots.js';
 import { createOrder, paymentMode, upiLink } from '../services/payments.js';
@@ -15,9 +16,17 @@ const newId = customAlphabet('ABCDEFGHJKLMNPQRSTUVWXYZ23456789', 8);
 const router = Router();
 
 /** Everything the booking page needs to render itself. */
-router.get('/meta', (_req, res) => {
+router.get('/meta', async (_req, res, next) => {
   const now = Date.now();
+  let hours;
+  try {
+    hours = await getAvailability();
+  } catch (err) {
+    return next(err);
+  }
   res.json({
+    // Weekdays (0 = Sunday) with at least one consulting window, so the date picker can skip closed days.
+    openDays: [0, 1, 2, 3, 4, 5, 6].filter((d) => (hours[d] || []).length > 0),
     services: SERVICES,
     practice: PRACTICE,
     rules: bookingRules,

@@ -50,6 +50,11 @@ const patient = (n) => ({
 const book = (time, n, extra = {}) => call('/bookings', { method: 'POST',
   body: JSON.stringify({ date, time, service: 'general', patient: patient(n), language: 'en', ...extra }) });
 
+console.log('── Open days drive the date picker ──');
+const openDays = (await call('/bookings/meta')).body?.openDays;
+Array.isArray(openDays) && openDays.includes(1) && !openDays.includes(0)
+  ? pass('meta lists open weekdays (Sunday closed)') : fail(`unexpected openDays ${JSON.stringify(openDays)}`);
+
 console.log('── Body region is stored and validated ──');
 const b1 = await book(slots[0].time, 1, { bodyRegion: 'chest' });
 b1.status === 201 ? pass('booking created with bodyRegion=chest') : fail(`create failed ${b1.status} ${JSON.stringify(b1.body)}`);
