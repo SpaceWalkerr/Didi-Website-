@@ -43,7 +43,12 @@ for (const s of SUITES) {
   }
   const data = fs.mkdtempSync(path.join(os.tmpdir(), 'clinic-test-'));
   const env = { ...process.env, DATABASE_URL: '', SMTP_URL: '', DATA_DIR: data, MOCKDATA: data, PORT: String(s.port),
-    ...(s.mock && { RAZORPAY_KEY_ID: '', RAZORPAY_KEY_SECRET: '', UPI_ID: '' }) };
+    // Every suite gets an explicit payment setup instead of whatever server/.env
+    // holds. CI builds .env from .env.example, which has no UPI_ID, so without
+    // this the dashboard suite ran with UPI switched off and its UPI steps failed.
+    ...(s.mock
+      ? { RAZORPAY_KEY_ID: '', RAZORPAY_KEY_SECRET: '', UPI_ID: '' }
+      : { UPI_ID: 'demo-clinic@upi' }) };
   const server = spawn('node', ['server/src/index.js'], { cwd: REPO, env, stdio: 'ignore' });
   try {
     await wait(s.port);
