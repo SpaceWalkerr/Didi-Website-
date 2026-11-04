@@ -155,6 +155,9 @@ export default function Confirmation() {
                 <WhatsAppIcon className="h-5 w-5 text-whatsapp" />
                 {t('common.messageClinic')}
               </a>
+              <Link to="/account" className="btn-secondary flex-1">
+                {t('nav.account')}
+              </Link>
               <Link to="/" className="btn-secondary flex-1">
                 {t('common.backHome')}
               </Link>

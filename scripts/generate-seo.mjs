@@ -61,6 +61,7 @@ Allow: /
 Disallow: /book
 Disallow: /confirmation/
 Disallow: /admin
+Disallow: /account
 
 Sitemap: ${site}/sitemap.xml
 `;

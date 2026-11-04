@@ -26,8 +26,9 @@ Without Razorpay keys the app starts in **mock payment mode**: the entire bookin
 end and no money moves, so you can demo the site before the doctor's payment account exists. The
 booking page shows a clear "Demo mode" banner while this is on.
 
-The clinic view is at **/admin**. The default token is `change-me-please` — set `ADMIN_TOKEN` in
-`server/.env` before deploying anywhere.
+The clinic dashboard is at **/admin** (sign in with the clinic email and `ADMIN_PASSWORD`, which defaults to
+`ADMIN_TOKEN`; the default is `change-me-please` — change it before deploying anywhere). Patients have their own
+page at **/account**, signed into by an emailed link. See [DEPLOY.md](DEPLOY.md) → *The dashboards*.
 
 ---
 

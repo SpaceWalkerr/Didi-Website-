@@ -88,6 +88,23 @@ export async function sendBookingConfirmation(booking) {
   return { email: emailEnabled() ? 'sent' : 'logged', sms: 'logged' };
 }
 
+const LOGIN_COPY = {
+  en: { subject: 'Your sign-in link — {doctor}', body: 'Hello {name},\n\nUse this link to see your bookings. It works once and expires in 15 minutes:\n\n{link}\n\nIf you did not ask for this, you can ignore this email.' },
+  hi: { subject: 'आपका साइन-इन लिंक — {doctor}', body: 'नमस्ते {name},\n\nअपनी बुकिंग देखने के लिए यह लिंक इस्तेमाल करें। यह एक बार चलता है और 15 मिनट में समाप्त हो जाता है:\n\n{link}\n\nअगर आपने यह नहीं मांगा तो इस ईमेल को अनदेखा करें।' },
+  pa: { subject: 'ਤੁਹਾਡਾ ਸਾਈਨ-ਇਨ ਲਿੰਕ — {doctor}', body: 'ਸਤਿ ਸ੍ਰੀ ਅਕਾਲ {name},\n\nਆਪਣੀਆਂ ਬੁਕਿੰਗਾਂ ਦੇਖਣ ਲਈ ਇਹ ਲਿੰਕ ਵਰਤੋ। ਇਹ ਇੱਕ ਵਾਰ ਚੱਲਦਾ ਹੈ ਅਤੇ 15 ਮਿੰਟ ਵਿੱਚ ਖਤਮ ਹੋ ਜਾਂਦਾ ਹੈ:\n\n{link}\n\nਜੇ ਤੁਸੀਂ ਇਹ ਨਹੀਂ ਮੰਗਿਆ ਤਾਂ ਇਸ ਈਮੇਲ ਨੂੰ ਅਣਡਿੱਠਾ ਕਰੋ।' },
+  ru: { subject: 'Ваша ссылка для входа — {doctor}', body: 'Здравствуйте, {name}!\n\nИспользуйте эту ссылку, чтобы увидеть свои записи. Она работает один раз и действует 15 минут:\n\n{link}\n\nЕсли вы не запрашивали ссылку, проигнорируйте это письмо.' },
+};
+
+/** The patient's one-time sign-in link, in the language they booked in. */
+export async function sendLoginLink({ email, link, name, language }) {
+  // Without SMTP the email is only logged. A sign-in link in a production log would
+  // be a working credential, so there it is dropped rather than printed.
+  if (!emailEnabled() && config.isProduction) return;
+  const copy = LOGIN_COPY[language] || LOGIN_COPY.en;
+  const fill = (s) => s.replace('{doctor}', PRACTICE.doctorName).replace('{name}', name).replace('{link}', link);
+  await sendEmail(email, fill(copy.subject), fill(copy.body));
+}
+
 /** Manual UPI: tells the doctor a patient says they have paid and needs checking. */
 export async function notifyPaymentSubmitted(booking) {
   await sendEmail(

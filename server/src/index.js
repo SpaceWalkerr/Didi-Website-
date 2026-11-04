@@ -14,6 +14,7 @@ import { rateLimit } from './middleware/rateLimit.js';
 import bookingsRouter from './routes/bookings.js';
 import paymentsRouter from './routes/payments.js';
 import adminRouter from './routes/admin.js';
+import accountRouter from './routes/account.js';
 
 // Checked before anything binds a port, so an unsafe production config fails
 // the deploy rather than quietly going live.
@@ -143,6 +144,15 @@ app.use(
 );
 
 app.use('/api/admin', adminLimit, adminRouter);
+
+// Sign-in links: few per hour, because each one sends an email.
+const loginLinkLimit = rateLimit({ name: 'login-link', windowMs: 60 * 60 * 1000, max: 6 });
+const accountLimit = rateLimit({ name: 'account', windowMs: 60 * 1000, max: 60 });
+app.use(
+  '/api/account',
+  (req, res, next) => (req.path === '/login-link' ? loginLinkLimit(req, res, next) : accountLimit(req, res, next)),
+  accountRouter,
+);
 
 // In production, serve the built client from the same origin.
 const clientDist = path.join(here, '..', '..', 'client', 'dist');

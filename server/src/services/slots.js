@@ -1,4 +1,5 @@
-import { AVAILABILITY, BOOKING_RULES, getService } from '../config.js';
+import { BOOKING_RULES, getService } from '../config.js';
+import { getAvailability } from './availability.js';
 import { db } from '../db.js';
 
 const { slotGridMinutes, minLeadMinutes, maxDaysAhead, pendingHoldMinutes, utcOffset } =
@@ -90,7 +91,7 @@ export async function getSlots(date, serviceId, now = Date.now(), excludeId = nu
   // `pending` before the slot can be sold again.
   await db.expireStale(new Date(now));
 
-  const windows = AVAILABILITY[dayOfWeek(date)] || [];
+  const windows = (await getAvailability())[dayOfWeek(date)] || [];
   const { booked, blocked } = await busyRanges(date, now, excludeId);
   const earliest = now + minLeadMinutes * 60 * 1000;
   const slots = [];

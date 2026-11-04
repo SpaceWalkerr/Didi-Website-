@@ -65,6 +65,7 @@ export default {
   },
 
   nav: {
+    account: 'My bookings',
     home: 'Home',
     about: 'About',
     services: 'Services',
@@ -279,6 +280,42 @@ export default {
     progressAria: 'Booking progress',
   },
 
+  account: {
+    eyebrow: 'My bookings',
+    title: 'Your consultations',
+    signInTitle: 'Sign in to see your bookings',
+    signInBody: 'Enter the email you used when booking. We will email you a one-time link. No password needed.',
+    emailLabel: 'Email address',
+    sendLink: 'Email me a sign-in link',
+    sending: 'Sending…',
+    sentTitle: 'Check your email',
+    sentBody: 'If {email} has a booking with us, a sign-in link is on its way. It works once and expires in 15 minutes.',
+    tryAgain: 'Use a different email',
+    linkInvalid: 'That sign-in link has expired or was already used. Please request a new one.',
+    hello: 'Hello, {name}',
+    signOut: 'Sign out',
+    loadError: 'We could not load your bookings. Please try again.',
+    upcoming: 'Upcoming',
+    history: 'Past and cancelled',
+    noUpcoming: 'You have no upcoming consultations.',
+    noHistory: 'Nothing here yet.',
+    bookNew: 'Book a consultation',
+    cancel: 'Cancel booking',
+    cancelConfirm: 'Cancel this booking? The slot will be released.',
+    join: 'Join on WhatsApp',
+    messageClinic: 'Message the clinic',
+    followUp: 'Follow-up suggested on {date}',
+    help: 'To change or cancel a paid booking, message the clinic with the booking ID and it will be arranged.',
+    status: {
+      pending: 'Awaiting payment',
+      verifying: 'Payment being verified',
+      confirmed: 'Confirmed',
+      completed: 'Completed',
+      cancelled: 'Cancelled',
+      'needs-attention': 'Needs attention',
+    },
+  },
+
   confirmation: {
     verifyingTitle: 'Payment received — awaiting confirmation',
     verifyingBody: 'The clinic is checking your UPI payment. You will get a confirmation at {email} and a WhatsApp message as soon as it is verified. Your slot is held.',
@@ -394,6 +431,9 @@ export default {
   },
 
   errors: {
+    sessionExpired: 'Your session has ended. Please sign in again.',
+    linkInvalid: 'That sign-in link has expired or was already used.',
+    cannotCancel: 'This booking can no longer be cancelled here. Please message the clinic.',
     utrInvalid: 'Please enter the 12-digit UPI reference (UTR) number.',
     utrUsed: 'That reference number was already used for another booking.',
     upiNotAvailable: 'UPI payment is not available right now.',

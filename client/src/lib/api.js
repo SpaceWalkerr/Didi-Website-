@@ -18,6 +18,11 @@ async function request(path, options = {}) {
     // Non-JSON response (server down, proxy error) — fall through to the throw.
   }
 
+  // An expired clinic session: let the admin shell send the doctor back to the login form.
+  if (res.status === 401 && path.startsWith('/admin') && path !== '/admin/login') {
+    window.dispatchEvent(new Event('admin-unauthorized'));
+  }
+
   if (!res.ok) {
     // The server sends a `code` rather than a sentence, because it does not know
     // what language the patient is reading. Callers translate `messageKey`;
@@ -51,7 +56,29 @@ export const api = {
   cancelPayment: (bookingId) =>
     request('/payments/cancel', { method: 'POST', body: JSON.stringify({ bookingId }) }),
 
-  adminLogin: (token) => request('/admin/login', { method: 'POST', headers: { 'x-admin-token': token } }),
+  adminLogin: (email, password) =>
+    request('/admin/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
+  adminOverview: (token) => request('/admin/overview', { headers: { 'x-admin-token': token } }),
+  adminCalendar: (token, from, days = 7) =>
+    request(`/admin/calendar?from=${from}&days=${days}`, { headers: { 'x-admin-token': token } }),
+  adminPatients: (token, q = '') =>
+    request(`/admin/patients?q=${encodeURIComponent(q)}`, { headers: { 'x-admin-token': token } }),
+  adminPatient: (token, phone) =>
+    request(`/admin/patients/${encodeURIComponent(phone)}`, { headers: { 'x-admin-token': token } }),
+  adminNotes: (token, id, body) =>
+    request(`/admin/bookings/${id}/notes`, {
+      method: 'PATCH',
+      headers: { 'x-admin-token': token },
+      body: JSON.stringify(body),
+    }),
+  adminAvailability: (token) =>
+    request('/admin/availability', { headers: { 'x-admin-token': token } }),
+  adminSaveAvailability: (token, hours) =>
+    request('/admin/availability', {
+      method: 'PUT',
+      headers: { 'x-admin-token': token },
+      body: JSON.stringify({ hours }),
+    }),
   adminBookings: (token, scope = 'upcoming') =>
     request(`/admin/bookings?scope=${scope}`, { headers: { 'x-admin-token': token } }),
   adminUpdate: (token, id, status) =>
@@ -65,6 +92,19 @@ export const api = {
     request(`/admin/bookings/${id}/confirm-payment`, {
       method: 'POST',
       headers: { 'x-admin-token': token },
+    }),
+
+  // ── Patient account ──
+  accountLoginLink: (email) =>
+    request('/account/login-link', { method: 'POST', body: JSON.stringify({ email }) }),
+  accountSession: (token) =>
+    request('/account/session', { method: 'POST', body: JSON.stringify({ token }) }),
+  accountMe: (session) =>
+    request('/account/me', { headers: { Authorization: `Bearer ${session}` } }),
+  accountCancel: (session, id) =>
+    request(`/account/bookings/${id}/cancel`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session}` },
     }),
 
   // ── Slot blocks: the doctor marking themselves unavailable ──

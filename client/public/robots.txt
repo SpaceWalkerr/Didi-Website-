@@ -7,5 +7,6 @@ Allow: /
 Disallow: /book
 Disallow: /confirmation/
 Disallow: /admin
+Disallow: /account
 
 Sitemap: https://richarani.in/sitemap.xml

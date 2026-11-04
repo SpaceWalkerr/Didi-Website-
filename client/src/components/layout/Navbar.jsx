@@ -44,6 +44,7 @@ export default function Navbar() {
     ['/services', t('nav.services')],
     ['/faq', t('nav.faq')],
     ['/contact', t('nav.contact')],
+    ['/account', t('nav.account')],
   ];
 
   const linkClass = ({ isActive }) =>

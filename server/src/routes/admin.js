@@ -1,26 +1,28 @@
-import crypto from 'node:crypto';
 import { Router } from 'express';
-import { config, BOOKING_RULES } from '../config.js';
+import { BOOKING_RULES } from '../config.js';
 import { db } from '../db.js';
 import { whatsappJoinLink, formatWhen } from '../services/notify.js';
 import { confirmPaidBooking } from '../services/confirm.js';
+import { adminLogin, requireAdmin } from '../services/auth.js';
+import { getAvailability, validateAvailability, saveAvailability } from '../services/availability.js';
 import { istEpoch, isValidDateString, istToday, istDateString } from '../services/slots.js';
 
 const router = Router();
 
 /**
- * A shared-token guard. Enough for a single doctor checking their own list;
- * if the practice grows, replace this with real per-user auth.
+ * POST /api/admin/login { email, password } → { token }
+ * The token is a signed 12-hour session; send it as the x-admin-token header.
+ * (The raw ADMIN_TOKEN still works as an API key, so scripts keep working.)
  */
-function requireAdmin(req, res, next) {
-  const supplied = Buffer.from(String(req.get('x-admin-token') || ''));
-  const expected = Buffer.from(config.adminToken);
-  const ok = supplied.length === expected.length && crypto.timingSafeEqual(supplied, expected);
-  if (!ok) return res.status(401).json({ error: 'Invalid admin token.' });
-  next();
-}
-
-router.post('/login', requireAdmin, (_req, res) => res.json({ ok: true }));
+router.post('/login', (req, res, next) => {
+  const { email, password } = req.body || {};
+  if (email !== undefined || password !== undefined) {
+    const session = adminLogin(email, password);
+    if (!session) return res.status(401).json({ error: 'Wrong email or password.' });
+    return res.json(session);
+  }
+  return requireAdmin(req, res, () => res.json({ ok: true }));
+});
 
 /**
  * GET /api/admin/bookings?scope=today|upcoming|all
@@ -78,6 +80,8 @@ router.get('/bookings', requireAdmin, async (req, res, next) => {
         patient: b.patient,
         payment: b.payment,
         note: b.note || null,
+        doctorNotes: b.doctorNotes || null,
+        followUpDate: b.followUpDate || null,
         whatsappLink: b.status === 'confirmed' ? whatsappJoinLink(b) : null,
         createdAt: b.createdAt,
       }))
@@ -125,6 +129,218 @@ router.post('/bookings/:id/confirm-payment', requireAdmin, async (req, res, next
       booking.payment?.paymentId || `manual_${booking.id}`,
     );
     res.json({ id: result.id, status: result.status, outcome });
+  } catch (err) {
+    next(err);
+  }
+});
+
+// ── Dashboard ──────────────────────────────────────────────────────────
+
+const DONE = ['confirmed', 'completed'];
+const INACTIVE = ['expired', 'cancelled'];
+const awaitingVerification = (b) => b.status === 'pending' && Boolean(b.payment?.paymentId);
+
+const brief = (b) => ({
+  id: b.id,
+  status: b.status,
+  date: b.date,
+  time: b.time,
+  when: formatWhen(b),
+  serviceName: b.serviceName,
+  durationMinutes: b.durationMinutes,
+  amount: b.amount,
+  patientName: b.patient.name,
+  phone: b.patient.phone,
+  payment: { mode: b.payment?.mode, status: b.payment?.status, paymentId: b.payment?.paymentId || null },
+  awaitingVerification: awaitingVerification(b),
+});
+
+const addDays = (date, n) => istDateString(new Date(Date.parse(`${date}T12:00:00+05:30`) + n * 86400000));
+const weekdayOf = (date) => new Date(`${date}T12:00:00+05:30`).getUTCDay();
+
+/** GET /api/admin/overview — everything the dashboard's first screen needs. */
+router.get('/overview', requireAdmin, async (_req, res, next) => {
+  try {
+    const all = await db.all();
+    const now = Date.now();
+    const today = istToday();
+    const month = today.slice(0, 7);
+    const earned = all.filter((b) => DONE.includes(b.status));
+
+    const todays = all
+      .filter((b) => b.date === today && !INACTIVE.includes(b.status))
+      .sort((a, b) => a.time.localeCompare(b.time));
+
+    // Bookings and money per day, a week back to a week ahead.
+    const series = Array.from({ length: 15 }, (_, i) => {
+      const date = addDays(today, i - 7);
+      const day = earned.filter((b) => b.date === date);
+      return { date, bookings: day.length, revenue: day.reduce((sum, b) => sum + b.amount, 0) };
+    });
+
+    res.json({
+      today,
+      todaysBookings: todays.map(brief),
+      awaitingVerification: all.filter(awaitingVerification).map(brief),
+      stats: {
+        todayCount: todays.length,
+        todayRemaining: todays.filter(
+          (b) => b.status !== 'completed' && istEpoch(b.date, b.time) + b.durationMinutes * 60000 >= now,
+        ).length,
+        upcoming: earned.filter((b) => b.status === 'confirmed' && istEpoch(b.date, b.time) >= now).length,
+        monthRevenue: earned.filter((b) => b.date.startsWith(month)).reduce((s, b) => s + b.amount, 0),
+        totalRevenue: earned.reduce((s, b) => s + b.amount, 0),
+        completed: all.filter((b) => b.status === 'completed').length,
+        patients: new Set(earned.map((b) => b.patient.phone)).size,
+        needsAttention: all.filter((b) => b.status === 'needs-attention').length,
+      },
+      series,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** GET /api/admin/calendar?from=YYYY-MM-DD&days=7 — bookings, hours and time off per day. */
+router.get('/calendar', requireAdmin, async (req, res, next) => {
+  try {
+    const from = isValidDateString(String(req.query.from || '')) ? String(req.query.from) : istToday();
+    const days = Math.min(Math.max(Number(req.query.days) || 7, 1), 14);
+    const dates = Array.from({ length: days }, (_, i) => addDays(from, i));
+    const [all, blocks, hours] = await Promise.all([
+      db.all(),
+      db.listBlocks(dates[0], dates[days - 1]),
+      getAvailability(),
+    ]);
+
+    res.json({
+      from,
+      days: dates.map((date) => ({
+        date,
+        weekday: weekdayOf(date),
+        hours: hours[weekdayOf(date)] || [],
+        blocks: blocks.filter((b) => b.date === date),
+        bookings: all
+          .filter((b) => b.date === date && !INACTIVE.includes(b.status))
+          .sort((a, b) => a.time.localeCompare(b.time))
+          .map(brief),
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** Patients are identified by mobile number, which is what the booking form treats as identity. */
+function groupPatients(all) {
+  const byPhone = new Map();
+  for (const b of all) {
+    if (INACTIVE.includes(b.status)) continue;
+    const entry = byPhone.get(b.patient.phone) || { phone: b.patient.phone, bookings: [] };
+    entry.bookings.push(b);
+    byPhone.set(b.patient.phone, entry);
+  }
+  return [...byPhone.values()].map(({ phone, bookings }) => {
+    const latest = [...bookings].sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+    const now = Date.now();
+    // A visit has happened: completed, or confirmed with the slot already past.
+    const visits = bookings.filter(
+      (b) => b.status === 'completed' || (b.status === 'confirmed' && istEpoch(b.date, b.time) < now),
+    );
+    const lastVisit = visits.map((b) => b.date).sort().pop() || null;
+    return {
+      phone,
+      name: latest.patient.name,
+      email: latest.patient.email,
+      age: latest.patient.age,
+      gender: latest.patient.gender,
+      language: latest.language || 'en',
+      visits: visits.length,
+      lastVisit,
+      totalSpent: bookings.filter((b) => DONE.includes(b.status)).reduce((s, b) => s + b.amount, 0),
+      bookings,
+    };
+  });
+}
+
+/** GET /api/admin/patients?q= */
+router.get('/patients', requireAdmin, async (req, res, next) => {
+  try {
+    const q = String(req.query.q || '').trim().toLowerCase();
+    let list = groupPatients(await db.all());
+    if (q) {
+      list = list.filter((p) => [p.name, p.phone, p.email].some((v) => String(v).toLowerCase().includes(q)));
+    }
+    list.sort((a, b) => String(b.lastVisit || '').localeCompare(String(a.lastVisit || '')) || a.name.localeCompare(b.name));
+    res.json({ patients: list.map(({ bookings, ...p }) => p) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** GET /api/admin/patients/:phone — one patient with their full visit history and private notes. */
+router.get('/patients/:phone', requireAdmin, async (req, res, next) => {
+  try {
+    const found = groupPatients(await db.all()).find((p) => p.phone === req.params.phone);
+    if (!found) return res.status(404).json({ error: 'Patient not found.' });
+    const { bookings, ...patient } = found;
+    res.json({
+      patient,
+      bookings: bookings
+        .sort((a, b) => b.date.localeCompare(a.date) || b.time.localeCompare(a.time))
+        .map((b) => ({
+          ...brief(b),
+          symptoms: b.patient.symptoms,
+          bodyRegion: b.bodyRegion || null,
+          doctorNotes: b.doctorNotes || null,
+          followUpDate: b.followUpDate || null,
+        })),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** PATCH /api/admin/bookings/:id/notes { doctorNotes, followUpDate } */
+router.patch('/bookings/:id/notes', requireAdmin, async (req, res, next) => {
+  try {
+    const { doctorNotes = null, followUpDate = null } = req.body || {};
+    if (doctorNotes !== null && (typeof doctorNotes !== 'string' || doctorNotes.length > 4000)) {
+      return res.status(400).json({ error: 'Notes must be text of at most 4000 characters.' });
+    }
+    if (followUpDate !== null && !isValidDateString(String(followUpDate))) {
+      return res.status(400).json({ error: 'Follow-up date must be YYYY-MM-DD.' });
+    }
+    const updated = await db.update(req.params.id.toUpperCase(), {
+      doctorNotes: doctorNotes ? doctorNotes.trim() : null,
+      followUpDate: followUpDate || null,
+    });
+    if (!updated) return res.status(404).json({ error: 'Booking not found.' });
+    res.json({ id: updated.id, doctorNotes: updated.doctorNotes, followUpDate: updated.followUpDate });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * GET/PUT /api/admin/availability — consulting hours. Changing them affects
+ * which slots patients can book from now on; appointments already booked
+ * outside the new hours are left alone.
+ */
+router.get('/availability', requireAdmin, async (_req, res, next) => {
+  try {
+    res.json({ hours: await getAvailability(), slotGridMinutes: BOOKING_RULES.slotGridMinutes });
+  } catch (err) {
+    next(err);
+  }
+});
+
+router.put('/availability', requireAdmin, async (req, res, next) => {
+  try {
+    const hours = req.body?.hours;
+    const problem = validateAvailability(hours);
+    if (problem) return res.status(400).json({ error: problem });
+    res.json({ hours: await saveAvailability(hours) });
   } catch (err) {
     next(err);
   }

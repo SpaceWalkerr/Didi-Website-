@@ -412,3 +412,37 @@ confirmation page keep working either way.
 India; check the current rate card). An unverified business account has a low daily limit of new
 recipients, so complete **business verification** in Business Settings before real volume. Patients must
 have a WhatsApp number; the 10-digit number they enter at booking is used.
+
+---
+
+## The dashboards
+
+### Clinic dashboard — `/admin`
+
+Sign in with the **clinic email** (`ADMIN_EMAIL`, default `drricha7273@gmail.com`) and the **password**
+(`ADMIN_PASSWORD`, default the same value as `ADMIN_TOKEN`). The session lasts 12 hours and ends when the
+tab closes. Changing the password or token on Render signs everyone out.
+
+| Tab | What it does |
+| --- | --- |
+| Overview | Today's schedule, payments waiting to be verified (with a Confirm button), revenue, a 15-day chart |
+| Bookings | Every booking: confirm payment, complete, cancel, **private notes and a follow-up date** |
+| Calendar | One week at a glance: hours, time off and bookings per day |
+| Patients | Searchable list by name, phone or email; each patient's full history and notes |
+| Hours & time off | Edit weekly consulting hours without touching code; block days or hours off |
+
+Private notes never leave the clinic view. The follow-up date is the one thing a patient sees.
+Notes are health data: the page is only ever served after sign-in, and the notes are stored in your own
+database. Back the database up (Supabase does daily backups on paid plans; the free plan does not).
+
+New in the database: `doctor_notes`, `follow_up_date`, `reminder_sent_at` and a `settings` table. They
+are added automatically on first start.
+
+### Patient dashboard — `/account`
+
+Patients enter their booking email and receive a **one-time sign-in link** (valid 15 minutes, works once).
+No password. They see upcoming and past consultations, can join on WhatsApp, cancel a booking they have
+not yet paid for, and see a follow-up date if the doctor set one. Links are only emailed to addresses that
+already have a booking, and the page answers identically either way, so it cannot be used to find out who is
+a patient. This needs `SMTP_URL` to be working.
+

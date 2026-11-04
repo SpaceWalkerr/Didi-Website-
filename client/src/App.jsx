@@ -24,6 +24,7 @@ const Contact = lazy(() => import('./pages/Contact.jsx'));
 const Privacy = lazy(() => import('./pages/Privacy.jsx'));
 const Terms = lazy(() => import('./pages/Terms.jsx'));
 const Refund = lazy(() => import('./pages/Refund.jsx'));
+const Account = lazy(() => import('./pages/Account.jsx'));
 const Admin = lazy(() => import('./pages/Admin.jsx'));
 const NotFound = lazy(() => import('./pages/NotFound.jsx'));
 
@@ -63,6 +64,7 @@ export default function App() {
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/refund" element={<Refund />} />
+            <Route path="/account" element={<Account />} />
             <Route path="/admin" element={<Admin />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

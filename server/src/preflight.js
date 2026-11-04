@@ -36,6 +36,10 @@ export function preflight() {
     );
   }
 
+  if (process.env.ADMIN_PASSWORD && process.env.ADMIN_PASSWORD.length < 12) {
+    errors.push('ADMIN_PASSWORD is shorter than 12 characters. It guards patient health data.');
+  }
+
   // Without a database the app falls back to a JSON file on the container's own
   // filesystem, which is wiped on every deploy and every idle restart. The site
   // looks like it is working right up until the diary is empty and a patient

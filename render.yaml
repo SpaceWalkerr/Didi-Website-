@@ -42,6 +42,10 @@ services:
         sync: false
       - key: WHATSAPP_TOKEN
         sync: false
+      - key: ADMIN_EMAIL
+        sync: false             # optional: defaults to the clinic email
+      - key: ADMIN_PASSWORD
+        sync: false             # optional: defaults to ADMIN_TOKEN
       - key: UPI_ID
         sync: false             # doctor's UPI ID for manual payments (no Razorpay needed)
       - key: SMTP_URL

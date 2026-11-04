@@ -20,7 +20,8 @@
     "test:schema": "node scripts/test/schema.mjs",
     "test:api": "node scripts/test/api.mjs",
     "test:race": "node scripts/test/race.mjs",
-    "test:payment": "node scripts/test/payment.mjs"
+    "test:payment": "node scripts/test/payment.mjs",
+    "test:dashboard": "node scripts/test/dashboard.mjs"
   },
   "devDependencies": {
     "concurrently": "^9.1.2"

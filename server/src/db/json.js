@@ -21,7 +21,7 @@ const DATA_DIR =
   path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'data');
 const DB_FILE = path.join(DATA_DIR, 'bookings.json');
 
-const EMPTY = { bookings: [], blocks: [], nextBlockId: 1 };
+const EMPTY = { bookings: [], blocks: [], nextBlockId: 1, settings: {} };
 
 function read() {
   try {
@@ -125,6 +125,18 @@ export function createJsonStore() {
     /** Conditional counterpart to the Postgres adapter's atomic update. */
     async updateIf(id, expectedStatus, patch) {
       return applyPatch(id, expectedStatus, patch);
+    },
+
+    // ── Settings ─────────────────────────────────────────────────────────
+
+    async getSetting(key) {
+      return read().settings?.[key] ?? null;
+    },
+
+    async setSetting(key, value) {
+      const data = read();
+      data.settings = { ...(data.settings || {}), [key]: value };
+      write(data);
     },
 
     // ── Slot blocks ──────────────────────────────────────────────────────

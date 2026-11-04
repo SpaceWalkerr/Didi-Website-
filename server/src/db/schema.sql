@@ -102,6 +102,17 @@ CREATE TABLE IF NOT EXISTS appointments (
 -- Set once the WhatsApp reminder has been attempted, so it is never sent twice.
 ALTER TABLE appointments ADD COLUMN IF NOT EXISTS reminder_sent_at TIMESTAMPTZ;
 
+-- Private to the doctor: notes on the visit, and an optional follow-up date shown to the patient.
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS doctor_notes TEXT;
+ALTER TABLE appointments ADD COLUMN IF NOT EXISTS follow_up_date DATE;
+
+-- Small key/value store for settings the doctor edits in the clinic view (e.g. consulting hours).
+CREATE TABLE IF NOT EXISTS settings (
+  key        TEXT PRIMARY KEY,
+  value      JSONB       NOT NULL,
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 CREATE INDEX IF NOT EXISTS appointments_date_idx    ON appointments (appt_date);
 CREATE INDEX IF NOT EXISTS appointments_status_idx  ON appointments (status);
 CREATE INDEX IF NOT EXISTS appointments_patient_idx ON appointments (patient_id);

@@ -73,6 +73,8 @@ const toBooking = (row) => {
       signatureVerified: row.signature_verified ?? false,
     },
     language: row.language,
+    doctorNotes: row.doctor_notes || null,
+    followUpDate: row.follow_up_date ? dateString(row.follow_up_date) : null,
     reminderSentAt: row.reminder_sent_at ? row.reminder_sent_at.toISOString() : null,
     note: row.note || null,
     confirmedAt: row.confirmed_at ? row.confirmed_at.toISOString() : null,
@@ -325,6 +327,20 @@ export function createPostgresStore(connectionString) {
       return applyPatch(pool, id, expectedStatus, patch);
     },
 
+    // ── Settings ─────────────────────────────────────────────────────────
+    async getSetting(key) {
+      const { rows } = await pool.query('SELECT value FROM settings WHERE key = $1', [key]);
+      return rows[0] ? rows[0].value : null;
+    },
+
+    async setSetting(key, value) {
+      await pool.query(
+        `INSERT INTO settings (key, value) VALUES ($1, $2::jsonb)
+         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
+        [key, JSON.stringify(value)],
+      );
+    },
+
     // ── Slot blocks ──────────────────────────────────────────────────────
 
     /** Blocks covering a date. A row with NULL times blocks the whole day. */
@@ -405,6 +421,8 @@ async function applyPatch(pool, id, expectedStatus, patch) {
     if (patch.note !== undefined) add('note', patch.note);
     if (patch.confirmedAt !== undefined) add('confirmed_at', patch.confirmedAt);
     if (patch.bodyRegion !== undefined) add('body_region', patch.bodyRegion);
+    if (patch.doctorNotes !== undefined) add('doctor_notes', patch.doctorNotes);
+    if (patch.followUpDate !== undefined) add('follow_up_date', patch.followUpDate);
     if (patch.reminderSentAt !== undefined) add('reminder_sent_at', patch.reminderSentAt);
     if (patch.holdExpiresAt !== undefined) add('hold_expires_at', patch.holdExpiresAt);
     // Clearing the hold on confirmation stops the expiry sweep from ever
