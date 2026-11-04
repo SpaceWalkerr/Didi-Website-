@@ -99,10 +99,55 @@ const LOGIN_COPY = {
 export async function sendLoginLink({ email, link, name, language }) {
   // Without SMTP the email is only logged. A sign-in link in a production log would
   // be a working credential, so there it is dropped rather than printed.
-  if (!emailEnabled() && config.isProduction) return;
+  if (!emailEnabled() && config.isProduction) {
+    console.warn(`Sign-in link requested for ${email} but SMTP_URL is not set, so nothing was sent.`);
+    return;
+  }
   const copy = LOGIN_COPY[language] || LOGIN_COPY.en;
   const fill = (s) => s.replace('{doctor}', PRACTICE.doctorName).replace('{name}', name).replace('{link}', link);
   await sendEmail(email, fill(copy.subject), fill(copy.body));
+}
+
+/**
+ * Tells the patient their booking was cancelled by the clinic. When they had
+ * paid, says plainly that a refund is coming, since nothing else will.
+ */
+export async function sendCancellationNotice(booking) {
+  const when = formatWhen(booking);
+  const paid = booking.payment?.status === 'paid';
+  await sendEmail(
+    booking.patient.email,
+    `Your consultation on ${when} has been cancelled`,
+    [
+      `Dear ${booking.patient.name},`,
+      '',
+      `Your ${booking.serviceName} booking (ID ${booking.id}) for ${when} IST has been cancelled by the clinic.`,
+      paid
+        ? `The Rs. ${booking.amount} you paid will be refunded by UPI to the account you paid from. ` +
+          'You will get another email when it has been sent.'
+        : 'You had not completed payment, so nothing is due.',
+      '',
+      'You are welcome to book another time:',
+      `${BRAND.siteUrl}/book`,
+      '',
+      PRACTICE.doctorName,
+    ].join('\n'),
+  );
+}
+
+export async function sendRefundNotice(booking) {
+  await sendEmail(
+    booking.patient.email,
+    `Refund sent for booking ${booking.id}`,
+    [
+      `Dear ${booking.patient.name},`,
+      '',
+      `We have sent your refund of Rs. ${booking.amount} for booking ${booking.id} by UPI to the account you paid from.`,
+      'It can take a few working days to show, depending on your bank.',
+      '',
+      PRACTICE.doctorName,
+    ].join('\n'),
+  );
 }
 
 /** Manual UPI: tells the doctor a patient says they have paid and needs checking. */

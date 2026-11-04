@@ -80,6 +80,17 @@ const mine = me2.body.bookings.find((b) => b.id === id);
 check(mine.status === 'confirmed' && mine.whatsappLink && mine.followUpDate === ymd(14), 'patient sees confirmed + follow-up date');
 check(!JSON.stringify(me2.body).includes('Advised rest'), 'but not the private note');
 
+console.log('\n── Cancelling a paid booking ──');
+check((await call(`/admin/bookings/${id}/refunded`, { method: 'POST', headers: A })).status === 409, 'cannot mark refunded before cancelling');
+await call(`/admin/bookings/${id}`, { method: 'PATCH', headers: A, body: JSON.stringify({ status: 'cancelled' }) });
+const ov2 = await call('/admin/overview', { headers: A });
+check(ov2.body.refundsDue.some((b) => b.id === id) && ov2.body.stats.refundsDue >= 1, 'cancelled paid booking shows as a refund to send');
+check((await call(`/admin/bookings/${id}/refunded`, { method: 'POST', headers: A })).body.payment === 'refunded', 'doctor marks it refunded');
+const ov3 = await call('/admin/overview', { headers: A });
+check(!ov3.body.refundsDue.some((b) => b.id === id), 'no longer listed as due');
+// bring it back so the later checks still have a confirmed booking
+await call(`/admin/bookings/${id}`, { method: 'PATCH', headers: A, body: JSON.stringify({ status: 'confirmed' }) });
+
 console.log('\n── Admin views ──');
 const pats = await call('/admin/patients?q=dash', { headers: A });
 check(pats.body.patients.some((p) => p.phone === '9811122233' && p.visits === 0 && p.totalSpent === 500), 'patients list aggregates spend (a future booking is not yet a visit)');

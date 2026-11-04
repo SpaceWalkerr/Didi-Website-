@@ -80,6 +80,7 @@ export default function Overview({ token, onGoTo }) {
         <Stat label="Completed visits" value={s.completed} />
         <Stat label="Payments to verify" value={data.awaitingVerification.length} highlight={data.awaitingVerification.length > 0} />
         <Stat label="Need attention" value={s.needsAttention} highlight={s.needsAttention > 0} />
+        <Stat label="Refunds to send" value={s.refundsDue} highlight={s.refundsDue > 0} />
       </dl>
 
       {data.awaitingVerification.length > 0 && (
@@ -98,6 +99,28 @@ export default function Overview({ token, onGoTo }) {
                   <p className="text-[15px] text-slate-600">{b.when} · UTR <span className="font-mono">{b.payment.paymentId}</span></p>
                 </div>
                 <button type="button" onClick={() => confirm(b)} className="btn-primary !py-2">Confirm payment</button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {data.refundsDue.length > 0 && (
+        <section aria-labelledby="refund-h" className="rounded-2xl border border-red-300 bg-red-50 p-5">
+          <h2 id="refund-h" className="font-sans text-lg font-semibold text-red-900">
+            Refunds to send ({data.refundsDue.length})
+          </h2>
+          <p className="mt-1 text-[15px] text-red-900">
+            These bookings were cancelled after payment. Send the money back by UPI, then mark it refunded in Bookings.
+          </p>
+          <ul className="mt-4 space-y-3">
+            {data.refundsDue.map((b) => (
+              <li key={b.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-white p-4">
+                <div>
+                  <p className="font-semibold text-slate-900">{b.patientName} · {rupees(b.amount)}</p>
+                  <p className="text-[15px] text-slate-600">+91 {b.phone} · {b.when} · UTR <span className="font-mono">{b.payment.paymentId || 'n/a'}</span></p>
+                </div>
+                <button type="button" onClick={() => onGoTo('bookings')} className="btn-secondary !py-2">Open bookings</button>
               </li>
             ))}
           </ul>

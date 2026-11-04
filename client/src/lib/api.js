@@ -88,6 +88,8 @@ export const api = {
       body: JSON.stringify({ status }),
     }),
 
+  adminMarkRefunded: (token, id) =>
+    request(`/admin/bookings/${id}/refunded`, { method: 'POST', headers: { 'x-admin-token': token } }),
   adminConfirmPayment: (token, id) =>
     request(`/admin/bookings/${id}/confirm-payment`, {
       method: 'POST',

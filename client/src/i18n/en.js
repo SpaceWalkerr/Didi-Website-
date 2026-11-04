@@ -183,9 +183,9 @@ export default {
     },
     paymentTitle: 'Payment',
     paymentBody:
-      'Fees are paid online at the time of booking through Razorpay, which accepts UPI, cards, net ' +
-      'banking and wallets. Card details are handled entirely by the payment gateway and never reach ' +
-      'this website.',
+      'Fees are paid online at the time of booking, directly to the doctor by UPI: scan the QR code or ' +
+      'use the UPI ID. Your booking is confirmed once the clinic has seen the payment. Your UPI PIN and ' +
+      'banking details never reach this website.',
     refundTitle: 'Rescheduling & refunds',
     refundBody:
       'Reschedule free of charge up to 4 hours before your slot. Cancel more than 4 hours ahead for a ' +
@@ -732,7 +732,7 @@ export default {
           p: [
             'When you book, you provide: your name, age, gender if you choose to give it, mobile number, email address, and a description of the symptoms or concern you want to discuss.',
             'During and after the consultation, the doctor records clinical notes and any prescription issued, as a registered practitioner is required to do.',
-            'For payment, a record of the amount, the payment reference and whether it succeeded is kept. Card, UPI and banking details are handled entirely by Razorpay and never reach this website’s servers.',
+            'For payment, a record of the amount and the UPI reference (UTR) you enter is kept. You pay from your own UPI app: your UPI PIN and banking details never reach this website’s servers.',
             'The web server keeps ordinary technical logs — IP address, browser type and the time of the request — which are used to keep the site running and secure, not to profile you.',
           ],
         },
@@ -753,7 +753,7 @@ export default {
         {
           h: 'Who it is shared with',
           p: [
-            'Razorpay, to process your payment. They receive the amount and your contact details, not your clinical information.',
+            'Your own bank and UPI app, which process the payment you make to the clinic. The clinic sees the amount, the UPI reference and the payer name your bank shows, not your clinical information.',
             'A pharmacy, laboratory or another doctor, only where you ask for a prescription or referral to be sent, or where the doctor is referring you onward for your care and tells you so.',
             'A court, regulator or authority, where disclosure is required by Indian law.',
             'Nobody else. Your information is never sold, rented or shared for marketing.',
@@ -832,7 +832,7 @@ export default {
         {
           h: 'Fees and payment',
           p: [
-            'Fees are shown in full before payment and are charged in Indian rupees through Razorpay. Your slot is held while you pay and confirmed once the payment is verified.',
+            'Fees are shown in full before payment and are paid in Indian rupees by UPI directly to the clinic. Your slot is held while you pay and confirmed once the clinic has verified the payment.',
             'Cancellation, rescheduling and refund terms are set out on the refund policy page.',
           ],
         },
@@ -896,8 +896,8 @@ export default {
         {
           h: 'How refunds are paid',
           p: [
-            'Refunds go back through Razorpay to the method you paid with. There is no cash or alternative-account option.',
-            'Razorpay typically takes 5 to 7 working days to return the money to your account, and sometimes longer for cards. The clinic issues the refund promptly; the timeline after that is the bank’s.',
+            'Refunds are sent by UPI to the account you paid from, once the clinic has confirmed the cancellation. There is no cash option.',
+            'The clinic sends the refund promptly. After that it can take a few working days to show in your account, depending on your bank.',
           ],
         },
         {

@@ -33,6 +33,7 @@ export default function BookingsView({ token, onChange, initialScope = 'today' }
     }
   }
   const confirmPayment = (id) => run(() => api.adminConfirmPayment(token, id));
+  const markRefunded = (id) => run(() => api.adminMarkRefunded(token, id));
   const setStatus = (id, status) => run(() => api.adminUpdate(token, id, status));
 
   return (
@@ -134,6 +135,11 @@ export default function BookingsView({ token, onChange, initialScope = 'today' }
                 <p className="mt-2 text-[13px] text-slate-500">
                   Payment: {b.payment.status} ({b.payment.mode})
                 </p>
+                {b.refundDue && (
+                  <p className="mt-1 inline-block rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-800">
+                    Refund due · {rupees(b.amount)}
+                  </p>
+                )}
                 {b.payment.mode === 'upi' && b.payment.paymentId && (
                   <p className="mt-1 text-[13px] text-slate-700">
                     UTR: <span className="font-mono font-semibold">{b.payment.paymentId}</span>
@@ -175,6 +181,21 @@ export default function BookingsView({ token, onChange, initialScope = 'today' }
                   Confirm payment
                 </button>
               )}
+              {b.refundDue && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const ok = window.confirm(
+                      `Mark ${rupees(b.amount)} as refunded to ${b.patient.name}?\n\n` +
+                        'Do this only after you have sent the money back by UPI. The patient is emailed.',
+                    );
+                    if (ok) markRefunded(b.id);
+                  }}
+                  className="btn-primary !py-2"
+                >
+                  Mark refunded
+                </button>
+              )}
               {b.status !== 'completed' && b.status !== 'pending' && (
                 <button
                   type="button"
@@ -192,8 +213,8 @@ export default function BookingsView({ token, onChange, initialScope = 'today' }
                     // so it is worth one deliberate confirmation.
                     const ok = window.confirm(
                       `Cancel ${b.patient.name}'s ${b.when} consultation?\n\n` +
-                        'The slot is released immediately. Any refund has to be issued ' +
-                        'separately (bank or UPI app, or the Razorpay dashboard).',
+                        'The slot is released and the patient is emailed. If they have paid, you must ' +
+                        'send the refund yourself by UPI, then press "Mark refunded" here.',
                     );
                     if (ok) setStatus(b.id, 'cancelled');
                   }}

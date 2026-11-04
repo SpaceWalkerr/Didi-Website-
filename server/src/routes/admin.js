@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { BOOKING_RULES } from '../config.js';
 import { db } from '../db.js';
-import { whatsappJoinLink, formatWhen } from '../services/notify.js';
+import { whatsappJoinLink, formatWhen, sendCancellationNotice, sendRefundNotice } from '../services/notify.js';
 import { confirmPaidBooking } from '../services/confirm.js';
 import { adminLogin, requireAdmin } from '../services/auth.js';
 import { getAvailability, validateAvailability, saveAvailability } from '../services/availability.js';
@@ -80,6 +80,7 @@ router.get('/bookings', requireAdmin, async (req, res, next) => {
         patient: b.patient,
         payment: b.payment,
         note: b.note || null,
+        refundDue: b.status === 'cancelled' && b.payment?.status === 'paid',
         doctorNotes: b.doctorNotes || null,
         followUpDate: b.followUpDate || null,
         whatsappLink: b.status === 'confirmed' ? whatsappJoinLink(b) : null,
@@ -153,6 +154,7 @@ const brief = (b) => ({
   phone: b.patient.phone,
   payment: { mode: b.payment?.mode, status: b.payment?.status, paymentId: b.payment?.paymentId || null },
   awaitingVerification: awaitingVerification(b),
+  refundDue: b.status === 'cancelled' && b.payment?.status === 'paid',
 });
 
 const addDays = (date, n) => istDateString(new Date(Date.parse(`${date}T12:00:00+05:30`) + n * 86400000));
@@ -182,6 +184,7 @@ router.get('/overview', requireAdmin, async (_req, res, next) => {
       today,
       todaysBookings: todays.map(brief),
       awaitingVerification: all.filter(awaitingVerification).map(brief),
+      refundsDue: all.filter((b) => b.status === 'cancelled' && b.payment?.status === 'paid').map(brief),
       stats: {
         todayCount: todays.length,
         todayRemaining: todays.filter(
@@ -193,6 +196,7 @@ router.get('/overview', requireAdmin, async (_req, res, next) => {
         completed: all.filter((b) => b.status === 'completed').length,
         patients: new Set(earned.map((b) => b.patient.phone)).size,
         needsAttention: all.filter((b) => b.status === 'needs-attention').length,
+        refundsDue: all.filter((b) => b.status === 'cancelled' && b.payment?.status === 'paid').length,
       },
       series,
     });
@@ -346,6 +350,26 @@ router.put('/availability', requireAdmin, async (req, res, next) => {
   }
 });
 
+/**
+ * POST /api/admin/bookings/:id/refunded — the doctor has sent the money back.
+ * Refunds are manual (UPI from the clinic's own app), so this is the record that
+ * it happened, and the patient is told.
+ */
+router.post('/bookings/:id/refunded', requireAdmin, async (req, res, next) => {
+  try {
+    const booking = await db.find(req.params.id.toUpperCase());
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    if (booking.status !== 'cancelled' || booking.payment?.status !== 'paid') {
+      return res.status(409).json({ error: 'Only a cancelled, paid booking can be marked refunded.' });
+    }
+    const updated = await db.update(booking.id, { payment: { ...booking.payment, status: 'refunded' } });
+    sendRefundNotice(updated || booking).catch((err) => console.error('Notification failed:', err));
+    res.json({ id: booking.id, payment: 'refunded' });
+  } catch (err) {
+    next(err);
+  }
+});
+
 /** Lets the doctor mark a consultation as completed or cancelled. */
 router.patch('/bookings/:id', requireAdmin, async (req, res, next) => {
   const allowed = ['confirmed', 'completed', 'cancelled', 'needs-attention'];
@@ -353,8 +377,13 @@ router.patch('/bookings/:id', requireAdmin, async (req, res, next) => {
   if (!allowed.includes(status)) return res.status(400).json({ error: 'Unsupported status.' });
 
   try {
+    const before = await db.find(req.params.id.toUpperCase());
     const updated = await db.update(req.params.id.toUpperCase(), { status });
     if (!updated) return res.status(404).json({ error: 'Booking not found.' });
+    // Tell the patient when the clinic cancels something they were counting on.
+    if (status === 'cancelled' && before && before.status !== 'cancelled' && ['confirmed', 'pending', 'needs-attention'].includes(before.status)) {
+      sendCancellationNotice(updated).catch((err) => console.error('Notification failed:', err));
+    }
     res.json({ id: updated.id, status: updated.status });
   } catch (err) {
     next(err);
