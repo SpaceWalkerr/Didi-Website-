@@ -11,6 +11,7 @@ import ServicePicker from '../components/booking/ServicePicker.jsx';
 import DatePicker from '../components/booking/DatePicker.jsx';
 import SlotGrid from '../components/booking/SlotGrid.jsx';
 import PatientForm from '../components/booking/PatientForm.jsx';
+import UpiPayment from '../components/booking/UpiPayment.jsx';
 import Summary from '../components/booking/Summary.jsx';
 import { REGION_IDS } from '../components/bodymap/regions.js';
 import { AlertIcon, ArrowRightIcon, WhatsAppIcon } from '../components/Icons.jsx';
@@ -64,6 +65,8 @@ export default function Booking() {
   const [submitError, setSubmitError] = useState(null);
   const [step, setStep] = useState(0);
   const [paying, setPaying] = useState(false);
+  // Set once a booking is created in manual-UPI mode; replaces the details form.
+  const [upiBooking, setUpiBooking] = useState(null);
 
   const detailsRef = useRef(null);
   const errorRef = useRef(null);
@@ -155,6 +158,12 @@ export default function Booking() {
 
     setStep(2);
 
+    if (created.paymentMode === 'upi') {
+      setPaying(false);
+      setUpiBooking(created);
+      return;
+    }
+
     try {
       const payment = await openCheckout({
         order: created.order,
@@ -178,6 +187,28 @@ export default function Booking() {
       api.cancelPayment(created.bookingId).catch(() => {});
       loadSlots();
     }
+  }
+
+  async function submitUtr(utr) {
+    setSubmitError(null);
+    setPaying(true);
+    try {
+      await api.upiSubmit(upiBooking.bookingId, utr);
+      navigate(`/confirmation/${upiBooking.bookingId}`);
+    } catch (err) {
+      setPaying(false);
+      setSubmitError(translateError(err));
+    }
+  }
+
+  async function cancelUpi() {
+    const id = upiBooking.bookingId;
+    setUpiBooking(null);
+    setSubmitError(null);
+    setStep(0);
+    setTime('');
+    await api.cancelPayment(id).catch(() => {});
+    loadSlots();
   }
 
   if (metaError) {
@@ -257,7 +288,9 @@ export default function Booking() {
             {step >= 1 && (
               <section aria-labelledby="step2" ref={detailsRef} className="card scroll-mt-24">
                 <h2 id="step2" className="text-xl">{t('booking.step2Title')}</h2>
-                <p className="mt-2 text-slate-600">{t('booking.step2Body')}</p>
+                <p className="mt-2 text-slate-600">
+                  {upiBooking ? t('booking.upi.intro') : t('booking.step2Body')}
+                </p>
 
                 {submitError && (
                   <div
@@ -270,6 +303,19 @@ export default function Booking() {
                   </div>
                 )}
 
+                {upiBooking && (
+                  <UpiPayment
+                    upi={upiBooking.upi}
+                    amount={upiBooking.amount}
+                    bookingId={upiBooking.bookingId}
+                    onSubmit={submitUtr}
+                    onCancel={cancelUpi}
+                    busy={paying}
+                    error={null}
+                  />
+                )}
+
+                {!upiBooking && (
                 <form onSubmit={handleSubmit} className="mt-6" noValidate>
                   <PatientForm
                     patient={patient}
@@ -281,14 +327,17 @@ export default function Booking() {
                   <button type="submit" disabled={paying} className="btn-primary mt-6 w-full text-base">
                     {paying
                       ? t('booking.paying')
-                      : t('booking.pay', { amount: service ? rupees(service.price) : '' })}
+                      : t(meta?.paymentMode === 'upi' ? 'booking.payUpi' : 'booking.pay', {
+                          amount: service ? rupees(service.price) : '',
+                        })}
                   </button>
                 </form>
+                )}
               </section>
             )}
           </div>
 
-          <Summary service={service} date={date} time={time} rules={meta?.rules} />
+          <Summary service={service} date={date} time={time} rules={meta?.rules} paymentMode={meta?.paymentMode} />
         </div>
       </div>
     </>

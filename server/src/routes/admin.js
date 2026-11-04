@@ -3,6 +3,7 @@ import { Router } from 'express';
 import { config, BOOKING_RULES } from '../config.js';
 import { db } from '../db.js';
 import { whatsappJoinLink, formatWhen } from '../services/notify.js';
+import { confirmPaidBooking } from '../services/confirm.js';
 import { istEpoch, isValidDateString, istToday, istDateString } from '../services/slots.js';
 
 const router = Router();
@@ -51,7 +52,12 @@ router.get('/bookings', requireAdmin, async (req, res, next) => {
           return b.date === today && !['expired', 'cancelled'].includes(b.status);
         }
         const startsAt = istEpoch(b.date, b.time);
-        return startsAt >= now - 60 * 60 * 1000 && ['confirmed', 'needs-attention'].includes(b.status);
+        // A pending booking with a submitted UTR is a payment waiting on the doctor.
+        const awaitingVerification = b.status === 'pending' && Boolean(b.payment?.paymentId);
+        return (
+          startsAt >= now - 60 * 60 * 1000 &&
+          (['confirmed', 'needs-attention'].includes(b.status) || awaitingVerification)
+        );
       })
       .map((b) => ({
         id: b.id,
@@ -97,6 +103,28 @@ router.get('/bookings', requireAdmin, async (req, res, next) => {
         ).length,
       },
     });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/**
+ * POST /api/admin/bookings/:id/confirm-payment — manual UPI mode.
+ * The doctor has seen the money arrive; confirm the booking and notify the patient.
+ */
+router.post('/bookings/:id/confirm-payment', requireAdmin, async (req, res, next) => {
+  try {
+    const booking = await db.find(req.params.id.toUpperCase());
+    if (!booking) return res.status(404).json({ error: 'Booking not found.' });
+    if (booking.status === 'confirmed') return res.json({ id: booking.id, status: 'confirmed' });
+    if (booking.status !== 'pending') {
+      return res.status(409).json({ error: `Booking is ${booking.status}; it cannot be confirmed.` });
+    }
+    const { outcome, booking: result } = await confirmPaidBooking(
+      booking,
+      booking.payment?.paymentId || `manual_${booking.id}`,
+    );
+    res.json({ id: result.id, status: result.status, outcome });
   } catch (err) {
     next(err);
   }

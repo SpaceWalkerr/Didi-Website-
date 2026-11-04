@@ -79,6 +79,15 @@ export default function Admin() {
     setData(null);
   }
 
+  async function confirmPayment(id) {
+    try {
+      await api.adminConfirmPayment(token, id);
+      load();
+    } catch (err) {
+      setError(err.message);
+    }
+  }
+
   async function setStatus(id, status) {
     try {
       await api.adminUpdate(token, id, status);
@@ -222,6 +231,11 @@ export default function Admin() {
                   >
                     {b.status.replace('-', ' ')}
                   </span>
+                  {b.status === 'pending' && b.payment.paymentId && (
+                    <span className="rounded-full bg-amber-500 px-2.5 py-0.5 text-xs font-semibold text-white">
+                      Verify payment
+                    </span>
+                  )}
                 </p>
                 <p className="mt-1 text-[15px] text-slate-600">
                   {b.serviceName} · {b.durationMinutes} min · {rupees(b.amount)} · ID {b.id}
@@ -270,6 +284,11 @@ export default function Admin() {
                 <p className="mt-2 text-[13px] text-slate-500">
                   Payment: {b.payment.status} ({b.payment.mode})
                 </p>
+                {b.payment.mode === 'upi' && b.payment.paymentId && (
+                  <p className="mt-1 text-[13px] text-slate-700">
+                    UTR: <span className="font-mono font-semibold">{b.payment.paymentId}</span>
+                  </p>
+                )}
               </div>
 
               <div>
@@ -288,7 +307,23 @@ export default function Admin() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-200 pt-4">
-              {b.status !== 'completed' && (
+              {b.status === 'pending' && b.payment.paymentId && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const ok = window.confirm(
+                      `Confirm ${rupees(b.amount)} received from ${b.patient.name}?\n\n` +
+                        `UTR ${b.payment.paymentId}. Check this in your bank or UPI app first. ` +
+                        'The patient will be told their booking is confirmed.',
+                    );
+                    if (ok) confirmPayment(b.id);
+                  }}
+                  className="btn-primary !py-2"
+                >
+                  Confirm payment
+                </button>
+              )}
+              {b.status !== 'completed' && b.status !== 'pending' && (
                 <button
                   type="button"
                   onClick={() => setStatus(b.id, 'completed')}
@@ -306,7 +341,7 @@ export default function Admin() {
                     const ok = window.confirm(
                       `Cancel ${b.patient.name}'s ${b.when} consultation?\n\n` +
                         'The slot is released immediately. Any refund has to be issued ' +
-                        'separately in the Razorpay dashboard.',
+                        'separately (bank or UPI app, or the Razorpay dashboard).',
                     );
                     if (ok) setStatus(b.id, 'cancelled');
                   }}

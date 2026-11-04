@@ -245,6 +245,27 @@ export default {
     pay: 'Pay {amount} & confirm',
     paying: 'Opening secure payment…',
     secureNote: 'Payments are processed by Razorpay. Card details never touch this website.',
+    payUpi: 'Continue to UPI payment — {amount}',
+    secureNoteUpi: 'You pay the doctor directly by UPI. Your booking is confirmed once the clinic sees the payment.',
+    upi: {
+      intro: 'Pay by UPI, then enter the reference number so the clinic can confirm your booking.',
+      step1: 'Pay {amount} using any UPI app (GPay, PhonePe, Paytm, BHIM) — scan the QR code, tap the button, or use the UPI ID.',
+      step2: 'After paying, find the 12-digit UTR / reference number in the payment details.',
+      step3: 'Enter it below. The clinic confirms the payment and you receive a confirmation.',
+      qrAlt: 'QR code to pay by UPI',
+      payTo: 'Pay to',
+      idLabel: 'UPI ID',
+      copy: 'Copy',
+      copied: 'Copied',
+      amountLabel: 'Amount',
+      openApp: 'Open UPI app to pay',
+      utrLabel: 'UTR / reference number (12 digits)',
+      utrHelp: 'Shown in your UPI app after payment, e.g. “UPI Ref No.” or “UTR”.',
+      submit: 'I have paid',
+      submitting: 'Submitting…',
+      cancel: 'Cancel and choose another time',
+      holdNote: 'Your slot is held while the clinic verifies the payment. Please pay before submitting.',
+    },
     summaryTitle: 'Booking summary',
     summary: { consultation: 'Consultation', duration: 'Duration', when: 'When', total: 'Total', notSelected: 'Not selected' },
     holdNote:
@@ -259,6 +280,8 @@ export default {
   },
 
   confirmation: {
+    verifyingTitle: 'Payment received — awaiting confirmation',
+    verifyingBody: 'The clinic is checking your UPI payment. You will get a confirmation at {email} and a WhatsApp message as soon as it is verified. Your slot is held.',
     confirmedTitle: 'Your consultation is confirmed',
     pendingTitle: 'Payment not completed',
     confirmedBody: 'A confirmation has been sent to {email} and by SMS to {phone}. Please be ready a few minutes early.',
@@ -371,6 +394,10 @@ export default {
   },
 
   errors: {
+    utrInvalid: 'Please enter the 12-digit UPI reference (UTR) number.',
+    utrUsed: 'That reference number was already used for another booking.',
+    upiNotAvailable: 'UPI payment is not available right now.',
+    holdExpired: 'This booking has expired. Please choose a slot again.',
     slotBlocked: 'The doctor is not available at that time. Please choose another slot.',
     tooManyRequests: 'Too many attempts. Please wait about {seconds} seconds and try again.',
     network: 'We could not reach the clinic server. Please try again.',

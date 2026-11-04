@@ -19,7 +19,20 @@ const client = config.razorpay.enabled
 
 const MOCK_SECRET = 'mock_secret_do_not_use_in_production';
 
-export const paymentMode = () => (config.razorpay.enabled ? 'razorpay-test' : 'mock');
+export const paymentMode = () =>
+  config.razorpay.enabled ? 'razorpay-test' : config.upi.enabled ? 'upi' : 'mock';
+
+/** upi:// deep link that opens the patient's UPI app with everything filled in. */
+export function upiLink({ amountInRupees, bookingId }) {
+  const q = new URLSearchParams({
+    pa: config.upi.id,
+    pn: config.upi.payeeName,
+    am: String(amountInRupees),
+    cu: 'INR',
+    tn: `Booking ${bookingId}`,
+  });
+  return `upi://pay?${q.toString().replace(/\+/g, '%20')}`;
+}
 
 /** Amount is in rupees; Razorpay expects the smallest currency unit (paise). */
 export async function createOrder({ amountInRupees, receipt, notes }) {

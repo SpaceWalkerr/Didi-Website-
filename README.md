@@ -164,6 +164,12 @@ All times are Asia/Kolkata. India has no DST, so a fixed `+05:30` offset is used
 
 ## Going live
 
+### 0. No payment gateway yet? Manual UPI
+
+Set `UPI_ID` in `server/.env` (and leave the Razorpay keys blank). Patients pay the doctor's UPI ID
+by QR/app and submit the UTR; the doctor confirms each payment in `/admin`. See
+[DEPLOY.md](DEPLOY.md) §2a. Razorpay keys, once present, take priority.
+
 ### 1. Razorpay
 
 Sign up, then from the dashboard with the **Test Mode** toggle on, copy the key pair into

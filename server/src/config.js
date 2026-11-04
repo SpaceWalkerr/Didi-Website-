@@ -60,6 +60,19 @@ export const config = {
     },
   },
 
+  /**
+   * Manual UPI collection, for a practice with no payment-gateway account.
+   * The patient pays the doctor's UPI ID directly and submits the 12-digit
+   * UTR; the doctor confirms in /admin once the money shows in the bank app.
+   */
+  upi: {
+    id: (process.env.UPI_ID || '').trim(),
+    payeeName: process.env.UPI_PAYEE_NAME || DOCTOR.name,
+    get enabled() {
+      return Boolean(this.id);
+    },
+  },
+
   notify: {
     emailFrom: process.env.NOTIFY_EMAIL_FROM || '',
     /** SMTP connection URL, e.g. smtps://user:app-password@smtp.gmail.com:465. Blank = log only. */

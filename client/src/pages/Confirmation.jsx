@@ -51,13 +51,14 @@ export default function Confirmation() {
   }
 
   const confirmed = booking.status === 'confirmed';
+  const verifying = booking.paymentSubmitted;
   // The server sends its own English `when`; re-format from the raw date and
   // time so it reads correctly in the patient's language.
   const when = formatDateTime(booking.date, booking.time, locale);
 
   return (
     <>
-      <Seo title={t('confirmation.confirmedTitle')} description={t('doctor.tagline')} noIndex />
+      <Seo title={t(confirmed ? 'confirmation.confirmedTitle' : verifying ? 'confirmation.verifyingTitle' : 'confirmation.pendingTitle')} description={t('doctor.tagline')} noIndex />
       <div className="container-page py-12 sm:py-16">
         <div className="mx-auto max-w-2xl">
           <div className="card text-center">
@@ -70,7 +71,11 @@ export default function Confirmation() {
             </span>
 
             <h1 className="mt-5 text-2xl sm:text-3xl">
-              {confirmed ? t('confirmation.confirmedTitle') : t('confirmation.pendingTitle')}
+              {confirmed
+                ? t('confirmation.confirmedTitle')
+                : verifying
+                  ? t('confirmation.verifyingTitle')
+                  : t('confirmation.pendingTitle')}
             </h1>
 
             <p className="mt-3 leading-relaxed text-slate-600">
@@ -79,7 +84,9 @@ export default function Confirmation() {
                     email: booking.patientEmail,
                     phone: booking.patientPhone,
                   })
-                : t('confirmation.pendingBody', { status: booking.status })}
+                : verifying
+                  ? t('confirmation.verifyingBody', { email: booking.patientEmail })
+                  : t('confirmation.pendingBody', { status: booking.status })}
             </p>
 
             <dl className="mt-8 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 text-left">

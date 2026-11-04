@@ -43,6 +43,23 @@ node -e "console.log(crypto.randomUUID())"
 The admin view exposes every patient's name, phone, email and symptom summary. The server
 **refuses to start in production** with the default token or anything under 24 characters.
 
+### 2a. No Razorpay account? Use manual UPI payments
+
+If Razorpay verification is not through yet, set **`UPI_ID`** (the doctor's UPI ID, e.g.
+`name@okaxis`) and leave the Razorpay keys unset. The server then starts in **`upi` mode**:
+
+1. The patient picks a slot and details, then sees a QR code, a "pay in UPI app" button and the UPI ID.
+2. They pay from any UPI app and enter the 12-digit **UTR** (reference number).
+3. The slot is held, and the doctor gets an email: *Verify UPI payment*.
+4. The doctor checks the amount and UTR in their bank/UPI app, then opens **/admin** and presses
+   **Confirm payment**. The patient is emailed and gets the WhatsApp join link.
+5. To reject a payment that never arrived, press **Cancel booking** — the slot is released.
+
+Things to know: a UTR can back only one booking; the slot is held until the doctor acts (a
+patient who submits a made-up UTR holds it until the doctor cancels); refunds are manual.
+Without `UPI_ID` and without Razorpay keys the server refuses to start in production.
+When Razorpay is later verified, add its keys — they take priority and UPI mode switches off.
+
 ### 2. Get Razorpay keys and set up the webhook
 
 From the Razorpay dashboard. The server also **refuses to start in production** without

@@ -36,5 +36,7 @@ services:
         sync: false
       - key: RAZORPAY_WEBHOOK_SECRET
         sync: false             # required once the Razorpay keys are live
+      - key: UPI_ID
+        sync: false             # doctor's UPI ID for manual payments (no Razorpay needed)
       - key: SMTP_URL
         sync: false             # confirmation emails; see server/.env.example

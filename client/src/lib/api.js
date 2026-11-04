@@ -46,6 +46,8 @@ export const api = {
     request('/payments/verify', { method: 'POST', body: JSON.stringify(payload) }),
   mockPay: (orderId) =>
     request('/payments/mock-pay', { method: 'POST', body: JSON.stringify({ orderId }) }),
+  upiSubmit: (bookingId, utr) =>
+    request('/payments/upi-submit', { method: 'POST', body: JSON.stringify({ bookingId, utr }) }),
   cancelPayment: (bookingId) =>
     request('/payments/cancel', { method: 'POST', body: JSON.stringify({ bookingId }) }),
 
@@ -57,6 +59,12 @@ export const api = {
       method: 'PATCH',
       headers: { 'x-admin-token': token },
       body: JSON.stringify({ status }),
+    }),
+
+  adminConfirmPayment: (token, id) =>
+    request(`/admin/bookings/${id}/confirm-payment`, {
+      method: 'POST',
+      headers: { 'x-admin-token': token },
     }),
 
   // ── Slot blocks: the doctor marking themselves unavailable ──

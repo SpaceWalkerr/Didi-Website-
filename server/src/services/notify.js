@@ -85,6 +85,23 @@ export async function sendBookingConfirmation(booking) {
   return { email: emailEnabled() ? 'sent' : 'logged', sms: 'logged' };
 }
 
+/** Manual UPI: tells the doctor a patient says they have paid and needs checking. */
+export async function notifyPaymentSubmitted(booking) {
+  await sendEmail(
+    PRACTICE.email,
+    `Verify UPI payment: ${booking.patient.name} — ${formatWhen(booking)}`,
+    [
+      `${booking.patient.name} says they paid Rs. ${booking.amount} for ${booking.serviceName}.`,
+      `Booking ID : ${booking.id}`,
+      `UTR        : ${booking.payment.paymentId}`,
+      `Slot       : ${formatWhen(booking)} IST`,
+      '',
+      'Check your bank/UPI app for this amount and reference, then open the',
+      'clinic view (/admin) and press "Confirm payment". The slot is held until you do.',
+    ].join('\n'),
+  );
+}
+
 const LANGUAGE_NAMES = {
   en: 'English',
   hi: 'Hindi',

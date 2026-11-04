@@ -5,6 +5,7 @@ import { verifySignature, mockSignature, paymentMode } from '../services/payment
 import { whatsappJoinLink, formatWhen } from '../services/notify.js';
 import { confirmPaidBooking } from '../services/confirm.js';
 import { config } from '../config.js';
+import { notifyPaymentSubmitted } from '../services/notify.js';
 
 const router = Router();
 
@@ -168,12 +169,62 @@ router.post('/mock-pay', async (req, res, next) => {
   });
 });
 
+/**
+ * POST /api/payments/upi-submit — manual UPI mode.
+ * The patient reports the UTR (12-digit UPI reference) of the payment they made.
+ * This does NOT confirm the booking: only the doctor can, after seeing the money
+ * arrive. Submitting clears the expiry hold so the slot is kept while the doctor
+ * checks, instead of being released under a patient who has really paid.
+ */
+router.post('/upi-submit', async (req, res, next) => {
+  try {
+    if (paymentMode() !== 'upi') {
+      return res.status(400).json({ code: 'upiNotAvailable', error: 'UPI payments are not enabled.' });
+    }
+    const utr = String(req.body?.utr || '').replace(/\s/g, '');
+    if (!/^\d{12}$/.test(utr)) {
+      return res.status(400).json({ code: 'utrInvalid', error: 'Enter the 12-digit UPI reference.' });
+    }
+
+    const booking = await db.find(String(req.body?.bookingId || '').toUpperCase());
+    if (!booking) return res.status(404).json({ code: 'bookingNotFound', error: 'Booking not found.' });
+    if (booking.status !== 'pending') {
+      // Already confirmed is fine to the patient; anything else (expired,
+      // cancelled) means the slot is gone.
+      return res.status(booking.status === 'confirmed' ? 200 : 409).json(
+        booking.status === 'confirmed'
+          ? { status: 'confirmed' }
+          : { code: 'holdExpired', error: 'This booking has expired.' },
+      );
+    }
+
+    // The same reference cannot back two bookings.
+    const used = (await db.all()).some(
+      (b) => b.id !== booking.id && b.payment?.paymentId === utr,
+    );
+    if (used) return res.status(409).json({ code: 'utrUsed', error: 'That reference was already used.' });
+
+    const updated = await db.update(booking.id, {
+      holdExpiresAt: null,
+      payment: { ...booking.payment, mode: 'upi', paymentId: utr, status: 'created' },
+    });
+    notifyPaymentSubmitted(updated || booking).catch((err) =>
+      console.error('Notification failed:', err),
+    );
+    res.json({ status: 'submitted', bookingId: booking.id });
+  } catch (err) {
+    next(err);
+  }
+});
+
 /** Marks a booking as failed when the patient dismisses the payment window. */
 router.post('/cancel', async (req, res, next) => {
   try {
     const booking = await db.find(String(req.body?.bookingId || '').toUpperCase());
     if (!booking) return res.status(404).json({ code: 'bookingNotFound', error: 'Booking not found.' });
-    if (booking.status === 'pending') {
+    // Once a UTR is submitted the patient may really have paid: only the doctor
+    // can release that slot.
+    if (booking.status === 'pending' && !booking.payment?.paymentId) {
       await db.update(booking.id, {
         status: 'cancelled',
         payment: { ...booking.payment, status: 'cancelled' },

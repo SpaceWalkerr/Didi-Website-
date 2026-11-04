@@ -4,7 +4,7 @@ import { SERVICES, getService, PRACTICE, BOOKING_RULES, config } from '../config
 import { db } from '../db.js';
 import { getSlots, validateSlot, isValidDateString, istToday, istDateString, bookingRules }
   from '../services/slots.js';
-import { createOrder, paymentMode } from '../services/payments.js';
+import { createOrder, paymentMode, upiLink } from '../services/payments.js';
 import { whatsappJoinLink, formatWhen } from '../services/notify.js';
 import { SlotConflictError } from '../db/errors.js';
 import { isBodyRegion } from '../../../shared/body-regions.js';
@@ -22,6 +22,7 @@ router.get('/meta', (_req, res) => {
     practice: PRACTICE,
     rules: bookingRules,
     paymentMode: paymentMode(),
+    upiEnabled: config.upi.enabled,
     minDate: istToday(),
     maxDate: istDateString(new Date(now + BOOKING_RULES.maxDaysAhead * 86400000)),
   });
@@ -157,6 +158,24 @@ router.post('/', async (req, res, next) => {
       throw err;
     }
 
+    // Manual UPI: no gateway order exists. The patient pays the doctor's UPI ID
+    // and submits the UTR, which the doctor then confirms in /admin.
+    if (paymentMode() === 'upi') {
+      return res.status(201).json({
+        bookingId: booking.id,
+        amount: service.price,
+        currency: 'INR',
+        order: null,
+        paymentMode: 'upi',
+        upi: {
+          id: config.upi.id,
+          payeeName: config.upi.payeeName,
+          link: upiLink({ amountInRupees: service.price, bookingId: booking.id }),
+        },
+        holdMinutes: BOOKING_RULES.pendingHoldMinutes,
+      });
+    }
+
     let order;
     try {
       order = await createOrder({
@@ -212,6 +231,8 @@ router.get('/:id', async (req, res, next) => {
     patientName: booking.patient.name,
     patientEmail: booking.patient.email,
     patientPhone: booking.patient.phone,
+    // A UTR has been submitted and the doctor has yet to confirm the payment.
+    paymentSubmitted: booking.status === 'pending' && Boolean(booking.payment?.paymentId),
     whatsappLink: booking.status === 'confirmed' ? whatsappJoinLink(booking) : null,
   });
 });

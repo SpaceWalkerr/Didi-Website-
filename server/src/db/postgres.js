@@ -404,6 +404,7 @@ async function applyPatch(pool, id, expectedStatus, patch) {
     if (patch.note !== undefined) add('note', patch.note);
     if (patch.confirmedAt !== undefined) add('confirmed_at', patch.confirmedAt);
     if (patch.bodyRegion !== undefined) add('body_region', patch.bodyRegion);
+    if (patch.holdExpiresAt !== undefined) add('hold_expires_at', patch.holdExpiresAt);
     // Clearing the hold on confirmation stops the expiry sweep from ever
     // touching a booking that has actually been paid for.
     if (patch.status === 'confirmed') sets.push('hold_expires_at = NULL');

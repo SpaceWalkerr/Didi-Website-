@@ -3,7 +3,7 @@ import { useI18n } from '../../i18n/index.jsx';
 import { ShieldIcon } from '../Icons.jsx';
 
 /** Sticky booking summary — what is being bought, and for how much. */
-export default function Summary({ service, date, time, rules }) {
+export default function Summary({ service, date, time, rules, paymentMode }) {
   const { t, locale } = useI18n();
   const notSelected = t('booking.summary.notSelected');
 
@@ -38,7 +38,7 @@ export default function Summary({ service, date, time, rules }) {
 
       <p className="mt-5 flex items-start gap-2 text-sm leading-relaxed text-slate-600">
         <ShieldIcon className="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
-        {t('booking.secureNote')}
+        {t(paymentMode === 'upi' ? 'booking.secureNoteUpi' : 'booking.secureNote')}
       </p>
 
       {rules && (
