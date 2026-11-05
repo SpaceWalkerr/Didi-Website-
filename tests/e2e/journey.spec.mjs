@@ -108,3 +108,18 @@ test('unknown routes show the designed 404', async ({ page }) => {
   expect(res.status()).toBe(404);
   await expect(page.getByRole('link', { name: /Book Consultation/ }).first()).toBeVisible();
 });
+
+test('shared links preview the right page without running JavaScript', async ({ request }) => {
+  // WhatsApp and other chat apps read the raw HTML, so each page's own tags must be in it.
+  const services = await (await request.get('/services')).text();
+  expect(services).toContain('<title>Consultation types — Dr. Richa Rani</title>');
+  expect(services).toContain('<meta property="og:url" content="https://richarani.in/services" />');
+  expect(services).toContain('<link rel="canonical" href="https://richarani.in/services" />');
+  expect(services).not.toContain('name="robots"');
+
+  const book = await (await request.get('/book')).text();
+  expect(book).toContain('<meta name="robots" content="noindex, nofollow" />');
+
+  // The prerendered files are not reachable at a second URL.
+  expect((await request.get('/.heads/services.html')).status()).toBe(404);
+});
