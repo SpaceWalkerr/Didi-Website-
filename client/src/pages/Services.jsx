@@ -4,6 +4,7 @@ import { api } from '../lib/api.js';
 import { rupees } from '../lib/format.js';
 import { FEATURES, HIGHLIGHTED_SERVICE, SERVICES, waLink } from '../config.js';
 import { useI18n } from '../i18n/index.jsx';
+import { serviceIncludes } from '../lib/claims.js';
 import PageIntro from '../design/PageIntro.jsx';
 import Badge from '../design/Badge.jsx';
 import { RevealGroup, RevealItem } from '../design/Reveal.jsx';
@@ -96,7 +97,7 @@ export default function Services() {
                 </p>
 
                 <ul className="mt-5 flex-1 space-y-2.5">
-                  {tList(`services.items.${service.id}.includes`).map((line) => (
+                  {serviceIncludes(service.id, t, tList).map((line) => (
                     <li key={line} className="flex gap-2.5 text-[0.9375rem] leading-relaxed text-slate-700">
                       <CheckIcon className="mt-0.5 h-4 w-4 shrink-0 text-care-600" />
                       {line}

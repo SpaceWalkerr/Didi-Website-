@@ -1,6 +1,7 @@
 import { DOCTOR } from '@shared/practice.config.js';
 import { Link } from '../../lib/router.jsx';
 import { useI18n } from '../../i18n/index.jsx';
+import { doctorBio } from '../../lib/claims.js';
 import { ArrowRightIcon, LockIcon, ShieldIcon } from '../Icons.jsx';
 
 /**
@@ -10,7 +11,7 @@ import { ArrowRightIcon, LockIcon, ShieldIcon } from '../Icons.jsx';
  */
 export default function HomeTrust() {
   const { t, tList } = useI18n();
-  const bio = tList('doctor.longBio');
+  const bio = doctorBio(t, tList);
 
   const rows = [
     [t('about.rows.qualification'), t('doctor.qualification')],
