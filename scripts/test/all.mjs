@@ -19,6 +19,7 @@ const SUITES = [
   { name: 'dashboard', file: 'dashboard.mjs', port: 4000 },
   { name: 'reschedule', file: 'reschedule.mjs', port: 4000 },
   { name: 'validation', file: 'validation-parity.mjs', port: 4000 },
+  { name: 'ratelimit', file: 'ratelimit.mjs', port: 4000 },
   { name: 'payment', file: 'payment.mjs', port: 4001, mock: true },
 ];
 
