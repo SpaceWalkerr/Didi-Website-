@@ -31,7 +31,9 @@ function Seal({ confirmed }) {
 
 function TicketSkeleton() {
   return (
-    <div className="container-page py-14" role="status" aria-live="polite">
+    // Taller than the screen, like the ticket it stands in for, so the footer
+    // never appears and then jumps away when the booking arrives.
+    <div className="container-page min-h-[150svh] py-14" role="status" aria-live="polite">
       <div className="mx-auto max-w-xl space-y-4">
         <Bone className="mx-auto h-24 w-24 rounded-full" />
         <Bone className="mx-auto h-8 w-2/3 rounded-full" />

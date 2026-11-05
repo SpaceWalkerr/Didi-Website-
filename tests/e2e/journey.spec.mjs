@@ -17,7 +17,8 @@ test('home → body map → concierge → book → slot → details → payment 
 
   // Hero
   await expect(page.getByRole('heading', { level: 1 })).toContainText('time to listen');
-  await expect(page.getByText('Reg. No. 52532').first()).toBeVisible();
+  // The header renders a phone line and a desktop line; whichever this width shows must be visible.
+  await expect(page.getByText('Reg. No. 52532').locator('visible=true').first()).toBeVisible();
 
   // Body map: choose an area from the list, the result card appears with a booking route.
   const map = page.locator('#body-map');

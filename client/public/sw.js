@@ -3,14 +3,15 @@
  *
  *   · Navigations: network first, so patients always get the latest page; the
  *     cached app shell is the fallback when there is no signal.
- *   · /assets/* (fingerprinted by Vite) and /images/*: cache first.
+ *   · /assets/* (fingerprinted by Vite): cache first.
+ *   · /images/*: stale-while-revalidate, so a replaced photo updates.
  *   · Google Fonts: stale-while-revalidate.
  *   · /api/* is NEVER cached here. Health information does not belong in a
  *     shared HTTP cache. "My bookings" keeps its own small offline copy on the
  *     patient's phone instead (see src/pages/Account.jsx).
  *   · Razorpay and every other third-party request pass straight through.
  */
-const VERSION = 'v1';
+const VERSION = 'v2';
 const SHELL = `shell-${VERSION}`;
 const ASSETS = `assets-${VERSION}`;
 const FONTS = `fonts-${VERSION}`;
@@ -57,7 +58,27 @@ self.addEventListener('fetch', (event) => {
       return;
     }
 
-    if (url.pathname.startsWith('/assets/') || url.pathname.startsWith('/images/')) {
+    // Images keep their names when replaced (a new photo of the doctor is
+    // still doctor-photo.jpg), so they are refreshed in the background.
+    if (url.pathname.startsWith('/images/')) {
+      event.respondWith(
+        caches.open(ASSETS).then((cache) =>
+          cache.match(request).then((hit) => {
+            const network = fetch(request)
+              .then((res) => {
+                if (res.ok) cache.put(request, res.clone());
+                return res;
+              })
+              .catch(() => hit);
+            return hit || network;
+          }),
+        ),
+      );
+      return;
+    }
+
+    // Vite fingerprints /assets/*, so a cached copy is never stale.
+    if (url.pathname.startsWith('/assets/')) {
       event.respondWith(
         caches.open(ASSETS).then((cache) =>
           cache.match(request).then(

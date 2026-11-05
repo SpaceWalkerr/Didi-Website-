@@ -147,23 +147,20 @@ export default function Booking() {
 
   const updatePatient = (key) => (event) => {
     const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value;
-    setPatient((prev) => {
-      const next = { ...prev, [key]: value };
-      // Once a field has been visited, re-check it as the patient types, so
-      // an error clears the moment it is fixed (and a tick appears).
-      if (touched[key] || key === 'consent') {
-        setFieldErrors((errs) => ({ ...errs, [key]: validateField(key, next) || undefined }));
-      } else {
-        setFieldErrors((errs) => ({ ...errs, [key]: undefined }));
-      }
-      return next;
-    });
+    const next = { ...patient, [key]: value };
+    setPatient(next);
+    // Once a field has been visited, re-check it as the patient types, so an
+    // error clears the moment it is fixed (and a tick appears). Before that,
+    // typing only clears an old error.
+    setFieldErrors((errs) => ({ ...errs, [key]: touched[key] ? validateField(key, next) || undefined : undefined }));
   };
 
   /** Inline validation on leaving a field — never while the patient is still typing it. */
   const blurPatient = (key) => () => {
     const value = patient[key];
-    if (key !== 'consent' && (value === '' || value === undefined)) return;
+    // Tabbing past an empty field (or the consent box) is not a mistake yet;
+    // those are reported on submit.
+    if (key === 'consent' || value === '' || value === undefined) return;
     setTouched((prev) => ({ ...prev, [key]: true }));
     setFieldErrors((errs) => ({ ...errs, [key]: validateField(key, patient) || undefined }));
   };

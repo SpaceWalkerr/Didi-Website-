@@ -46,14 +46,15 @@ export default function NextSlotChip() {
   return (
     <Link
       to={`/book?${params}`}
-      className="group mt-6 inline-flex min-h-[2.75rem] max-w-full items-center gap-3 rounded-full border border-brand-200 bg-paper/80 py-1.5 pl-3 pr-4 text-sm shadow-card backdrop-blur transition-[transform,border-color] duration-300 hover:border-brand-400 active:scale-[0.98]"
+      className="group mt-6 inline-flex min-h-[2.75rem] max-w-full items-center gap-3 rounded-3xl border border-brand-200 bg-paper/80 py-1.5 pl-3 pr-4 text-sm shadow-card backdrop-blur transition-[transform,border-color] duration-300 hover:border-brand-400 active:scale-[0.98]"
       style={{ animation: 'rise .7s var(--ease-calm) both' }}
     >
       <span className="live-dot relative h-2 w-2 shrink-0 rounded-full bg-care-500 text-care-500" aria-hidden="true" />
-      <span className="min-w-0 truncate">
+      {/* Wraps rather than truncating: the time is the point of the chip. */}
+      <span className="min-w-0">
         <span className="text-slate-600">{t('hero.nextSlot')}</span>
         <span aria-hidden="true" className="mx-1.5 text-slate-400">·</span>
-        <span className="font-semibold text-ink">
+        <span className="whitespace-nowrap font-semibold text-ink">
           {day}, {formatTime(slot.time, locale)}
         </span>
       </span>
