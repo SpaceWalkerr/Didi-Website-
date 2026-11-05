@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Link, NavLink } from '../../lib/router.jsx';
 import { useI18n } from '../../i18n/index.jsx';
@@ -20,6 +20,7 @@ export default function Navbar() {
   const { t, isEnglish } = useI18n();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const toggleRef = useRef(null);
   const { pathname } = useLocation();
 
   useEffect(() => setOpen(false), [pathname]);
@@ -43,7 +44,11 @@ export default function Navbar() {
     if (!open) return undefined;
     const previous = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
-    const onKey = (event) => event.key === 'Escape' && setOpen(false);
+    const onKey = (event) => {
+      if (event.key !== 'Escape') return;
+      setOpen(false);
+      toggleRef.current?.focus();
+    };
     window.addEventListener('keydown', onKey);
     return () => {
       document.body.style.overflow = previous;
@@ -74,7 +79,13 @@ export default function Navbar() {
       }`}
       style={{ viewTransitionName: 'site-header' }}
     >
-      <nav aria-label={t('nav.aria')} className="container-page">
+      <nav
+        aria-label={t('nav.aria')}
+        className="container-page"
+        // Tabbing past the last item in the open menu closes it, instead of
+        // moving focus into page content hidden under a scroll-locked menu.
+        onBlur={(e) => open && e.relatedTarget && !e.currentTarget.contains(e.relatedTarget) && setOpen(false)}
+      >
         <div className="flex h-[var(--header-height)] items-center justify-between gap-3">
           <Link
             to="/"
@@ -129,6 +140,7 @@ export default function Navbar() {
             </Link>
 
             <button
+              ref={toggleRef}
               type="button"
               onClick={() => setOpen((v) => !v)}
               aria-expanded={open}

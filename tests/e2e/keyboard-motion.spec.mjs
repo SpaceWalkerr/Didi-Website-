@@ -7,6 +7,38 @@ const focused = (page) =>
     return { tag: el?.tagName, label: el?.getAttribute('aria-label') || el?.textContent?.trim().slice(0, 40), ring: getComputedStyle(el).boxShadow !== 'none' || getComputedStyle(el).outlineStyle !== 'none' };
   });
 
+test.describe('menus close when keyboard focus leaves them', () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test('mobile menu: Escape returns focus to the toggle; tabbing out closes it', async ({ page }) => {
+    await page.goto('/');
+    const toggle = page.getByRole('button', { name: 'Open menu' });
+    await toggle.focus();
+    await page.keyboard.press('Enter');
+    const menu = page.locator('#mobile-menu');
+    await expect(menu).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(menu).toBeHidden();
+    expect((await focused(page)).label).toBe('Open menu');
+
+    await page.keyboard.press('Enter');
+    await expect(menu).toBeVisible();
+    for (let i = 0; i < 40 && (await menu.isVisible()); i++) await page.keyboard.press('Tab');
+    await expect(menu).toBeHidden();
+    expect(await page.evaluate(() => Boolean(document.activeElement.closest('nav')))).toBe(false);
+  });
+
+  test('reading comfort panel closes when focus tabs out of it', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Reading comfort' }).focus();
+    await page.keyboard.press('Enter');
+    const panel = page.getByRole('dialog', { name: 'Reading comfort' });
+    await expect(panel).toBeVisible();
+    for (let i = 0; i < 10 && (await panel.isVisible()); i++) await page.keyboard.press('Tab');
+    await expect(panel).toBeHidden();
+  });
+});
+
 test.describe('keyboard', () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
