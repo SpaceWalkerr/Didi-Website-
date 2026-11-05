@@ -102,7 +102,14 @@ export default function ComfortControls({ inline = false }) {
   if (inline) return panel;
 
   return (
-    <div ref={ref} className="relative">
+    <div
+      ref={ref}
+      className="relative"
+      // Disclosure pattern: tabbing out of the panel closes it, so it never
+      // stays open behind the visitor. (A null relatedTarget is a click on
+      // something unfocusable; the pointerdown handler covers clicks outside.)
+      onBlur={(e) => open && e.relatedTarget && !e.currentTarget.contains(e.relatedTarget) && setOpen(false)}
+    >
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}

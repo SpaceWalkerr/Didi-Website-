@@ -20,17 +20,28 @@
 const buckets = new Map();
 
 /**
- * Behind Render, Vercel and most hosts the socket address is the proxy's, so
- * the client IP arrives in X-Forwarded-For. Only the FIRST entry is meaningful
- * — the rest can be forged by the caller.
+ * Which address a request is counted against.
  *
- * This is best-effort: an attacker on a rotating IP defeats it, and that is
- * accepted. It exists to stop casual abuse and runaway retry loops, not a
- * determined adversary.
+ * X-Forwarded-For cannot be used as sent: Render (behind Cloudflare) appends
+ * to whatever the caller supplied, so its FIRST entry is caller-controlled.
+ * Keying on it let a script get a fresh bucket per request just by changing
+ * that header (verified against the live site, November 2026).
+ *
+ * 1. CLIENT_IP_HEADER (default `cf-connecting-ip`). Cloudflare sets this to
+ *    the address that connected to it and overwrites any value the caller
+ *    sent, so it cannot be forged through Cloudflare. Set CLIENT_IP_HEADER to
+ *    an empty string to ignore it, e.g. if the site moves off Cloudflare.
+ * 2. Otherwise `req.ip`, which Express derives from X-Forwarded-For counting
+ *    `trust proxy` hops from the right (the entries the infrastructure added),
+ *    never the caller's own prefix.
+ *
+ * Still best-effort: an attacker with many real IPs defeats any IP counter.
  */
-function clientKey(req) {
-  const forwarded = req.get('x-forwarded-for');
-  if (forwarded) return forwarded.split(',')[0].trim();
+export function clientKey(req) {
+  // Read per call, not at import, so .env is loaded whatever the import order.
+  const header = (process.env.CLIENT_IP_HEADER ?? 'cf-connecting-ip').trim();
+  const fromEdge = header && req.get(header);
+  if (fromEdge) return fromEdge.trim();
   return req.ip || req.socket?.remoteAddress || 'unknown';
 }
 

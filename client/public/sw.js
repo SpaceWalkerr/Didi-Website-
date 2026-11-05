@@ -5,16 +5,25 @@
  *     cached app shell is the fallback when there is no signal.
  *   · /assets/* (fingerprinted by Vite): cache first.
  *   · /images/*: stale-while-revalidate, so a replaced photo updates.
+ *     Both share one cache capped at MAX_ASSET_ENTRIES, oldest dropped first:
+ *     every deploy adds new fingerprinted files, and without a cap the old
+ *     ones would sit on the patient's phone until the next VERSION bump.
  *   · Google Fonts: stale-while-revalidate.
  *   · /api/* is NEVER cached here. Health information does not belong in a
  *     shared HTTP cache. "My bookings" keeps its own small offline copy on the
  *     patient's phone instead (see src/pages/Account.jsx).
  *   · Razorpay and every other third-party request pass straight through.
  */
-const VERSION = 'v2';
+const VERSION = 'v3';
 const SHELL = `shell-${VERSION}`;
 const ASSETS = `assets-${VERSION}`;
 const FONTS = `fonts-${VERSION}`;
+/** A build is ~25 files plus ~16 images: room for about three deploys. */
+const MAX_ASSET_ENTRIES = 100;
+
+/** Drops the oldest entries (Cache keys come back in insertion order). */
+const trim = (cache) =>
+  cache.keys().then((keys) => Promise.all(keys.slice(0, Math.max(0, keys.length - MAX_ASSET_ENTRIES)).map((k) => cache.delete(k))));
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -46,7 +55,8 @@ self.addEventListener('fetch', (event) => {
       event.respondWith(
         fetch(request)
           .then((res) => {
-            // Keep the latest shell for offline use. Every route serves the same HTML.
+            // Keep the latest shell for offline use. Routes differ only in their
+            // <head> preview tags, which the app rewrites on load anyway.
             if (res.ok) {
               const copy = res.clone();
               caches.open(SHELL).then((c) => c.put('/', copy));
@@ -66,7 +76,7 @@ self.addEventListener('fetch', (event) => {
           cache.match(request).then((hit) => {
             const network = fetch(request)
               .then((res) => {
-                if (res.ok) cache.put(request, res.clone());
+                if (res.ok) cache.put(request, res.clone()).then(() => trim(cache));
                 return res;
               })
               .catch(() => hit);
@@ -85,7 +95,7 @@ self.addEventListener('fetch', (event) => {
             (hit) =>
               hit ||
               fetch(request).then((res) => {
-                if (res.ok) cache.put(request, res.clone());
+                if (res.ok) cache.put(request, res.clone()).then(() => trim(cache));
                 return res;
               }),
           ),

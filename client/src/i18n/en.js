@@ -15,12 +15,15 @@ export default {
     council: 'Bihar State Medical Council',
     tagline: 'Careful, unhurried online consultations for everyday health concerns.',
     shortBio:
-      'I am a general physician trained in internal medicine. I treat common infections, fevers, ' +
+      'I am a general physician. I treat common infections, fevers, ' +
       'lifestyle conditions such as diabetes and hypertension, and the everyday complaints that do ' +
       'not need a hospital visit — with enough time to actually listen.',
-    longBio: [
+    /** Shown instead of the first longBio paragraph only when DOCTOR.hospitalExperience is true. */
+    longBioHospitalOpening:
       'I completed my MBBS and have worked in hospital outpatient and inpatient care since. Much of what I saw there were ordinary ' +
         'problems that had been left far too long, often because getting to a doctor was the hard part.',
+    longBio: [
+      'I completed my MBBS and am registered with the Bihar State Medical Council. Many of the problems patients bring are ordinary ones that have been left far too long, often because getting to a doctor was the hard part.',
       'Most everyday health problems do not need a waiting room. A structured conversation, a ' +
         'careful history and a look at your reports can resolve a great deal — and when it cannot, ' +
         'I will say so plainly and help you find the right specialist or in-person care.',
@@ -29,7 +32,7 @@ export default {
     ],
     credentials: [
       { title: 'MBBS' },
-      { title: 'General medicine', detail: 'Hospital outpatient and inpatient experience' },
+      { title: 'General medicine', hospital: true, detail: 'Hospital outpatient and inpatient experience' },
       { title: 'Registered medical practitioner', detail: 'Bihar State Medical Council — Reg. No. 52532' },
     ],
     focusAreas: [
@@ -88,15 +91,7 @@ export default {
     steps: [
       { title: 'Pick a time', body: 'Choose a consultation type and a slot that suits you, up to 30 days ahead.' },
       { title: 'Share your details & pay', body: 'A short form about your symptoms, then a secure payment. Your slot is held while you pay.' },
-      { title: 'Consult on WhatsApp', body: 'You get a WhatsApp link by email and SMS. Tap it at the scheduled time to begin.' },
-    ],
-    trustEyebrow: 'Why patients choose this practice',
-    trustTitle: 'Real medicine, delivered calmly',
-    trust: [
-      { title: '{years}+ years in practice', body: 'Training and experience in hospital outpatient and inpatient medicine.' },
-      { title: 'Unhurried consultations', body: 'Slots are long enough for a proper history — not a two-minute conversation.' },
-      { title: 'Registered & compliant', body: 'Reg. No. {reg}, {council}. Practising under the 2020 Telemedicine Practice Guidelines.' },
-      { title: 'Consult from anywhere', body: 'All you need is WhatsApp and a stable connection. No apps to install, no travel.' },
+      { title: 'Consult on WhatsApp', body: 'Once your payment is confirmed, your WhatsApp link appears on your booking page and in My bookings. Tap it at the scheduled time to begin.' },
     ],
     focusEyebrow: 'What I treat',
     focusTitle: 'Everyday problems that don’t need a waiting room',
@@ -152,11 +147,12 @@ export default {
           'For a new health concern — fever, infections, aches, digestive issues, skin problems, ' +
           'lifestyle disease review and prescriptions.',
         includes: [
-          'Video consultation with the doctor',
+          'Consultation with the doctor on WhatsApp: audio, video or chat',
           'Digital prescription where appropriate',
           'Advice on tests, if any are needed',
-          'One free follow-up message within 48 hours',
         ],
+        /** Listed only when FEATURES.freeFollowUpMessage is on. */
+        freeFollowUp: 'One free follow-up message within 48 hours',
       },
       followup: {
         name: 'Follow-up Consultation',
@@ -327,7 +323,7 @@ export default {
     verifyingBody: 'The clinic is checking your UPI payment. You will get a confirmation at {email} and a WhatsApp message as soon as it is verified. Your slot is held.',
     confirmedTitle: 'Your consultation is confirmed',
     pendingTitle: 'Payment not completed',
-    confirmedBody: 'A confirmation has been sent to {email} and by SMS to {phone}. Please be ready a few minutes early.',
+    confirmedBody: 'Your WhatsApp link is below and stays in My bookings. Please be ready a few minutes early.',
     pendingBody:
       'This booking is still marked as {status}. If money was deducted, message the clinic with your ' +
       'booking ID and it will be sorted out.',
@@ -337,7 +333,7 @@ export default {
       'At {when}, tap the button below. It opens WhatsApp with a message already written — just send ' +
       'it, and the doctor will start the consultation.',
     joinCta: 'Join on WhatsApp at your slot time',
-    joinNote: 'Save this page or the email — the same link works any time before your slot.',
+    joinNote: 'The same link is in My bookings and works any time before your slot.',
     beforeTitle: 'Before your consultation',
     beforeItems: [
       'Send any reports, prescriptions or photographs on WhatsApp beforehand so the doctor can review them.',
@@ -689,7 +685,7 @@ export default {
       },
       {
         q: 'How does the consultation actually happen?',
-        a: 'Once your payment is confirmed you receive a WhatsApp link by email and SMS. Tap it at your scheduled time and the consultation begins on WhatsApp — audio, video or chat, whichever suits you and the problem.',
+        a: 'Once your payment is confirmed, your WhatsApp link appears on your booking page and in My bookings. Tap it at your scheduled time and the consultation begins on WhatsApp — audio, video or chat, whichever suits you and the problem.',
       },
       {
         q: 'Will I get a prescription?',

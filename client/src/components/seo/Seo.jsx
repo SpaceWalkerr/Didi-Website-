@@ -11,10 +11,10 @@ import { useI18n } from '../../i18n/index.jsx';
  * directly. Every page mounts one; the effect cleans up nothing because the
  * next page immediately overwrites the same tags.
  *
- * A crawler has to execute JavaScript to see these, which is true of the whole
- * site — it is a SPA with no server rendering. Google does execute it. If
- * search traffic ever matters more than it does for a practice found mainly by
- * word of mouth and WhatsApp, pre-rendering these routes is the upgrade.
+ * Link previews (WhatsApp and other apps that do not run JavaScript) come from
+ * per-route heads written at build time — page-heads in client/vite.config.js,
+ * served by the server's SPA fallback. Keep the keys there in step with the
+ * title/description each page passes here.
  */
 const OG_LOCALE = { en: 'en_IN', hi: 'hi_IN', pa: 'pa_IN', ru: 'ru_RU' };
 

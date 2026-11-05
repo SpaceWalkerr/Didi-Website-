@@ -1,6 +1,7 @@
 import { Link } from '../lib/router.jsx';
 import { DOCTOR } from '@shared/practice.config.js';
 import { useI18n } from '../i18n/index.jsx';
+import { doctorBio, doctorCredentials } from '../lib/claims.js';
 import PageIntro from '../design/PageIntro.jsx';
 import { RevealGroup, RevealItem } from '../design/Reveal.jsx';
 import { ArrowRightIcon, CheckIcon, ShieldIcon, StethoscopeIcon } from '../components/Icons.jsx';
@@ -85,7 +86,7 @@ export default function About() {
                 {t('about.backgroundTitle')}
               </h2>
               <div className="mt-4 space-y-4 leading-relaxed text-slate-700">
-                {tList('doctor.longBio').map((paragraph) => (
+                {doctorBio(t, tList).map((paragraph) => (
                   <p key={paragraph.slice(0, 40)}>{paragraph}</p>
                 ))}
               </div>
@@ -110,7 +111,7 @@ export default function About() {
                 {t('about.credentialsTitle')}
               </h2>
               <RevealGroup as="ul" className="mt-4 space-y-3">
-                {tList('doctor.credentials').map((credential) => (
+                {doctorCredentials(tList).map((credential) => (
                   <RevealItem as="li" key={credential.title} className="flex gap-3">
                     <CheckIcon className="mt-1 h-5 w-5 shrink-0 text-care-600" />
                     <div>

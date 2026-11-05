@@ -13,24 +13,51 @@ import { WhatsAppIcon } from '../components/Icons.jsx';
 
 const SESSION_KEY = 'clinic-patient-session';
 /**
- * Offline copy of "My bookings": the last list this phone loaded, so a
- * patient on a train with no signal can still see when their consultation is
- * and how to join. It holds only what the page shows (no symptoms, no phone
- * number), stays on this device, and is deleted on sign-out.
+ * Offline copy of "My bookings": the upcoming bookings this phone last
+ * loaded, so a patient on a train with no signal can still see when their
+ * consultation is and how to join. It holds only what the page shows (no
+ * symptoms, no phone number, no past bookings) and stays on this device.
+ *
+ * Phones get shared in families, so it does not linger: it is deleted on
+ * sign-out, when a different patient signs in, once the last booking in it
+ * has passed, and after 30 days (the diary only opens 30 days ahead).
  */
 const OFFLINE_KEY = 'clinic-bookings-offline';
+const OFFLINE_MAX_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
+const stillUpcoming = (b, now) =>
+  ['pending', 'confirmed', 'needs-attention'].includes(b.status) && b.startsAt >= now - HOUR_MS;
+const dropOffline = () => {
+  try {
+    localStorage.removeItem(OFFLINE_KEY);
+  } catch {
+    // nothing to remove
+  }
+};
 const saveOffline = (email, me) => {
   try {
+    const now = Date.now();
     const { phone, ...rest } = me; // eslint-disable-line no-unused-vars
-    localStorage.setItem(OFFLINE_KEY, JSON.stringify({ email, at: Date.now(), me: rest }));
+    const bookings = (me.bookings || []).filter((b) => stillUpcoming(b, now));
+    if (!bookings.length) return dropOffline();
+    localStorage.setItem(OFFLINE_KEY, JSON.stringify({ email, at: now, me: { ...rest, bookings } }));
   } catch {
     // Storage full or blocked: offline view simply unavailable.
   }
+  return undefined;
 };
+/** Returns the copy for this email, deleting it instead if it is stale or someone else's. */
 const readOffline = (email) => {
   try {
     const v = JSON.parse(localStorage.getItem(OFFLINE_KEY) || 'null');
-    return v && v.email === email ? v : null;
+    if (!v) return null;
+    const now = Date.now();
+    const bookings = (v.me?.bookings || []).filter((b) => stillUpcoming(b, now));
+    if (v.email !== email || !bookings.length || now - v.at > OFFLINE_MAX_AGE_MS) {
+      dropOffline();
+      return null;
+    }
+    return { ...v, me: { ...v.me, bookings } };
   } catch {
     return null;
   }
@@ -258,6 +285,10 @@ export default function Account() {
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [session, setSession] = useState(readSession);
+  // No one signed in on this phone: no one's bookings should be left on it.
+  useEffect(() => {
+    if (!session) dropOffline();
+  }, [session]);
   const [me, setMe] = useState(null);
   const [error, setError] = useState(null);
   const [linkError, setLinkError] = useState(null);
@@ -272,11 +303,7 @@ export default function Account() {
 
   const signOut = useCallback(() => {
     storeSession(null);
-    try {
-      localStorage.removeItem(OFFLINE_KEY);
-    } catch {
-      // nothing to remove
-    }
+    dropOffline();
     setSession(null);
     setMe(null);
   }, []);
