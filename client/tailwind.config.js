@@ -41,7 +41,7 @@ export default {
         paper: v('paper'),
         ink: v('ink'),
         /** Constant deep teal for bold panels; white text on it in both themes. */
-        deep: { DEFAULT: '#0b4a46', 700: '#0d5a55', 900: '#08302d' },
+        deep: { DEFAULT: '#0a5550', 700: '#0d5a55', 900: '#08302d' },
         /** Constant action teal: buttons keep white text in both themes. */
         action: { DEFAULT: '#0f8078', hover: '#0d6660' },
         /**

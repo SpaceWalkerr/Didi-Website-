@@ -171,10 +171,3 @@ export const SparkIcon = ({ className = 'h-5 w-5' }) => (
 );
 
 /** Brand mark: a calm heartbeat inside a soft circle. */
-export const BrandMark = ({ className = 'h-9 w-9' }) => (
-  <svg className={className} viewBox="0 0 40 40" aria-hidden="true">
-    <circle cx="20" cy="20" r="19" fill="#0f8078" />
-    <path d="M8 21h6.2l2.3-5.2 3.6 10 2.6-6.4 1.6 1.6H32" fill="none" stroke="#fffdf9" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
-    <circle cx="32" cy="21" r="1.7" fill="#e2a587" />
-  </svg>
-);

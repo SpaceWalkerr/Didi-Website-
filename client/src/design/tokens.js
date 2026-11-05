@@ -11,7 +11,7 @@ export const THEMES = {
   light: {
     cream: '#fbf7f0',
     paper: '#fffdf9',
-    ink: '#10302d',
+    ink: '#12302e',
     shadow: '#1a3330',
 
     'slate-50': '#f6f3ee',
@@ -20,15 +20,15 @@ export const THEMES = {
     'slate-300': '#cdc6b9',
     'slate-400': '#848a84',
     'slate-500': '#5f6a65',
-    'slate-600': '#4b5752',
+    'slate-600': '#4d6b68',
     'slate-700': '#34423d',
     'slate-800': '#22302c',
-    'slate-900': '#10302d',
+    'slate-900': '#12302e',
 
     'brand-50': '#eef8f5',
     'brand-100': '#d9f0ea',
     'brand-200': '#b3e3d9',
-    'brand-300': '#7fd0c3',
+    'brand-300': '#7cc6bc',
     'brand-400': '#48b5a8',
     'brand-500': '#26988c',
     'brand-600': '#0f8078',
@@ -44,7 +44,7 @@ export const THEMES = {
     'sand-100': '#f4eadb',
     'sand-200': '#eadbc4',
     'clay-100': '#f6e3d8',
-    'clay-300': '#e2a587',
+    'clay-300': '#c9855a',
     'clay-500': '#c2683f',
     'clay-700': '#97482a',
 

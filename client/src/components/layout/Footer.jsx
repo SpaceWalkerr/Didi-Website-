@@ -1,7 +1,8 @@
 import { Link } from '../../lib/router.jsx';
 import { CONTACT, DOCTOR, waLink } from '@shared/practice.config.js';
 import { useI18n } from '../../i18n/index.jsx';
-import { AlertIcon, BrandMark, MailIcon, ShieldIcon, WhatsAppIcon } from '../Icons.jsx';
+import BrandLogo from '../BrandLogo.jsx';
+import { AlertIcon, MailIcon, ShieldIcon, WhatsAppIcon } from '../Icons.jsx';
 
 /** A flat resting trace: the end of the heartbeat that opens the site. */
 function RestingLine() {
@@ -63,7 +64,7 @@ export default function Footer() {
       <div className="container-page pb-10 pt-16 sm:pt-20">
         <div className="grid gap-10 lg:grid-cols-[1.1fr_1fr] lg:gap-16">
           <div>
-            <BrandMark className="h-11 w-11" />
+            <BrandLogo variant="horizontal" alt={t('doctor.name')} className="h-12 w-auto max-w-full" />
             <p className="display-lg mt-6">{t('footerPlus.statement')}</p>
             <p className="mt-4 max-w-md text-lg leading-relaxed text-slate-600">{t('footerPlus.statementBody')}</p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -149,7 +150,7 @@ export default function Footer() {
             <ul className="mt-3 grid grid-cols-1 gap-x-6 text-[0.9375rem] min-[420px]:grid-cols-2">
               {quickLinks.map(([to, label]) => (
                 <li key={to}>
-                  <Link to={to} className="inline-flex min-h-[2.75rem] items-center text-slate-700 transition-colors hover:text-brand-700">
+                  <Link to={to} className="inline-flex min-h-[2.75rem] min-w-[2.75rem] items-center text-slate-700 transition-colors hover:text-brand-700">
                     {label}
                   </Link>
                 </li>
@@ -161,7 +162,7 @@ export default function Footer() {
             <ul className="mt-3 text-[0.9375rem]">
               {policyLinks.map(([to, label]) => (
                 <li key={to}>
-                  <Link to={to} className="inline-flex min-h-[2.75rem] items-center text-slate-700 transition-colors hover:text-brand-700">
+                  <Link to={to} className="inline-flex min-h-[2.75rem] min-w-[2.75rem] items-center text-slate-700 transition-colors hover:text-brand-700">
                     {label}
                   </Link>
                 </li>

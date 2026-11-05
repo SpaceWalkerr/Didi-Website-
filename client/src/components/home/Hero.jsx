@@ -98,6 +98,16 @@ export default function Hero() {
       {/* Very soft wash so the cream is not flat. */}
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_50%_at_85%_10%,rgb(var(--c-brand-100)/0.7),transparent_70%),radial-gradient(40%_40%_at_0%_100%,rgb(var(--c-sand-100)),transparent_70%)]" aria-hidden="true" />
 
+      {/* Symbol watermark: whole, uncropped, with clear space around it. */}
+      <img
+        src="/images/logo-mark.svg"
+        alt=""
+        width="100"
+        height="100"
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-10 left-[46%] hidden h-40 w-40 opacity-[0.07] lg:block"
+      />
+
       <div className="container-page relative pb-6 pt-8 sm:pt-14 lg:pb-0 lg:pt-16">
         <div className="grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr] lg:gap-10">
           <div className="min-w-0">

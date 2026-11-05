@@ -5,7 +5,7 @@ import { useI18n } from '../../i18n/index.jsx';
 import { DOCTOR } from '@shared/practice.config.js';
 import LanguageSwitcher from './LanguageSwitcher.jsx';
 import ComfortControls from './ComfortControls.jsx';
-import { BrandMark } from '../Icons.jsx';
+import BrandLogo from '../BrandLogo.jsx';
 
 /**
  * Sticky site header.
@@ -17,7 +17,7 @@ import { BrandMark } from '../Icons.jsx';
  * likely to go looking for it.
  */
 export default function Navbar() {
-  const { t } = useI18n();
+  const { t, isEnglish } = useI18n();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { pathname } = useLocation();
@@ -61,7 +61,7 @@ export default function Navbar() {
   ];
 
   const linkClass = ({ isActive }) =>
-    `relative rounded-full px-3 py-2 text-[0.9375rem] font-medium transition-colors duration-200 ${
+    `relative inline-flex min-h-[2.75rem] min-w-[2.75rem] items-center justify-center whitespace-nowrap rounded-full px-3 py-2 text-[0.9375rem] font-medium transition-colors duration-200 ${
       isActive ? 'text-ink after:absolute after:inset-x-3 after:-bottom-0.5 after:h-px after:bg-clay-500' : 'text-slate-600 hover:text-ink'
     }`;
 
@@ -76,19 +76,39 @@ export default function Navbar() {
     >
       <nav aria-label={t('nav.aria')} className="container-page">
         <div className="flex h-[var(--header-height)] items-center justify-between gap-3">
-          <Link to="/" className="group flex min-w-0 items-center gap-2.5 rounded-xl">
-            <BrandMark className="h-9 w-9 shrink-0 transition-transform duration-500 ease-calm group-hover:rotate-[-8deg]" />
-            <span className="min-w-0">
-              <span className="block truncate font-display text-[1.0625rem] font-semibold leading-tight text-ink">
-                {t('doctor.name')}
+          <Link
+            to="/"
+            aria-label={`${t('doctor.name')} — ${t('nav.home')}`}
+            className="group flex min-h-[2.75rem] min-w-0 items-center gap-3 rounded-xl"
+          >
+            {isEnglish && (
+              <span className="hidden shrink-0 sm:block">
+                <BrandLogo variant="horizontal" eager className="h-10 w-auto" />
               </span>
-              <span className="hidden truncate text-xs text-slate-500 min-[400px]:block">
-                {t('doctor.qualification')} · {t('common.regNo', { number: DOCTOR.registrationNumber })}
+            )}
+            {/* Phones, and every non-English language: symbol + live text. */}
+            <span className={`flex min-w-0 items-center gap-2.5 ${isEnglish ? 'sm:hidden' : ''}`}>
+              <span className="shrink-0">
+                <BrandLogo variant="mark" eager className="h-9 w-9" />
+              </span>
+              <span className="min-w-0">
+                <span className="block font-display text-[1.0625rem] font-semibold leading-tight text-ink">
+                  {t('doctor.name')}
+                </span>
+                <span className="brand-reg hidden whitespace-nowrap text-xs text-slate-500 min-[400px]:block">
+                  {t('doctor.qualification')} · {t('common.regNo', { number: DOCTOR.registrationNumber })}
+                </span>
               </span>
             </span>
+            {/* Registration stays visible beside the wide lockup. */}
+            {isEnglish && (
+              <span className="brand-reg hidden whitespace-nowrap border-l border-slate-200 pl-3 text-xs text-slate-500 md:block xl:hidden 2xl:block">
+                {t('doctor.qualification')} · {t('common.regNo', { number: DOCTOR.registrationNumber })}
+              </span>
+            )}
           </Link>
 
-          <div className="hidden items-center gap-0.5 lg:flex">
+          <div className="hidden items-center gap-0.5 xl:flex">
             {links.map(([to, label]) => (
               <NavLink key={to} to={to} end={to === '/'} className={linkClass}>
                 {label}
@@ -98,7 +118,7 @@ export default function Navbar() {
 
           <div className="flex shrink-0 items-center gap-1">
             <ComfortControls />
-            <div className="hidden lg:block">
+            <div className="hidden xl:block">
               <LanguageSwitcher />
             </div>
             <Link to="/book" className="btn-primary ml-1 hidden !min-h-[2.75rem] !px-5 sm:inline-flex">
@@ -112,7 +132,7 @@ export default function Navbar() {
               aria-controls="mobile-menu"
               aria-label={open ? t('nav.closeMenu') : t('nav.openMenu')}
               className="flex h-11 w-11 items-center justify-center rounded-full text-slate-700
-                         hover:bg-slate-100 active:scale-95 focus-visible:ring-2 focus-visible:ring-brand-600 lg:hidden"
+                         hover:bg-slate-100 active:scale-95 focus-visible:ring-2 focus-visible:ring-brand-600 xl:hidden"
             >
               <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" aria-hidden="true">
                 {open ? <path d="M6 6l12 12M18 6L6 18" /> : <path d="M4 8h16M4 16h11" />}
@@ -124,7 +144,7 @@ export default function Navbar() {
         {open && (
           <div
             id="mobile-menu"
-            className="max-h-[calc(100dvh-var(--header-height))] overflow-y-auto border-t border-slate-200/70 pb-6 pt-3 lg:hidden"
+            className="max-h-[calc(100dvh-var(--header-height))] overflow-y-auto border-t border-slate-200/70 pb-6 pt-3 xl:hidden"
             style={{ animation: 'fade .2s ease-out both' }}
           >
             <ul className="space-y-0.5">

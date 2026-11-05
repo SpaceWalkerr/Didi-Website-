@@ -3,7 +3,8 @@ import { getService } from '@shared/practice.config.js';
 import { useI18n } from '../../i18n/index.jsx';
 import { rupees } from '../../lib/format.js';
 import { usePrefersReducedMotion } from '../../lib/hooks.js';
-import { BrandMark, CalendarIcon, CheckIcon, ClockIcon, LockIcon, WhatsAppIcon } from '../Icons.jsx';
+import BrandLogo from '../BrandLogo.jsx';
+import { CalendarIcon, CheckIcon, ClockIcon, LockIcon, WhatsAppIcon } from '../Icons.jsx';
 
 /* ── Phone screens: plain, generic UI. No names, no dialogue, nothing that
       could be read as a real booking or a review. ─────────────────────── */
@@ -95,7 +96,7 @@ function ScreenConsult({ t }) {
       <div className="relative">
         <span className="story-ring absolute inset-0 rounded-full border border-white/40" aria-hidden="true" />
         <span className="story-ring story-ring-2 absolute inset-0 rounded-full border border-white/30" aria-hidden="true" />
-        <BrandMark className="relative h-20 w-20" />
+        <span className="relative block rounded-full bg-brand-600 p-4"><BrandLogo variant="mark" className="h-12 w-12" /></span>
       </div>
       <p className="mt-6 text-center font-display text-lg">{t('story.screen.inProgress')}</p>
       <p className="mt-1 text-sm tabular-nums text-white/70">{t('common.minutesShort', { count: 20 })}</p>
