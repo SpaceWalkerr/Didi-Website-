@@ -39,12 +39,11 @@ export const DOCTOR = {
   council: 'Bihar State Medical Council',
   yearsExperience: 2,
   /**
-   * ⚠ CONFIRM — true only if she has worked in hospital outpatient and
-   * inpatient care. It switches on the About-page lines that say so (opening
-   * paragraph and the "General medicine" credential). Off until confirmed:
-   * the brief allows only facts that are recorded here.
+   * Confirmed by the doctor (November 2026): she has worked in hospital
+   * outpatient and inpatient care. Switches on the About-page lines that say so
+   * (opening paragraph and the "General medicine" credential).
    */
-  hospitalExperience: false,
+  hospitalExperience: true,
   /** ⚠ PLACEHOLDER — replace the file, keep the filename. '' shows an illustrated fallback. */
   photoUrl: '/images/doctor-photo.jpg',
   /** Secondary photo on the About page. '' hides it. */
@@ -150,10 +149,10 @@ export const FEATURES = {
   mostBookedBadge: false,
   /**
    * "One free follow-up message within 48 hours" on the General Consultation
-   * card. Off until the doctor confirms she offers it: it is a promise to
-   * patients, and nothing in the booking system tracks or enforces it.
+   * card. Confirmed by the doctor (November 2026). It is a promise to patients
+   * and nothing in the booking system tracks it, so she honours it by hand.
    */
-  freeFollowUpMessage: false,
+  freeFollowUpMessage: true,
 };
 
 /**
