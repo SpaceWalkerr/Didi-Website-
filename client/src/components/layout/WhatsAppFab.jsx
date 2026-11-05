@@ -13,9 +13,10 @@ export default function WhatsAppFab() {
   const { t } = useI18n();
   const { pathname } = useLocation();
 
-  // Booking, the ticket and the clinic dashboard have their own WhatsApp
-  // links, and a floating button there sits on top of form fields.
-  if (/^\/(book|confirmation|admin)/.test(pathname)) return null;
+  // Hidden only on the clinic's own dashboard. On the booking page it sits
+  // higher on phones, clear of the sticky Continue button.
+  if (/^\/admin/.test(pathname)) return null;
+  const raised = /^\/book/.test(pathname);
 
   return (
     <a
@@ -26,7 +27,7 @@ export default function WhatsAppFab() {
       className="fixed bottom-5 right-5 z-40 flex h-14 w-14 items-center justify-center rounded-full
                  bg-whatsapp text-white shadow-lift transition-[transform,background-color] duration-300 hover:bg-whatsapp-dark active:scale-95
                  focus-visible:ring-2 focus-visible:ring-whatsapp focus-visible:ring-offset-2"
-      style={{ bottom: 'max(1.25rem, env(safe-area-inset-bottom))' }}
+      style={{ bottom: raised ? 'max(5.5rem, calc(env(safe-area-inset-bottom) + 4.5rem))' : 'max(1.25rem, env(safe-area-inset-bottom))' }}
     >
       <WhatsAppIcon className="h-7 w-7" />
     </a>

@@ -89,8 +89,12 @@
     html { scroll-behavior: auto; }
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
+      /* Delays too: otherwise staggered entrances still sit invisible (their
+         "from" frame) for up to a second before snapping in. */
+      animation-delay: 0s !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
+      transition-delay: 0s !important;
       scroll-behavior: auto !important;
     }
     ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) {

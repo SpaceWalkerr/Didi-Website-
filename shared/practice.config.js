@@ -135,6 +135,12 @@ export const FEATURES = {
   testimonials: false,
   /** "Next available slot" chip in the hero, read live from the booking API. */
   nextSlotChip: true,
+  /**
+   * "Most booked" badge on the Services page. Off: it is a claim about how
+   * patients book, and there is no booking data behind it yet. Turn on only
+   * if the dashboard shows it is true.
+   */
+  mostBookedBadge: false,
 };
 
 /**

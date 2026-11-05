@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link } from '../lib/router.jsx';
 import { api } from '../lib/api.js';
 import { rupees } from '../lib/format.js';
-import { HIGHLIGHTED_SERVICE, SERVICES, waLink } from '../config.js';
+import { FEATURES, HIGHLIGHTED_SERVICE, SERVICES, waLink } from '../config.js';
 import { useI18n } from '../i18n/index.jsx';
 import PageIntro from '../design/PageIntro.jsx';
 import Badge from '../design/Badge.jsx';
@@ -71,11 +71,11 @@ export default function Services() {
                   highlighted ? 'border-brand-400 ring-1 ring-brand-300' : 'border-slate-200'
                 }`}
               >
-                {highlighted && (
+                {highlighted && FEATURES.mostBookedBadge && (
                   <Badge className="self-start">{t('services.mostBooked')}</Badge>
                 )}
 
-                <h2 className={`font-display text-2xl ${highlighted ? 'mt-3' : ''}`}>
+                <h2 className={`font-display text-2xl ${highlighted && FEATURES.mostBookedBadge ? 'mt-3' : ''}`}>
                   {t(`services.items.${service.id}.name`)}
                 </h2>
 

@@ -8,7 +8,7 @@ export function Bone({ className = '' }) {
 
 export function PageSkeleton() {
   return (
-    <div className="min-h-[70vh]" role="status" aria-live="polite">
+    <div className="min-h-[110svh]" role="status" aria-live="polite">
       <span className="sr-only">Loading…</span>
       <div className="bg-surface">
         <div className="container-page space-y-4 py-14 sm:py-20">

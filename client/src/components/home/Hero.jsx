@@ -63,7 +63,6 @@ function Portrait({ t }) {
 
       {/* Name card resting on the portrait. */}
       <div className="absolute -bottom-3 left-0 flex items-center gap-3 rounded-2xl border border-slate-200/80 bg-paper/95 px-4 py-3 shadow-lift backdrop-blur sm:-left-6">
-        <span className="live-dot relative h-2 w-2 rounded-full bg-care-500 text-care-500" aria-hidden="true" />
         <span className="leading-tight">
           <span className="block font-display text-[0.95rem] font-semibold text-ink">{t('doctor.name')}</span>
           <span className="block text-xs text-slate-600">
@@ -157,7 +156,7 @@ export default function Hero() {
       </div>
 
       {/* The heartbeat, full width, settling under the hero. */}
-      <EcgLine className="relative -mt-2 w-[calc(100%-1.5rem)] lg:-mt-10" />
+      <EcgLine className="relative -mt-2 w-[calc(100%-1.5rem)] xl:-mt-10" />
 
       {/* Trust strip — registration first, as the guidelines intend. */}
       <div className="container-page relative pb-14 pt-4 sm:pb-20">
