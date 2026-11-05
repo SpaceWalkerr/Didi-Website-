@@ -81,9 +81,18 @@ export default function Navbar() {
             aria-label={`${t('doctor.name')} — ${t('nav.home')}`}
             className="group flex min-h-[2.75rem] min-w-0 items-center gap-3 rounded-xl"
           >
+            {/*
+              English, 640px+: the wide lockup with the registration line
+              under it. Stacked rather than beside, so it fits at every width
+              from 640px up, including 1280–1535px where the nav links leave
+              no room for it alongside.
+            */}
             {isEnglish && (
-              <span className="hidden shrink-0 sm:block">
-                <BrandLogo variant="horizontal" eager className="h-10 w-auto" />
+              <span className="hidden shrink-0 flex-col items-start gap-0.5 sm:flex">
+                <BrandLogo variant="horizontal" className="h-8 w-auto" />
+                <span className="brand-reg whitespace-nowrap pl-0.5 text-xs leading-4 text-slate-500">
+                  {t('doctor.qualification')} · {t('common.regNo', { number: DOCTOR.registrationNumber })}
+                </span>
               </span>
             )}
             {/* Phones, and every non-English language: symbol + live text. */}
@@ -100,12 +109,6 @@ export default function Navbar() {
                 </span>
               </span>
             </span>
-            {/* Registration stays visible beside the wide lockup. */}
-            {isEnglish && (
-              <span className="brand-reg hidden whitespace-nowrap border-l border-slate-200 pl-3 text-xs text-slate-500 md:block xl:hidden 2xl:block">
-                {t('doctor.qualification')} · {t('common.regNo', { number: DOCTOR.registrationNumber })}
-              </span>
-            )}
           </Link>
 
           <div className="hidden items-center gap-0.5 xl:flex">
