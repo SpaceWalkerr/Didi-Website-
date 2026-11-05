@@ -25,7 +25,8 @@
     "test:payment": "node scripts/test/payment.mjs",
     "test:dashboard": "node scripts/test/dashboard.mjs",
     "test:e2e": "npm run build && playwright test",
-    "check:contrast": "node scripts/check-contrast.mjs"
+    "check:contrast": "node scripts/check-contrast.mjs",
+    "test:validation": "node scripts/test/validation-parity.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
