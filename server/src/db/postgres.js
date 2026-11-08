@@ -1,7 +1,7 @@
+import crypto from 'node:crypto';
 import fs from 'node:fs';
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import pg from 'pg';
+import { attachDatabasePool } from '@vercel/functions';
 import { AVAILABILITY, DOCTOR } from '../../../shared/practice.config.js';
 import { EXCLUSION_VIOLATION, SlotConflictError } from './errors.js';
 
@@ -17,11 +17,28 @@ import { EXCLUSION_VIOLATION, SlotConflictError } from './errors.js';
  * Works with any Postgres: Neon, Supabase, Render, or one you run yourself.
  */
 
-const here = path.dirname(fileURLToPath(import.meta.url));
-const SCHEMA = fs.readFileSync(path.join(here, 'schema.sql'), 'utf8');
+// `new URL(…, import.meta.url)` is the form Vercel's file tracer understands, so
+// schema.sql is bundled into the serverless function along with the code.
+const SCHEMA = fs.readFileSync(new URL('./schema.sql', import.meta.url), 'utf8');
 
 /** The single doctor row everything hangs off. */
 const DOCTOR_SLUG = 'primary';
+
+/**
+ * What init() compares against to decide whether the database already has the
+ * current schema and seed rows. Anything that init() writes is hashed in, so
+ * editing schema.sql or shared/practice.config.js changes it and the next start
+ * re-applies — which keeps "edit the config file and redeploy" working.
+ */
+const SCHEMA_FINGERPRINT = crypto
+  .createHash('sha256')
+  .update(SCHEMA)
+  .update(JSON.stringify([DOCTOR, AVAILABILITY]))
+  .digest('hex');
+const FINGERPRINT_SETTING = 'schema_fingerprint';
+
+/** Arbitrary constant: the lock that serialises concurrent init() runs. */
+const INIT_LOCK_KEY = 727_001;
 
 /** A local database is almost never running TLS; a hosted one always is. */
 const isLocal = (url) => /@(localhost|127\.0\.0\.1|\[::1\])[:/]/.test(url);
@@ -109,15 +126,23 @@ export function createPostgresStore(connectionString) {
     // database would just fail to connect.
     ssl: isLocal(connectionString) ? false : { rejectUnauthorized: false },
     // Small on purpose: free Postgres tiers cap connections hard, and this app
-    // serves one doctor's diary, not a busy API.
-    max: 5,
-    idleTimeoutMillis: 30_000,
+    // serves one doctor's diary, not a busy API. On Vercel every function
+    // instance holds its own pool, so each one takes fewer and gives idle
+    // connections back sooner. PG_POOL_MAX overrides either.
+    max: Number(process.env.PG_POOL_MAX) || (process.env.VERCEL ? 3 : 5),
+    idleTimeoutMillis: process.env.VERCEL ? 10_000 : 30_000,
     connectionTimeoutMillis: 10_000,
   });
 
   // A pool error outside a query (a dropped connection) is emitted here; without
   // a listener Node would treat it as unhandled and kill the process.
   pool.on('error', (err) => console.error('Postgres pool error:', err.message));
+
+  // A serverless instance can be frozen with idle connections still open, and
+  // the database then drops them behind its back. This keeps the instance alive
+  // just long enough to close idle connections cleanly, so the next request
+  // does not start by writing to a dead socket.
+  if (process.env.VERCEL) attachDatabasePool(pool);
 
   /** Cached after the first lookup — it never changes while the process lives. */
   let doctorId = null;
@@ -133,62 +158,80 @@ export function createPostgresStore(connectionString) {
   return {
     kind: 'postgres',
 
+    /**
+     * Makes sure the schema and the seed rows are current.
+     *
+     * This used to re-run the whole schema on every start. That was fine for one
+     * long-running server, but on Vercel every cold start is a "start", and
+     * several can happen at once: a dozen DDL statements per cold start is slow,
+     * and two instances running CREATE TABLE / CREATE EXTENSION at the same
+     * moment can fail each other with "tuple concurrently updated".
+     *
+     * So: the database remembers a fingerprint of what was last applied. If it
+     * matches there is nothing to do (two cheap queries). If not, one instance
+     * at a time applies it, under a lock, inside a transaction — a second
+     * instance waits, then finds the fingerprint already current and skips.
+     */
     async init() {
+      if (await schemaIsCurrent(pool)) return;
+
+      const client = await pool.connect();
       try {
-        await pool.query(SCHEMA);
+        await client.query('BEGIN');
+        // Transaction-scoped, so it is released by COMMIT/ROLLBACK even if this
+        // connection is later handed to someone else, and it works through a
+        // transaction pooler (Supabase :6543), where session locks do not.
+        await client.query('SELECT pg_advisory_xact_lock($1)', [INIT_LOCK_KEY]);
+
+        // Another instance may have finished while we waited for the lock.
+        if (await schemaIsCurrent(client)) {
+          await client.query('COMMIT');
+          return;
+        }
+
+        await applySchema(client);
+        await client.query('COMMIT');
       } catch (err) {
-        // btree_gist is what lets the overlap constraint mix an equality
-        // column with a range. Most managed Postgres (Neon, Supabase, Render,
-        // RDS) allow it, but a locked-down instance may not.
-        //
-        // This deliberately refuses to start rather than carrying on without
-        // the constraint. Without it two patients can be sold the same
-        // consultation slot, and the first anyone knows is when both join the
-        // call. A site that will not boot is a far better failure than that.
-        if (/btree_gist|permission denied to create extension/i.test(err.message)) {
-          throw new Error(
-            'Could not create the btree_gist extension, which the appointment ' +
-              'overlap constraint depends on.\n' +
-              '    Run this once as a superuser on your database:\n' +
-              '        CREATE EXTENSION IF NOT EXISTS btree_gist;\n' +
-              '    then start the app again. Neon and Supabase both allow this ' +
-              'from their SQL editor.\n' +
-              `    Original error: ${err.message}`,
-          );
-        }
+        await client.query('ROLLBACK').catch(() => {});
         throw err;
-      }
-
-      // Seed the single doctor. Details are refreshed on every boot so editing
-      // shared/practice.config.js is genuinely the only place to change them.
-      const { rows } = await pool.query(
-        `INSERT INTO doctors (slug, name, qualification, reg_no, council)
-              VALUES ($1, $2, $3, $4, $5)
-         ON CONFLICT (slug) DO UPDATE
-              SET name = EXCLUDED.name, qualification = EXCLUDED.qualification,
-                  reg_no = EXCLUDED.reg_no, council = EXCLUDED.council
-           RETURNING id`,
-        [DOCTOR_SLUG, DOCTOR.name, DOCTOR.qualification, DOCTOR.registrationNumber, DOCTOR.council],
-      );
-      doctorId = rows[0].id;
-
-      // Seed consulting hours. ON CONFLICT DO NOTHING keeps this idempotent;
-      // rows the doctor later edits in the database are left alone.
-      for (const [weekday, windows] of Object.entries(AVAILABILITY)) {
-        for (const [start, end] of windows) {
-          await pool.query(
-            `INSERT INTO availability_rules (doctor_id, weekday, start_time, end_time)
-                  VALUES ($1, $2, $3, $4)
-             ON CONFLICT (doctor_id, weekday, start_time, end_time) DO NOTHING`,
-            [doctorId, Number(weekday), start, end],
-          );
-        }
+      } finally {
+        client.release();
       }
     },
 
     /** Cheap liveness check for /api/health. */
     async ping() {
       await pool.query('SELECT 1');
+    },
+
+    /**
+     * Counts one occurrence of `key` in a fixed window and returns
+     * `{ count, resetInMs }`. One statement, so concurrent callers on different
+     * server instances cannot both read "4" and both write "5": the row lock the
+     * upsert takes makes them count 5 and 6.
+     *
+     * Time comes from the database clock, not the caller's, so instances whose
+     * clocks disagree still agree on when a window ends.
+     */
+    async hit(key, windowMs) {
+      const { rows } = await pool.query(
+        `INSERT INTO rate_limits AS r (key, count, reset_at)
+              VALUES ($1, 1, now() + ($2::int * interval '1 millisecond'))
+         ON CONFLICT (key) DO UPDATE
+              SET count    = CASE WHEN r.reset_at <= now() THEN 1 ELSE r.count + 1 END,
+                  reset_at = CASE WHEN r.reset_at <= now() THEN EXCLUDED.reset_at ELSE r.reset_at END
+           RETURNING count,
+                     GREATEST(0, EXTRACT(EPOCH FROM (reset_at - now())) * 1000)::float8 AS reset_in_ms`,
+        [key, Math.round(windowMs)],
+      );
+
+      // Counters are only meaningful until reset_at. Sweeping a little at a time,
+      // on a small share of calls, keeps the table tiny without a scheduled job.
+      if (Math.random() < 0.02) {
+        pool.query(`DELETE FROM rate_limits WHERE reset_at < now() - interval '1 hour'`).catch(() => {});
+      }
+
+      return { count: rows[0].count, resetInMs: rows[0].reset_in_ms };
     },
 
     /**
@@ -385,6 +428,84 @@ export function createPostgresStore(connectionString) {
       await pool.end();
     },
   };
+}
+
+/**
+ * True when the database already holds exactly the schema and seed rows this
+ * code would apply. Works on a pool or a checked-out client.
+ *
+ * The existence check comes first on purpose: on a brand-new database the
+ * `settings` table is not there yet, and selecting from it would raise an error
+ * — which, inside init()'s transaction, would abort the transaction.
+ */
+async function schemaIsCurrent(queryable) {
+  const { rows: exists } = await queryable.query(`SELECT to_regclass('public.settings') IS NOT NULL AS found`);
+  if (!exists[0].found) return false;
+  const { rows } = await queryable.query('SELECT value FROM settings WHERE key = $1', [FINGERPRINT_SETTING]);
+  return rows[0]?.value === SCHEMA_FINGERPRINT;
+}
+
+/** Applies schema.sql and the seed rows on a client that is inside a transaction. */
+async function applySchema(client) {
+  try {
+    await client.query(SCHEMA);
+  } catch (err) {
+    // btree_gist is what lets the overlap constraint mix an equality
+    // column with a range. Most managed Postgres (Neon, Supabase, Render,
+    // RDS) allow it, but a locked-down instance may not.
+    //
+    // This deliberately refuses to start rather than carrying on without
+    // the constraint. Without it two patients can be sold the same
+    // consultation slot, and the first anyone knows is when both join the
+    // call. A site that will not boot is a far better failure than that.
+    if (/btree_gist|permission denied to create extension/i.test(err.message)) {
+      throw new Error(
+        'Could not create the btree_gist extension, which the appointment ' +
+          'overlap constraint depends on.\n' +
+          '    Run this once as a superuser on your database:\n' +
+          '        CREATE EXTENSION IF NOT EXISTS btree_gist;\n' +
+          '    then start the app again. Neon and Supabase both allow this ' +
+          'from their SQL editor.\n' +
+          `    Original error: ${err.message}`,
+      );
+    }
+    throw err;
+  }
+
+  // Seed the single doctor. Details are refreshed whenever the fingerprint
+  // changes, so editing shared/practice.config.js is genuinely the only place
+  // to change them.
+  const { rows } = await client.query(
+    `INSERT INTO doctors (slug, name, qualification, reg_no, council)
+          VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (slug) DO UPDATE
+          SET name = EXCLUDED.name, qualification = EXCLUDED.qualification,
+              reg_no = EXCLUDED.reg_no, council = EXCLUDED.council
+       RETURNING id`,
+    [DOCTOR_SLUG, DOCTOR.name, DOCTOR.qualification, DOCTOR.registrationNumber, DOCTOR.council],
+  );
+  const doctor = rows[0].id;
+
+  // Seed consulting hours. ON CONFLICT DO NOTHING keeps this idempotent;
+  // rows the doctor later edits in the database are left alone.
+  for (const [weekday, windows] of Object.entries(AVAILABILITY)) {
+    for (const [start, end] of windows) {
+      await client.query(
+        `INSERT INTO availability_rules (doctor_id, weekday, start_time, end_time)
+              VALUES ($1, $2, $3, $4)
+         ON CONFLICT (doctor_id, weekday, start_time, end_time) DO NOTHING`,
+        [doctor, Number(weekday), start, end],
+      );
+    }
+  }
+
+  // Last, so a half-applied run (which rolls back anyway) can never be mistaken
+  // for a finished one.
+  await client.query(
+    `INSERT INTO settings (key, value) VALUES ($1, $2::jsonb)
+     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now()`,
+    [FINGERPRINT_SETTING, JSON.stringify(SCHEMA_FINGERPRINT)],
+  );
 }
 
 const toBlock = (row) =>

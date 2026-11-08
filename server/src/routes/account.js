@@ -6,6 +6,7 @@ import { createLoginLink, redeemLoginLink, requirePatient, normaliseEmail } from
 import { istEpoch, validateSlot, isValidDateString } from '../services/slots.js';
 import { sendRescheduleNotice } from '../services/notify.js';
 import { SlotConflictError } from '../db/errors.js';
+import { background } from '../services/background.js';
 
 const router = Router();
 
@@ -31,8 +32,9 @@ router.post('/login-link', async (req, res, next) => {
       const origin = config.clientOrigins[0];
       const link = `${origin}/account?token=${encodeURIComponent(createLoginLink(email))}`;
       const language = bookings[0].language || 'en';
-      sendLoginLink({ email, link, name: bookings[0].patient.name, language }).catch((err) =>
-        console.error('Login link email failed:', err.message),
+      background(
+        sendLoginLink({ email, link, name: bookings[0].patient.name, language }),
+        'Login link email',
       );
     }
     res.json({ ok: true });
@@ -42,12 +44,16 @@ router.post('/login-link', async (req, res, next) => {
 });
 
 /** POST /api/account/session { token } — swaps a one-time link token for a session. */
-router.post('/session', (req, res) => {
-  const session = redeemLoginLink(String(req.body?.token || ''));
-  if (!session) {
-    return res.status(401).json({ code: 'linkInvalid', error: 'This sign-in link has expired or was already used.' });
+router.post('/session', async (req, res, next) => {
+  try {
+    const session = await redeemLoginLink(String(req.body?.token || ''));
+    if (!session) {
+      return res.status(401).json({ code: 'linkInvalid', error: 'This sign-in link has expired or was already used.' });
+    }
+    res.json(session);
+  } catch (err) {
+    next(err);
   }
-  res.json(session);
 });
 
 const RESCHEDULE_LEAD_MS = 4 * 60 * 60 * 1000; // matches the refund policy
@@ -158,7 +164,7 @@ router.post('/bookings/:id/reschedule', requirePatient, async (req, res, next) =
       }
       throw err;
     }
-    sendRescheduleNotice(updated, previousWhen).catch((err) => console.error('Reschedule notice failed:', err.message));
+    background(sendRescheduleNotice(updated, previousWhen), 'Reschedule notice');
     res.json(present(updated));
   } catch (err) {
     next(err);

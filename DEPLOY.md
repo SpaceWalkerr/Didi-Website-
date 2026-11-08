@@ -1,8 +1,13 @@
 # Deploying
 
-The app is one Node process serving both the API and the built client from a single
-origin. Bookings live in **Postgres**, so no persistent disk is needed and the whole
-thing runs on free tiers.
+The app runs two ways from the same code, and both talk to the same **Postgres**:
+
+- **On Vercel** (Option C): the website is served from Vercel's CDN and the API runs as one
+  serverless function. Nothing sleeps.
+- **On Render** (Option A): one long-running Node process serves the API and the built
+  website from a single origin.
+
+Bookings live in Postgres either way, so no persistent disk is needed.
 
 Locally, leaving `DATABASE_URL` unset falls back to a JSON file under `server/data/`, so
 you can develop with no database installed. In production that fallback would sit on a
@@ -17,13 +22,18 @@ to start in production without `DATABASE_URL`.**
 | --- | --- | --- |
 | **Render, one service** | Free | Simplest. One origin, no CORS. Sleeps when idle — see below. |
 | **Render, Starter** | ~$7/mo | Same, but always on. |
-| **Vercel (front end) + Render (API)** | Free¹ | Front end on a fast CDN; two services to keep in sync. |
+| **Vercel, everything** (Option C) | Pro, ~$20/mo¹ | Fast CDN, API never sleeps, nothing to keep warm. Needs a paid plan. |
+| **Vercel (front end) + Render (API)** (Option B) | Pro¹ + Render | The older split. Superseded by Option C unless you want the API on Render. |
 
-¹ Vercel's Hobby plan is free but **not licensed for commercial use**. A practice taking
-payments is commercial, so a live clinic site would need a paid Vercel plan. Check their
-current terms — and Render's pricing — before relying on either.
+¹ Vercel's Hobby plan is free but **not licensed for commercial use**, and it also rejects
+the 5-minute reminder job in `vercel.json` (the deployment fails). A practice taking payments
+is commercial, so a live clinic site needs Vercel's paid Pro plan. Check their current terms
+and pricing — and Render's — before relying on either.
 
-**Recommendation: Render as a single service.** One thing to deploy, one origin, no CORS.
+**Which one:** if the site must open instantly for every visitor and a paid plan is fine,
+Option C. If you want the cheapest always-on option, Render Starter (~$7/mo) with Option A is
+simpler and half the price. The free Render tier is the one that sleeps (the ~50 second wait),
+and it cannot be fixed without paying for something.
 
 ### Free-tier caveats
 
@@ -260,8 +270,9 @@ anyone books, because those bookings will not survive.
 
 ## Option B — Vercel for the front end, Render for the API
 
-Vercel cannot run this backend (see below), so this splits them: Vercel serves the React
-app from its CDN, Render runs the API.
+This splits the two: Vercel serves the React app from its CDN, Render runs the API. Since
+the API can now run on Vercel too (Option C), this is only worth it if you specifically want
+the API on Render.
 
 ### 1. Deploy the API to Render
 
@@ -298,17 +309,138 @@ practice this size, Option A is usually the better trade.
 
 ---
 
-## Why Vercel cannot host the backend
+## Option C — Vercel, everything (nothing sleeps)
 
-Vercel runs serverless functions. They have no persistent filesystem — `/tmp` is wiped
-between invocations and is not shared between concurrent instances. Bookings live in a
-JSON file, so on Vercel they would disappear, and two patients booking at once could hit
-different instances and both be given the same slot.
+The website is served from Vercel's CDN and the API runs as one serverless function
+(`api/index.js`). A function wakes in a fraction of a second, so there is no 50-second
+wait, no pinger to keep warm, and no region to get wrong beyond the one in `vercel.json`.
 
-Storage is no longer the blocker — bookings are in Postgres now. What remains is that
-Express has to be wrapped as a serverless function, and that serverless Postgres
-connections need pooling care (Neon's pooled connection string, or its HTTP driver).
-Workable, but it buys little over Option A.
+### What it needs
+
+- **Vercel's Pro plan** (~$20/month at the time of writing — check current pricing). Hobby is
+  non-commercial by Vercel's terms, and also rejects the 5-minute cron below.
+- **Postgres** — the same Supabase or Neon database as before. If you are moving from Render,
+  keep using the one you have: nothing needs migrating.
+
+### 1. The database connection string
+
+Each function instance opens its own connections, so use the **pooler**, not a direct
+connection:
+
+- **Supabase:** Project Settings → Database → Connection string → **Transaction pooler**
+  (port **6543**). On Render you used the Session pooler (5432); on Vercel switch to 6543.
+- **Neon:** the **pooled** connection string (the host contains `-pooler`).
+
+The same password rules from Option A step 1 apply (letters and digits only, or percent-encode).
+The app uses no prepared statements or session state, so it works through a transaction pooler.
+
+**Region.** `vercel.json` runs the function in Singapore (`"regions": ["sin1"]`), which matches
+a Supabase project in `ap-southeast-1`. A booking makes several database round trips, so
+function ↔ database distance matters more than function ↔ visitor. If your database is
+elsewhere, change `regions` to the nearest Vercel region.
+
+### 2. Create the project
+
+vercel.com → **Add New → Project** → import the GitHub repository. Leave **Framework Preset**
+as *Other*: `vercel.json` already sets the build command, output directory and routing.
+Add the variables below **before** the first deploy.
+
+### 3. Environment variables
+
+Set these for the **Production** environment only. (Leaving Preview empty means a preview
+deployment shows a clear "service unavailable" instead of writing to the live diary.)
+
+| Key | Value |
+| --- | --- |
+| `DATABASE_URL` | the pooler string from step 1 |
+| `CLIENT_ORIGIN` | the site's final address, e.g. `https://richarani.in` — no trailing slash. Patients' emailed sign-in links are built from it |
+| `ADMIN_TOKEN` | the token you generated (24+ characters) |
+| `RAZORPAY_KEY_ID`, `RAZORPAY_KEY_SECRET`, `RAZORPAY_WEBHOOK_SECRET` | as in Option A — or leave them out and set `UPI_ID` for manual UPI payments |
+| `UPI_ID` | the doctor's UPI ID, if paying by manual UPI |
+| `SMTP_URL` | for confirmation emails |
+| `ADMIN_EMAIL`, `ADMIN_PASSWORD` | optional, as in Option A |
+| `WHATSAPP_PROVIDER`, `WHATSAPP_PHONE_NUMBER_ID`, `WHATSAPP_TOKEN` | only with WhatsApp automation |
+| `CRON_SECRET` | **required with WhatsApp automation**: any random string, 16+ characters. Vercel sends it to the reminder job; without it the server refuses to start rather than silently never send a reminder |
+
+Do **not** set `VITE_API_BASE` (the website calls `/api` on its own address), `PORT`, or
+`CLIENT_IP_HEADER`. Vercel sets `NODE_ENV=production` itself.
+
+### 4. Deploy and check
+
+Push to `main` (or press Deploy). Then open `https://<project>.vercel.app/api/health`. You want
+`"storage":"postgres"`, `"database":"up"` and a payment mode that is **not** `mock`. The very
+first request after a deploy takes a moment (loading the function and a one-time schema
+check); later ones are fast.
+
+If it returns `503` or an error, open **Vercel → your project → Logs**. A line starting
+*Refusing to start in production* lists exactly what is missing — the same checks as on Render.
+
+### 5. Cut over from Render
+
+Both can run at once against the same database, so this is a DNS change and nothing else.
+
+1. Test the `*.vercel.app` address: book a slot, sign in to `/admin`, request a patient
+   sign-in link.
+2. In Vercel → **Settings → Domains**, add `richarani.in` and `www.richarani.in`. Vercel shows
+   the DNS records to create; use exactly what it displays.
+3. At your DNS provider, replace the current records (apex `A` → `216.24.57.1` and `www`
+   `CNAME` → `dr-richa-rani-zg8t.onrender.com` — both Render's) with Vercel's. Lower the TTL
+   to ~300 seconds a day beforehand so it takes effect quickly. Nothing else changes: the
+   Razorpay webhook URL is the same address.
+4. Wait for the domain to show *Valid Configuration* in Vercel. HTTPS is issued automatically.
+5. Keep the Render service for a few days as a fallback, then delete it (and any
+   UptimeRobot monitor aimed at it).
+
+**Rollback:** point the DNS records back at Render. There is no data to move back, because
+both use the same database.
+
+### 6. Costs, limits and what runs when
+
+- **Cron.** `vercel.json` declares two jobs, which run on the Production deployment only:
+  `/api/cron/reminders` every 5 minutes (sends due WhatsApp reminders; does nothing unless
+  WhatsApp automation is on) and `/api/health` once a day, which runs `SELECT 1` and so keeps
+  a free Supabase project from pausing. Check them in **Settings → Cron Jobs**. They replace
+  the UptimeRobot pinger from Option A.
+- **Function limits.** The API is capped at 30 seconds per request (`maxDuration`); a booking
+  takes well under one.
+- **Supabase free tier** still pauses after about a week without activity, and the daily job
+  above is what prevents that. It is no substitute for backups (see *Data protection*).
+
+---
+
+## How the Vercel setup works (for whoever maintains it)
+
+Vercel runs functions, not a server that stays up, and that changes four things. Each is
+already handled; this is why the code looks the way it does.
+
+- **Two entry points, one app.** `server/src/app.js` builds the Express app. `server/src/index.js`
+  runs it as a long-running server (Render, local, tests) and serves the built website.
+  `api/index.js` runs it as a function; Vercel's CDN serves `client/dist`. Nothing else may
+  live in `api/` — every file there becomes a function.
+- **Shared state lives in Postgres.** Requests are spread over however many instances are warm,
+  each with its own memory. Rate limits and the "this sign-in link was already used" record
+  are kept in a `rate_limits` table there (`server/src/services/shared-state.js`), so a visitor
+  cannot spend their allowance once per instance. On Render they stay in memory.
+- **Work after the response.** Emails and WhatsApp messages are sent after the patient has been
+  answered. A function can be frozen the moment it responds, so these go through `waitUntil`
+  (`server/src/services/background.js`) to keep it alive until they are sent.
+- **The schema is set up cheaply and safely.** `init()` used to run on every start. Now the
+  database remembers a fingerprint of the schema and seed rows it last applied; a start that
+  finds it current does one cheap check, and one that does not applies it under a lock, so
+  several instances starting together cannot collide.
+
+Smaller points: reminders use Vercel Cron instead of a timer; request bodies are read by
+`server/src/middleware/body.js` because Vercel's runtime drains the request stream before Express
+sees it (the stock `express.json()` fails with "stream is not readable" there); and the client IP
+for rate limiting ignores `CF-Connecting-IP` on Vercel, because anyone can send that header when
+Cloudflare is not in front.
+
+**Tests.** `npm test` covers the app on the JSON store. `npm run test:postgres` runs it against a
+real Postgres engine with shared state in the database, including two separate server processes
+sharing one database. `npm run test:vercel` runs `api/index.js` through Vercel's own Node runtime,
+with its request helpers on and off. The last two need packages that are deliberately not
+dependencies — each prints the one command to install them, and CI runs them. What no local test
+can show is `vercel.json` routing, the CDN, Cron and `waitUntil`; the checks below cover those.
 
 ---
 
@@ -325,8 +457,23 @@ Workable, but it buys little over Option A.
 - **Open `/admin`**, confirm your token works and a wrong one is rejected.
 - **Send the link to yourself on WhatsApp** to check the preview card renders.
 - **Check storage**: the health endpoint and the startup log should both say Postgres.
-- **Set up the uptime pinger** (step 1b) — without it the site sleeps and the database
-  eventually pauses.
+- **Set up the uptime pinger** (Render only, step 1b) — without it the site sleeps and the
+  database eventually pauses. On Vercel nothing sleeps, and the daily cron in `vercel.json`
+  keeps a free Supabase awake instead.
+- **On Vercel, check what only Vercel can show** (no local test covers these):
+  - **Routing.** `curl -s https://<your-site>/api/health` returns JSON (not an HTML page), and a
+    page that does not exist, e.g. `/nope`, returns a 404 page.
+  - **Link previews.** `curl -s https://<your-site>/about | grep '<title>'` prints the About
+    page's own title, not the home page's. Do the same for `/faq` and `/contact`. WhatsApp
+    reads exactly this.
+  - **Webhook.** With Razorpay keys set, Razorpay Dashboard → Webhooks → *Send test* (or the
+    next real payment) should show **200** against `/api/payments/webhook`. A 400 means the
+    secret does not match; a 500 would mean the body was altered on the way in, which
+    `npm run test:vercel` rules out for Vercel's runtime but only a live delivery proves.
+  - **Cron.** *Settings → Cron Jobs* lists both jobs, and *Logs* shows `/api/cron/reminders`
+    answering 200 every five minutes. A 401 there means `CRON_SECRET` is missing or short.
+  - **Emails still go out.** Book a test slot and confirm the email arrives — these are sent
+    after the response, which is the part a serverless function can get wrong.
 - **Set up backups.** Supabase's free tier has limited backups and no point-in-time
   restore. For patient records, take your own periodic dump:
   `pg_dump "$DATABASE_URL" > backup.sql`. Supabase's dashboard can also export a table
@@ -335,7 +482,8 @@ Workable, but it buys little over Option A.
 ## A custom domain
 
 On **Render**: Settings → Custom Domains, then point a CNAME at `<name>.onrender.com`.
-On **Vercel**: Project → Settings → Domains.
+On **Vercel**: Project → Settings → Domains; it shows the exact DNS records to create (see
+Option C step 5, which also covers moving an existing domain over from Render).
 
 Either way, update `CLIENT_ORIGIN` to the new domain and `og:url` in `client/index.html`,
 then redeploy — otherwise the API starts rejecting its own front end and link previews
@@ -395,7 +543,7 @@ confirmation page keep working either way.
    Approval usually takes minutes to a day. Hindi, Punjabi and Russian versions are optional: register them
    with the same names and list the codes in `WHATSAPP_TEMPLATE_LANGS` (e.g. `en,hi`). A patient whose
    language has no template gets English.
-5. **Set these on Render** (and in `server/.env` to test locally):
+5. **Set these on Render or Vercel** (and in `server/.env` to test locally):
 
    | Key | Value |
    | --- | --- |
@@ -405,6 +553,11 @@ confirmation page keep working either way.
    | `WHATSAPP_TEMPLATE_LANGS` | `en` (or `en,hi`, …) |
 
    The server refuses to start in production with `cloud-api` and a missing ID or token.
+
+   **On Vercel, also set `CRON_SECRET`** (any random string, 16+ characters). A function cannot
+   hold the timer that sends reminders on Render; Vercel Cron calls `/api/cron/reminders` every
+   five minutes instead and presents this secret. The server refuses to start on Vercel with
+   `cloud-api` and no `CRON_SECRET`, rather than quietly never sending a reminder.
 6. Redeploy, then book a test appointment with **your own phone number** and check the three messages arrive.
    `/api/health` reports `"whatsapp":"cloud-api"` when it is on.
 

@@ -265,9 +265,12 @@ npm run build && npm start
 `npm run build` emits `client/dist`, which the Express server serves automatically when present —
 so the whole site runs from one origin on one port, with no CORS configuration needed.
 
-Configs for Render (`render.yaml`) and Vercel (`vercel.json`) are included. With bookings in
-Postgres the whole thing runs on free tiers — Render for the app, Neon or Supabase for the
-database. **[DEPLOY.md](DEPLOY.md)** has the walkthrough.
+Configs for Render (`render.yaml`) and Vercel (`vercel.json`) are included, and the app runs on
+either. On Vercel the website is served from the CDN and the API runs as one serverless function
+(`api/index.js`), so nothing sleeps; on Render the same code runs as a single long-running server.
+Bookings live in Postgres (Neon or Supabase) either way. **[DEPLOY.md](DEPLOY.md)** has the
+walkthrough, including what each host costs and why a clinic taking payments needs a paid plan on
+Vercel.
 
 In production the server refuses to start if `DATABASE_URL` is unset, if `ADMIN_TOKEN` is still the
 default or shorter than 24 characters, or if Razorpay keys are missing. All three are live-site

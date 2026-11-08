@@ -18,6 +18,14 @@ jobs:
       - run: npm run build
       # Starts its own throwaway servers: JSON store, no database, no email.
       - run: npm test
+      # The same suites on a real Postgres engine with shared state in the
+      # database, then the API run through Vercel's own Node runtime. These need
+      # PGlite and @vercel/node, which are deliberately not dependencies; all
+      # three must be installed in ONE command or npm removes the earlier ones.
+      - run: npm i --no-save @electric-sql/pglite@0.5.15 @electric-sql/pglite-socket@0.2.18 @vercel/node@30.0.0
+      - run: npm run test:schema
+      - run: npm run test:postgres
+      - run: npm run test:vercel
       - run: npm run check:contrast
       # Browser journey + axe accessibility checks against a sandboxed server.
       - run: npx playwright install --with-deps chromium

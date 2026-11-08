@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { BOOKING_RULES } from '../config.js';
 import { db } from '../db.js';
 import { whatsappJoinLink, formatWhen, sendCancellationNotice, sendRefundNotice } from '../services/notify.js';
+import { background } from '../services/background.js';
 import { confirmPaidBooking } from '../services/confirm.js';
 import { adminLogin, requireAdmin } from '../services/auth.js';
 import { getAvailability, validateAvailability, saveAvailability } from '../services/availability.js';
@@ -363,7 +364,7 @@ router.post('/bookings/:id/refunded', requireAdmin, async (req, res, next) => {
       return res.status(409).json({ error: 'Only a cancelled, paid booking can be marked refunded.' });
     }
     const updated = await db.update(booking.id, { payment: { ...booking.payment, status: 'refunded' } });
-    sendRefundNotice(updated || booking).catch((err) => console.error('Notification failed:', err));
+    background(sendRefundNotice(updated || booking), 'Refund notice');
     res.json({ id: booking.id, payment: 'refunded' });
   } catch (err) {
     next(err);
@@ -382,7 +383,7 @@ router.patch('/bookings/:id', requireAdmin, async (req, res, next) => {
     if (!updated) return res.status(404).json({ error: 'Booking not found.' });
     // Tell the patient when the clinic cancels something they were counting on.
     if (status === 'cancelled' && before && before.status !== 'cancelled' && ['confirmed', 'pending', 'needs-attention'].includes(before.status)) {
-      sendCancellationNotice(updated).catch((err) => console.error('Notification failed:', err));
+      background(sendCancellationNotice(updated), 'Cancellation notice');
     }
     res.json({ id: updated.id, status: updated.status });
   } catch (err) {

@@ -27,7 +27,10 @@
     "test:e2e": "npm run build && playwright test",
     "check:contrast": "node scripts/check-contrast.mjs",
     "test:validation": "node scripts/test/validation-parity.mjs",
-    "test:ratelimit": "node scripts/test/ratelimit.mjs"
+    "test:ratelimit": "node scripts/test/ratelimit.mjs",
+    "test:body": "node scripts/test/body.mjs",
+    "test:postgres": "node scripts/test/all.mjs --pglite && node scripts/test/postgres.mjs",
+    "test:vercel": "node scripts/test/vercel.mjs"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.2",
@@ -35,6 +38,6 @@
     "concurrently": "^9.1.2"
   },
   "engines": {
-    "node": ">=22"
+    "node": "22.x"
   }
 }

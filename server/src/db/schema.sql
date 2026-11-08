@@ -1,8 +1,10 @@
 -- ════════════════════════════════════════════════════════════════════════
 --  Booking schema.
 --
---  Applied on every boot; every statement is idempotent, so starting the
---  server against an existing database is a no-op.
+--  Applied whenever this file (or the practice config the seed rows come from)
+--  has changed since the database last saw it — see init() in postgres.js.
+--  Every statement is idempotent, so applying it to an existing database is a
+--  no-op.
 --
 --  The previous single `bookings` table (one JSONB blob per booking) is
 --  deliberately NOT dropped. If a deployment already has rows in it, they
@@ -115,6 +117,18 @@ CREATE TABLE IF NOT EXISTS settings (
   value      JSONB       NOT NULL,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Short-lived counters shared by every server instance: rate limits, and the
+-- "this sign-in link was already used" record. Rows are only meaningful until
+-- reset_at and are swept as they go stale. Used on Vercel, where requests are
+-- spread over many function instances and an in-memory count would be per
+-- instance; see server/src/services/shared-state.js.
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key      TEXT        PRIMARY KEY,
+  count    INTEGER     NOT NULL,
+  reset_at TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS rate_limits_reset_idx ON rate_limits (reset_at);
 
 CREATE INDEX IF NOT EXISTS appointments_date_idx    ON appointments (appt_date);
 CREATE INDEX IF NOT EXISTS appointments_status_idx  ON appointments (status);
