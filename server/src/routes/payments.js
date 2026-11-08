@@ -7,6 +7,7 @@ import { confirmPaidBooking } from '../services/confirm.js';
 import { config } from '../config.js';
 import { notifyPaymentSubmitted } from '../services/notify.js';
 import { sendWhatsappTemplate } from '../services/whatsapp.js';
+import { background } from '../services/background.js';
 
 const router = Router();
 
@@ -209,10 +210,8 @@ router.post('/upi-submit', async (req, res, next) => {
       holdExpiresAt: null,
       payment: { ...booking.payment, mode: 'upi', paymentId: utr, status: 'created' },
     });
-    notifyPaymentSubmitted(updated || booking).catch((err) =>
-      console.error('Notification failed:', err),
-    );
-    sendWhatsappTemplate('received', updated || booking);
+    background(notifyPaymentSubmitted(updated || booking), 'Payment-submitted notice');
+    background(sendWhatsappTemplate('received', updated || booking), 'WhatsApp "received" message');
     res.json({ status: 'submitted', bookingId: booking.id });
   } catch (err) {
     next(err);

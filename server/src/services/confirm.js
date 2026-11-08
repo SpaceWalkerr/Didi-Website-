@@ -2,6 +2,7 @@ import { db } from '../db.js';
 import { validateSlot } from './slots.js';
 import { sendBookingConfirmation, notifyDoctor } from './notify.js';
 import { sendJoinInstructions } from './whatsapp.js';
+import { background } from './background.js';
 
 /**
  * Turns a proven-good payment into a confirmed booking.
@@ -50,11 +51,15 @@ export async function confirmPaidBooking(booking, paymentId) {
   // Fire-and-forget: a notification failure must not fail the confirmation.
   // The booking is paid for and valid whether or not a message goes out, and
   // the patient already has the join link on the confirmation screen.
-  Promise.all([
-    sendBookingConfirmation(confirmed),
-    notifyDoctor(confirmed),
-    sendJoinInstructions(confirmed),
-  ]).catch((err) => console.error('Notification failed:', err));
+  // `background` also keeps a serverless instance alive until they are sent.
+  background(
+    Promise.all([
+      sendBookingConfirmation(confirmed),
+      notifyDoctor(confirmed),
+      sendJoinInstructions(confirmed),
+    ]),
+    'Booking notification',
+  );
 
   return { outcome: 'confirmed', booking: confirmed };
 }

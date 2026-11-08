@@ -84,6 +84,34 @@ export function preflight() {
     );
   }
 
+  // A serverless function cannot hold the timer that sends reminders on a normal
+  // server; on Vercel they are sent by a cron job that authenticates with this
+  // secret. Without it every cron call would be refused and no reminder would
+  // ever go out — with nothing in the site to say so.
+  if (
+    process.env.VERCEL &&
+    process.env.WHATSAPP_PROVIDER === 'cloud-api' &&
+    (process.env.CRON_SECRET || '').length < 16
+  ) {
+    errors.push(
+      'WHATSAPP_PROVIDER is "cloud-api" on Vercel, but CRON_SECRET is missing or\n' +
+        '    shorter than 16 characters. Reminders are sent by a Vercel Cron job, which\n' +
+        '    authenticates with this secret; without it none would ever be sent.\n' +
+        '    Add CRON_SECRET (any random string, 16+ characters). See DEPLOY.md.',
+    );
+  }
+
+  // Sign-in links in emails are built from the first CLIENT_ORIGIN. Left unset it
+  // is localhost, and every link a patient is emailed would point at their own
+  // computer. A warning, not a refusal: the rest of the site works without it.
+  if (!process.env.CLIENT_ORIGIN) {
+    console.warn(
+      '  WARNING: CLIENT_ORIGIN is not set — patients\' sign-in links will point at\n' +
+        '           http://localhost:5173. Set it to the site\'s address, e.g.\n' +
+        '           https://richarani.in (see DEPLOY.md).',
+    );
+  }
+
   if (!config.notify.smtpUrl) {
     console.warn(
       '  WARNING: SMTP_URL is not set — patients and the doctor will NOT receive\n' +

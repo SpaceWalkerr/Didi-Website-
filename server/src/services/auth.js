@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { config, PRACTICE } from '../config.js';
+import { hit } from './shared-state.js';
 
 /**
  * Signed, expiring tokens, with no session table.
@@ -86,17 +87,22 @@ export const normaliseEmail = (e) => String(e || '').trim().toLowerCase();
 export const createLoginLink = (email) =>
   signToken({ role: 'link', sub: normaliseEmail(email), jti: crypto.randomUUID() }, LINK_TTL);
 
-// A link works once. Held in memory, so a restart forgets it; the 15-minute
-// expiry bounds that, and a replayed link only ever opens one patient's own page.
-const spent = new Map();
-
-export function redeemLoginLink(token) {
+/**
+ * Swaps a one-time link for a session. A link works once: the first redemption
+ * counts 1, any later one counts 2 or more and is refused.
+ *
+ * Counted in shared-state, so on Vercel — where the second click may land on a
+ * different function instance from the first — the database remembers it. On a
+ * single server it is held in memory, where a restart forgets it; the 15-minute
+ * expiry bounds that, and a replayed link only ever opens one patient's own page.
+ */
+export async function redeemLoginLink(token) {
   const payload = verifyToken(token, 'link');
   if (!payload) return null;
   const now = Date.now();
-  for (const [jti, exp] of spent) if (exp < now) spent.delete(jti);
-  if (spent.has(payload.jti)) return null;
-  spent.set(payload.jti, payload.exp);
+  // Remembered for as long as the link itself could still be valid.
+  const { count } = await hit(`login-link:${payload.jti}`, Math.max(1_000, payload.exp - now));
+  if (count > 1) return null;
   return {
     token: signToken({ role: 'patient', sub: payload.sub }, PATIENT_TTL),
     email: payload.sub,

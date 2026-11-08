@@ -8,3 +8,4 @@ server/data/*.json
 *.log
 test-results/
 playwright-report/
+.vercel

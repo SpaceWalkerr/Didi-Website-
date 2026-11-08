@@ -1,11 +1,14 @@
+import { hit, _resetMemoryCounters } from '../services/shared-state.js';
+
 /**
- * In-memory fixed-window rate limiting.
+ * Fixed-window rate limiting.
  *
- * Deliberately not a dependency: this is one doctor's booking site on a single
- * small instance, and a Map of counters is the right size of solution. The
- * trade-off is that the window is per-process — if the app is ever scaled to
- * more than one instance, move this to Redis or the database, because two
- * processes would each allow the full quota.
+ * Deliberately not a dependency: this is one doctor's booking site, and a
+ * counter per visitor is the right size of solution. Where the counters live is
+ * decided in services/shared-state.js — in memory on a single long-running
+ * server, in Postgres on Vercel, where every request may land on a different
+ * instance and a per-process count would let a visitor use the whole allowance
+ * once per instance.
  *
  * What it is actually protecting:
  *  · POST /api/bookings     — each call creates a row and a Razorpay order,
@@ -17,8 +20,6 @@
  *                             patient's name, phone and symptoms.
  */
 
-const buckets = new Map();
-
 /**
  * Which address a request is counted against.
  *
@@ -27,73 +28,60 @@ const buckets = new Map();
  * Keying on it let a script get a fresh bucket per request just by changing
  * that header (verified against the live site, November 2026).
  *
- * 1. CLIENT_IP_HEADER (default `cf-connecting-ip`). Cloudflare sets this to
- *    the address that connected to it and overwrites any value the caller
- *    sent, so it cannot be forged through Cloudflare. Set CLIENT_IP_HEADER to
- *    an empty string to ignore it, e.g. if the site moves off Cloudflare.
+ * 1. CLIENT_IP_HEADER. On Render the default is `cf-connecting-ip`: Cloudflare
+ *    sets it to the address that connected to it and overwrites any value the
+ *    caller sent, so it cannot be forged through Cloudflare. That is ONLY true
+ *    behind Cloudflare — anywhere else the caller writes this header, and
+ *    trusting it hands every visitor an unlimited number of fresh buckets. So
+ *    on Vercel the default is empty and the header is ignored. Set it
+ *    explicitly only if you know a proxy you control sets and overwrites it.
  * 2. Otherwise `req.ip`, which Express derives from X-Forwarded-For counting
  *    `trust proxy` hops from the right (the entries the infrastructure added),
- *    never the caller's own prefix.
+ *    never the caller's own prefix. Vercel puts the client's address there.
  *
  * Still best-effort: an attacker with many real IPs defeats any IP counter.
  */
 export function clientKey(req) {
   // Read per call, not at import, so .env is loaded whatever the import order.
-  const header = (process.env.CLIENT_IP_HEADER ?? 'cf-connecting-ip').trim();
+  const header = (process.env.CLIENT_IP_HEADER ?? (process.env.VERCEL ? '' : 'cf-connecting-ip')).trim();
   const fromEdge = header && req.get(header);
   if (fromEdge) return fromEdge.trim();
   return req.ip || req.socket?.remoteAddress || 'unknown';
 }
 
-/** Drops expired windows so the Map cannot grow without bound. */
-function sweep(now) {
-  for (const [key, bucket] of buckets) {
-    if (bucket.resetAt <= now) buckets.delete(key);
-  }
-}
+/**
+ * @param shared  Keep the count where every server instance can see it. Use it
+ *                for limits that guard something (creating bookings, signing
+ *                in); leave it off for cheap reads, where a per-instance count
+ *                is enough and a database call per request is not worth it.
+ */
+export function rateLimit({ windowMs, max, name, shared = false }) {
+  return async (req, res, next) => {
+    try {
+      const { count, resetInMs } = await hit(`${name}:${clientKey(req)}`, windowMs, { shared });
+      const retryAfter = Math.max(1, Math.ceil(resetInMs / 1000));
 
-let lastSweep = 0;
-const SWEEP_EVERY_MS = 60_000;
+      res.set('RateLimit-Limit', String(max));
+      res.set('RateLimit-Remaining', String(Math.max(0, max - count)));
+      res.set('RateLimit-Reset', String(Math.ceil(resetInMs / 1000)));
 
-export function rateLimit({ windowMs, max, name }) {
-  return (req, res, next) => {
-    const now = Date.now();
+      if (count > max) {
+        res.set('Retry-After', String(retryAfter));
+        // `code` maps to an errors.* key so the client can translate it — the
+        // server never sends a user-facing sentence in one fixed language.
+        return res.status(429).json({
+          code: 'tooManyRequests',
+          params: { seconds: retryAfter },
+          error: 'Too many requests. Please wait a moment and try again.',
+        });
+      }
 
-    if (now - lastSweep > SWEEP_EVERY_MS) {
-      sweep(now);
-      lastSweep = now;
+      return next();
+    } catch (err) {
+      return next(err);
     }
-
-    const key = `${name}:${clientKey(req)}`;
-    let bucket = buckets.get(key);
-
-    if (!bucket || bucket.resetAt <= now) {
-      bucket = { count: 0, resetAt: now + windowMs };
-      buckets.set(key, bucket);
-    }
-
-    bucket.count += 1;
-
-    const remaining = Math.max(0, max - bucket.count);
-    res.set('RateLimit-Limit', String(max));
-    res.set('RateLimit-Remaining', String(remaining));
-    res.set('RateLimit-Reset', String(Math.ceil((bucket.resetAt - now) / 1000)));
-
-    if (bucket.count > max) {
-      const retryAfter = Math.ceil((bucket.resetAt - now) / 1000);
-      res.set('Retry-After', String(retryAfter));
-      // `code` maps to an errors.* key so the client can translate it — the
-      // server never sends a user-facing sentence in one fixed language.
-      return res.status(429).json({
-        code: 'tooManyRequests',
-        params: { seconds: retryAfter },
-        error: 'Too many requests. Please wait a moment and try again.',
-      });
-    }
-
-    return next();
   };
 }
 
 /** Exposed for tests. */
-export const _resetRateLimits = () => buckets.clear();
+export const _resetRateLimits = _resetMemoryCounters;
