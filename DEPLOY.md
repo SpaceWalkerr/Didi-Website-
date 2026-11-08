@@ -22,13 +22,14 @@ to start in production without `DATABASE_URL`.**
 | --- | --- | --- |
 | **Render, one service** | Free | Simplest. One origin, no CORS. Sleeps when idle — see below. |
 | **Render, Starter** | ~$7/mo | Same, but always on. |
-| **Vercel, everything** (Option C) | Pro, ~$20/mo¹ | Fast CDN, API never sleeps, nothing to keep warm. Needs a paid plan. |
+| **Vercel, everything** (Option C) | Free (Hobby)¹, or Pro ~$20/mo | Fast CDN, API never sleeps, nothing to keep warm. |
 | **Vercel (front end) + Render (API)** (Option B) | Pro¹ + Render | The older split. Superseded by Option C unless you want the API on Render. |
 
-¹ Vercel's Hobby plan is free but **not licensed for commercial use**, and it also rejects
-the 5-minute reminder job in `vercel.json` (the deployment fails). A practice taking payments
-is commercial, so a live clinic site needs Vercel's paid Pro plan. Check their current terms
-and pricing — and Render's — before relying on either.
+¹ This repo's `vercel.json` works on Vercel's free Hobby plan, but Hobby is **not licensed for
+commercial use** by Vercel's terms, and a practice taking payments is commercial. Vercel can
+suspend a Hobby account that breaks that, so treat free as a stopgap and move to Pro when the
+clinic is established. Check their current terms and pricing — and Render's — before relying
+on either.
 
 **Which one:** if the site must open instantly for every visitor and a paid plan is fine,
 Option C. If you want the cheapest always-on option, Render Starter (~$7/mo) with Option A is
@@ -317,8 +318,10 @@ wait, no pinger to keep warm, and no region to get wrong beyond the one in `verc
 
 ### What it needs
 
-- **Vercel's Pro plan** (~$20/month at the time of writing — check current pricing). Hobby is
-  non-commercial by Vercel's terms, and also rejects the 5-minute cron below.
+- **A Vercel plan.** The free **Hobby** plan runs this repo as it stands. Its terms are
+  non-commercial, though (see the note under *Which host*), so plan to move to **Pro**
+  (~$20/month at the time of writing — check current pricing) once the clinic is taking real
+  patients. Pro is also what brings back the 5-minute reminder job (step 6).
 - **Postgres** — the same Supabase or Neon database as before. If you are moving from Render,
   keep using the one you have: nothing needs migrating.
 
@@ -396,11 +399,18 @@ both use the same database.
 
 ### 6. Costs, limits and what runs when
 
-- **Cron.** `vercel.json` declares two jobs, which run on the Production deployment only:
-  `/api/cron/reminders` every 5 minutes (sends due WhatsApp reminders; does nothing unless
-  WhatsApp automation is on) and `/api/health` once a day, which runs `SELECT 1` and so keeps
-  a free Supabase project from pausing. Check them in **Settings → Cron Jobs**. They replace
-  the UptimeRobot pinger from Option A.
+- **Cron.** `vercel.json` declares one job, which runs on the Production deployment only:
+  `/api/health` once a day, which runs `SELECT 1` and so keeps a free Supabase project from
+  pausing. Check it in **Settings → Cron Jobs**. It replaces the UptimeRobot pinger from
+  Option A.
+- **WhatsApp reminders are paused on the free plan.** They need a job that runs every five
+  minutes, which only Pro allows (Hobby refuses the deployment). They only matter with
+  WhatsApp automation switched on, which is off by default. When you move to Pro and turn
+  automation on, set `CRON_SECRET` and add this to the `crons` list in `vercel.json`:
+
+  ```json
+  { "path": "/api/cron/reminders", "schedule": "*/5 * * * *" }
+  ```
 - **Function limits.** The API is capped at 30 seconds per request (`maxDuration`); a booking
   takes well under one.
 - **Supabase free tier** still pauses after about a week without activity, and the daily job
@@ -556,7 +566,8 @@ confirmation page keep working either way.
 
    **On Vercel, also set `CRON_SECRET`** (any random string, 16+ characters). A function cannot
    hold the timer that sends reminders on Render; Vercel Cron calls `/api/cron/reminders` every
-   five minutes instead and presents this secret. The server refuses to start on Vercel with
+   five minutes instead and presents this secret (Pro only — see Option C step 6 for the line
+   to add to `vercel.json`). The server refuses to start on Vercel with
    `cloud-api` and no `CRON_SECRET`, rather than quietly never sending a reminder.
 6. Redeploy, then book a test appointment with **your own phone number** and check the three messages arrive.
    `/api/health` reports `"whatsapp":"cloud-api"` when it is on.
